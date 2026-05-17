@@ -70,7 +70,6 @@ MAX_LOT = 2.0
 PAIRS = {
     'EURUSD': {'pip_size': 0.0001, 'pip_value': 10.00},
     'AUDUSD': {'pip_size': 0.0001, 'pip_value': 10.00},
-    'NZDUSD': {'pip_size': 0.0001, 'pip_value': 10.00},
     'EURJPY': {'pip_size': 0.01,   'pip_value':  6.67},
     'GBPJPY': {'pip_size': 0.01,   'pip_value':  6.67},
 }
@@ -628,7 +627,7 @@ def print_per_pair(pair_stats: list):
 def print_combined(c: dict):
     w = 68
     print("=" * w)
-    print("  COMBINED RESULTS  |  5 PAIRS (GBPUSD DROPPED)  |  H4 TREND FILTER  |  SHARED $100,000 ACCOUNT")
+    print("  COMBINED RESULTS  |  4 PAIRS (GBPUSD + NZDUSD DROPPED)  |  H4 TREND FILTER  |  SHARED $100,000 ACCOUNT")
     print("=" * w)
     rows = [
         ('Total Trades',           f"{c['trades']:,}"),
