@@ -69,7 +69,6 @@ MAX_LOT = 2.0
 
 PAIRS = {
     'EURUSD': {'pip_size': 0.0001, 'pip_value': 10.00},
-    'AUDUSD': {'pip_size': 0.0001, 'pip_value': 10.00},
     'EURJPY': {'pip_size': 0.01,   'pip_value':  6.67},
     'GBPJPY': {'pip_size': 0.01,   'pip_value':  6.67},
 }
@@ -545,8 +544,9 @@ def compute_combined_stats(trades: list, equity_log: list,
     # Worst single trading day
     worst_day_loss = min((pnl for _, _, pnl, _ in equity_log), default=0)
 
-    # Profitable days per month
-    monthly_profit_days = defaultdict(int)
+    # Profitable days -- total across challenge and per-month breakdown
+    total_profitable_days = sum(1 for _, _, dpnl, _ in equity_log if dpnl > 0)
+    monthly_profit_days   = defaultdict(int)
     for day, bal, dpnl, dstart in equity_log:
         if dpnl > 0:
             monthly_profit_days[pd.Period(day, 'M')] += 1
@@ -593,8 +593,9 @@ def compute_combined_stats(trades: list, equity_log: list,
         'max_lots'          : round(df['Lots'].max(), 2),
         'months'            : round(months, 1),
         'per_month'         : round(pnl_total / months, 2),
-        'avg_profitable_days': round(avg_profitable_days, 1),
-        'min_profitable_days': int(min_profitable_days),
+        'total_profitable_days': int(total_profitable_days),
+        'avg_profitable_days'  : round(avg_profitable_days, 1),
+        'min_profitable_days'  : int(min_profitable_days),
         'monthly_pnl'       : dict(monthly_pnl),
         'monthly_start'     : monthly_start,
     }
@@ -627,7 +628,7 @@ def print_per_pair(pair_stats: list):
 def print_combined(c: dict):
     w = 68
     print("=" * w)
-    print("  COMBINED RESULTS  |  4 PAIRS (GBPUSD + NZDUSD DROPPED)  |  H4 TREND FILTER  |  SHARED $100,000 ACCOUNT")
+    print("  COMBINED RESULTS  |  3 PAIRS (EURUSD + EURJPY + GBPJPY)  |  H4 TREND FILTER  |  SHARED $100,000 ACCOUNT")
     print("=" * w)
     rows = [
         ('Total Trades',           f"{c['trades']:,}"),
@@ -642,6 +643,7 @@ def print_combined(c: dict):
         ('Best / Worst Trade',     f"${c['best_trade']:+,.2f}  /  ${c['worst_trade']:+,.2f}"),
         ('TP / SL / EOD exits',    f"{c['tp_hits']} / {c['sl_hits']} / {c['eod_hits']}"),
         ('Avg Lot Size',           f"{c['avg_lots']:.2f}  (range: {c['min_lots']:.2f}-{c['max_lots']:.2f})"),
+        ('Total Profitable Days',   f"{c['total_profitable_days']}"),
         ('Avg Profitable Days/mo', f"{c['avg_profitable_days']:.1f}"),
         ('Min Profitable Days/mo', f"{c['min_profitable_days']}"),
         ('Data Window',            f"~{c['months']:.0f} months"),
@@ -687,20 +689,17 @@ def the5ers_assessment(c: dict, equity_log: list):
     print(f"  Profit target      : 10%  ->  reach ${TARGET_BALANCE:,.0f}")
     print(f"  Max daily loss     : 5% of balance  (${STARTING_BALANCE * 0.05:,.0f} on day 1)")
     print(f"  Hard floor         : ${HARD_FLOOR:,.0f}  (10% from starting balance)")
-    print(f"  Min profitable days: 3 per month")
+    print(f"  Min profitable days: 3 total across the challenge")
     print(f"  Time limit         : Unlimited")
     print()
 
-    final_bal = c['final_balance']
-    max_dd    = c['max_dd']
-    worst_day = abs(c['worst_day'])
-    min_days  = c['min_profitable_days']
+    final_bal  = c['final_balance']
+    max_dd     = c['max_dd']
+    worst_day  = abs(c['worst_day'])
+    total_days = c['total_profitable_days']
 
     # Check if hard floor was ever breached
     floor_breach = any(bal <= HARD_FLOOR for _, bal, _, _ in equity_log)
-
-    # Check worst daily loss vs limit (5% of starting balance, conservative check)
-    worst_day_pct_of_start = worst_day / STARTING_BALANCE * 100
 
     # Estimate months to target
     monthly_rate = c['per_month']
@@ -710,11 +709,11 @@ def the5ers_assessment(c: dict, equity_log: list):
     else:
         months_to_target = float('inf')
 
-    target_pass  = final_bal >= TARGET_BALANCE
-    floor_pass   = not floor_breach
-    dd_pass      = max_dd    < (STARTING_BALANCE * 0.10)
-    daily_pass   = worst_day < (STARTING_BALANCE * 0.05)
-    days_pass    = min_days  >= 3
+    target_pass = final_bal >= TARGET_BALANCE
+    floor_pass  = not floor_breach
+    dd_pass     = max_dd    < (STARTING_BALANCE * 0.10)
+    daily_pass  = worst_day < (STARTING_BALANCE * 0.05)
+    days_pass   = total_days >= 3
 
     def status(p): return "PASS" if p else "FAIL"
 
@@ -728,8 +727,8 @@ def the5ers_assessment(c: dict, equity_log: list):
           f"${max_dd:>11,.2f}  {status(dd_pass)}")
     print(f"  {'Worst daily loss':<32}  {'< $5,000':>12}  "
           f"${worst_day:>11,.2f}  {status(daily_pass)}")
-    print(f"  {'Min profitable days/month':<32}  {'>= 3':>12}  "
-          f"{min_days:>12}  {status(days_pass)}")
+    print(f"  {'Min profitable days (total)':<32}  {'>= 3':>12}  "
+          f"{total_days:>12}  {status(days_pass)}")
     print("=" * w)
 
     all_pass = target_pass and floor_pass and dd_pass and daily_pass and days_pass
@@ -747,7 +746,7 @@ def the5ers_assessment(c: dict, equity_log: list):
             else:
                 print(f"    Strategy is losing money -- target unreachable at this rate")
         if not days_pass:
-            print(f"    Worst month only {min_days} profitable days (need 3+)")
+            print(f"    Only {total_days} profitable trading days total (need 3+)")
 
     if monthly_rate > 0 and not target_pass:
         print()
