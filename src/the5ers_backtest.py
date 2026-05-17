@@ -1,10 +1,13 @@
 """
-Forex Bot -- The5ers $100K Session Breakout Backtest
+Forex Bot -- The5ers $100K Session Breakout Backtest (H4 Trend Filter)
 
 Strategy:
+  0. H4 trend filter: 50/200 SMA on H4 bars at London open time
+       Bullish (Close > SMA50 > SMA200)  -> BUY breakouts only
+       Bearish (Close < SMA50 < SMA200)  -> SELL breakouts only
+       Neutral                           -> skip day (no trade)
   1. Asian session (00:00-07:00 UTC): record High and Low of the session
-  2. London open (08:00 UTC): BUY if price breaks above Asian High,
-                               SELL if price breaks below Asian Low
+  2. London open (08:00 UTC): take breakout ONLY in trend direction
   3. NY open (13:00 UTC): same check if London produced no signal that day
   4. CANCEL: if price already moved > 20 pips past the breakout level (no chasing)
   5. Stop loss  = 50% of Asian session range
@@ -62,7 +65,7 @@ NY_HOUR          = 13   # NY breakout check starts at 13:00 UTC
 EOD_HOUR         = 22   # Close any open trade at 22:00 UTC
 
 MIN_LOT = 0.01
-MAX_LOT = 50.0
+MAX_LOT = 2.0
 
 PAIRS = {
     'GBPUSD': {'pip_size': 0.0001, 'pip_value': 10.00},
@@ -128,13 +131,40 @@ def calc_lots(balance: float, sym: str, sl_pips: float) -> float:
     return round(max(MIN_LOT, min(lots, MAX_LOT)), 2)
 
 
+# -- 2b. H4 TREND FILTER -------------------------------------------------------
+
+def prepare_h4(m15_df: pd.DataFrame) -> pd.DataFrame:
+    """Resample M15 -> H4 and compute 50/200 SMA trend."""
+    h4 = m15_df.resample('4h').agg(
+        Open=('Open', 'first'), High=('High', 'max'),
+        Low=('Low', 'min'),   Close=('Close', 'last')
+    ).dropna()
+    h4['SMA50']  = h4['Close'].rolling(50).mean()
+    h4['SMA200'] = h4['Close'].rolling(200).mean()
+    h4['Trend']  = 0
+    bull = (h4['Close'] > h4['SMA50']) & (h4['SMA50'] > h4['SMA200'])
+    bear = (h4['Close'] < h4['SMA50']) & (h4['SMA50'] < h4['SMA200'])
+    h4.loc[bull, 'Trend'] =  1
+    h4.loc[bear, 'Trend'] = -1
+    return h4
+
+
+def get_h4_trend(h4_df: pd.DataFrame, at_ts: pd.Timestamp) -> int:
+    """Return the trend of the last H4 bar that CLOSED before at_ts."""
+    prior = h4_df[h4_df.index < at_ts]
+    if prior.empty:
+        return 0
+    return int(prior['Trend'].iloc[-1])
+
+
 # -- 3. BREAKOUT DETECTION -----------------------------------------------------
 
 def find_breakout(session_bars: pd.DataFrame,
                   asian_high: float, asian_low: float,
-                  sym: str):
+                  sym: str, allowed_direction: int = 0):
     """
     Scan session bars for the FIRST breakout of the Asian range.
+    allowed_direction: +1 = BUY only, -1 = SELL only, 0 = both directions.
     Returns a signal dict or None.
 
     Cancels if:
@@ -148,20 +178,19 @@ def find_breakout(session_bars: pd.DataFrame,
         sell_break = bar['Low']  < asian_low
 
         if buy_break and sell_break:
-            # Entire Asian range engulfed in one bar -- skip session
-            return None
+            return None  # Ambiguous -- skip
 
-        if buy_break:
+        if buy_break and allowed_direction >= 0:
             overshoot = (bar['High'] - asian_high) / pip_size
             if overshoot > MAX_OVERSHOOT_PIPS:
-                return None   # Too far, no chase
+                return None
             return {
                 'direction'   : 'LONG',
-                'entry_price' : asian_high,   # Pending order fills at breakout level
+                'entry_price' : asian_high,
                 'trigger_ts'  : ts,
             }
 
-        if sell_break:
+        if sell_break and allowed_direction <= 0:
             overshoot = (asian_low - bar['Low']) / pip_size
             if overshoot > MAX_OVERSHOOT_PIPS:
                 return None
@@ -228,6 +257,9 @@ def run_backtest(all_data: dict):
         if ts.weekday() < 5
     })
 
+    # Pre-compute H4 trend for each pair
+    h4_data = {sym: prepare_h4(df) for sym, df in all_data.items()}
+    print(f"H4 trend filter: ON  (50/200 SMA -- BUY/SELL only with trend, skip neutral days)")
     print(f"Processing {len(all_days)} trading days across {len(all_data)} pairs ...\n")
 
     balance     = STARTING_BALANCE
@@ -303,12 +335,21 @@ def run_backtest(all_data: dict):
             tp_pips = range_pips * 1.00   # 100% of range
             lots    = calc_lots(balance, sym, sl_pips)
 
+            # -- H4 trend direction at London open ----------------------------
+            london_open_ts = pd.Timestamp(day, tz='UTC').replace(
+                hour=LONDON_HOUR, minute=0, second=0, microsecond=0
+            )
+            trend = get_h4_trend(h4_data[sym], london_open_ts)
+            if trend == 0:
+                continue   # No clear H4 trend -- skip this pair today
+
             # -- London session breakout (08:00-12:45 UTC) --------------------
             london_bars = day_bars[
                 (day_bars.index.hour >= LONDON_HOUR) &
                 (day_bars.index.hour <  NY_HOUR)
             ]
-            signal = find_breakout(london_bars, asian_high, asian_low, sym)
+            signal = find_breakout(london_bars, asian_high, asian_low, sym,
+                                   allowed_direction=trend)
 
             # -- NY session breakout (13:00-21:45 UTC) if London produced none -
             if signal is None:
@@ -316,7 +357,8 @@ def run_backtest(all_data: dict):
                     (day_bars.index.hour >= NY_HOUR) &
                     (day_bars.index.hour <  EOD_HOUR)
                 ]
-                signal = find_breakout(ny_bars, asian_high, asian_low, sym)
+                signal = find_breakout(ny_bars, asian_high, asian_low, sym,
+                                       allowed_direction=trend)
 
             if signal is None:
                 continue   # No valid signal today for this pair
@@ -510,8 +552,8 @@ def compute_combined_stats(trades: list, equity_log: list,
 def print_per_pair(pair_stats: list):
     w = 108
     print("=" * w)
-    print("  PER-PAIR RESULTS  |  Session Breakout  |  Dynamic Lot Sizing")
-    print(f"  Asian range SL=50% / TP=100%  |  1% risk/trade  |  ~3 years  |  $100,000 account")
+    print("  PER-PAIR RESULTS  |  Session Breakout + H4 Trend Filter  |  Dynamic Lot Sizing")
+    print(f"  Asian range SL=50% / TP=100%  |  1% risk/trade  |  MAX 2 lots  |  ~3 years  |  $100,000 account")
     print("=" * w)
     print(f"  {'Pair':<8} {'Trades':>7} {'Win%':>6} {'P&L ($)':>12} "
           f"{'$/mo':>9} {'AvgWin':>9} {'AvgLoss':>9} "
@@ -532,7 +574,7 @@ def print_per_pair(pair_stats: list):
 def print_combined(c: dict):
     w = 68
     print("=" * w)
-    print("  COMBINED RESULTS  |  6 PAIRS  |  SHARED $100,000 ACCOUNT")
+    print("  COMBINED RESULTS  |  6 PAIRS  |  H4 TREND FILTER  |  SHARED $100,000 ACCOUNT")
     print("=" * w)
     rows = [
         ('Total Trades',           f"{c['trades']:,}"),
