@@ -347,87 +347,142 @@ def run_backtest(all_data: dict):
                 (day_bars.index.hour >= LONDON_HOUR) &
                 (day_bars.index.hour <  NY_HOUR)
             ]
-            signal = find_breakout(london_bars, asian_high, asian_low, sym,
-                                   allowed_direction=trend)
+            london_exit_ts = None
+            london_signal  = find_breakout(london_bars, asian_high, asian_low, sym,
+                                           allowed_direction=trend)
 
-            # -- NY session breakout (13:00-21:45 UTC) if London produced none -
-            if signal is None:
+            if london_signal is not None:
+                trigger_ts     = london_signal['trigger_ts']
+                tradeable_bars = day_bars[
+                    (day_bars.index >= trigger_ts) &
+                    (day_bars.index.hour < EOD_HOUR)
+                ]
+                if not tradeable_bars.empty:
+                    exit_price, exit_reason, exit_ts = execute_trade(
+                        london_signal, tradeable_bars, sl_pips, tp_pips, sym
+                    )
+                    london_exit_ts = exit_ts
+                    direction   = london_signal['direction']
+                    entry_price = london_signal['entry_price']
+                    pip_size    = PAIRS[sym]['pip_size']
+                    pips = ((exit_price - entry_price) if direction == 'LONG'
+                            else (entry_price - exit_price)) / pip_size
+                    pnl  = round(pips * PAIRS[sym]['pip_value'] * lots, 2)
+                    balance   = round(balance + pnl, 2)
+                    daily_pnl += pnl
+                    if direction == 'LONG':
+                        sl_level = entry_price - sl_pips * pip_size
+                        tp_level = entry_price + tp_pips * pip_size
+                    else:
+                        sl_level = entry_price + sl_pips * pip_size
+                        tp_level = entry_price - tp_pips * pip_size
+                    all_trades.append({
+                        'Date'          : str(day),
+                        'Symbol'        : sym,
+                        'Direction'     : direction,
+                        'Session'       : 'London',
+                        'Entry Time'    : trigger_ts.strftime('%H:%M'),
+                        'Exit Time'     : exit_ts.strftime('%H:%M'),
+                        'Entry Price'   : round(entry_price, 5),
+                        'Exit Price'    : round(exit_price, 5),
+                        'SL'            : round(sl_level, 5),
+                        'TP'            : round(tp_level, 5),
+                        'Asian High'    : round(asian_high, 5),
+                        'Asian Low'     : round(asian_low, 5),
+                        'Range (pips)'  : round(range_pips, 1),
+                        'SL (pips)'     : round(sl_pips, 1),
+                        'TP (pips)'     : round(tp_pips, 1),
+                        'Lots'          : lots,
+                        'Pips'          : round(pips, 1),
+                        'P&L (USD)'     : pnl,
+                        'Balance'       : balance,
+                        'Exit Reason'   : exit_reason,
+                        'Result'        : 'WIN' if pnl > 0 else ('LOSS' if pnl < 0 else 'BE'),
+                    })
+                    if pnl <= 0:
+                        pair_consec_losses[sym] += 1
+                        if pair_consec_losses[sym] >= MAX_CONSEC_LOSSES:
+                            pair_pause_until[sym]   = day + timedelta(days=1)
+                            pair_consec_losses[sym] = 0
+                    else:
+                        pair_consec_losses[sym] = 0
+
+            # -- NY session breakout (13:00-21:45 UTC) -- INDEPENDENT of London --
+            # Skip if: London position still open at 13:00, pair just paused, daily limit hit
+            ny_open_ts      = day_ts + pd.Timedelta(hours=NY_HOUR)
+            london_still_open = (london_exit_ts is not None
+                                 and london_exit_ts >= ny_open_ts)
+            pair_now_paused   = (pair_pause_until[sym] is not None
+                                 and day <= pair_pause_until[sym])
+
+            if (not london_still_open
+                    and not pair_now_paused
+                    and daily_pnl > -daily_loss_limit):
+
+                ny_lots = calc_lots(balance, sym, sl_pips)
                 ny_bars = day_bars[
                     (day_bars.index.hour >= NY_HOUR) &
                     (day_bars.index.hour <  EOD_HOUR)
                 ]
-                signal = find_breakout(ny_bars, asian_high, asian_low, sym,
-                                       allowed_direction=trend)
+                ny_signal = find_breakout(ny_bars, asian_high, asian_low, sym,
+                                          allowed_direction=trend)
 
-            if signal is None:
-                continue   # No valid signal today for this pair
+                if ny_signal is not None:
+                    trigger_ts     = ny_signal['trigger_ts']
+                    tradeable_bars = day_bars[
+                        (day_bars.index >= trigger_ts) &
+                        (day_bars.index.hour < EOD_HOUR)
+                    ]
+                    if not tradeable_bars.empty:
+                        exit_price, exit_reason, exit_ts = execute_trade(
+                            ny_signal, tradeable_bars, sl_pips, tp_pips, sym
+                        )
+                        direction   = ny_signal['direction']
+                        entry_price = ny_signal['entry_price']
+                        pip_size    = PAIRS[sym]['pip_size']
+                        pips = ((exit_price - entry_price) if direction == 'LONG'
+                                else (entry_price - exit_price)) / pip_size
+                        pnl  = round(pips * PAIRS[sym]['pip_value'] * ny_lots, 2)
+                        balance   = round(balance + pnl, 2)
+                        daily_pnl += pnl
+                        if direction == 'LONG':
+                            sl_level = entry_price - sl_pips * pip_size
+                            tp_level = entry_price + tp_pips * pip_size
+                        else:
+                            sl_level = entry_price + sl_pips * pip_size
+                            tp_level = entry_price - tp_pips * pip_size
+                        all_trades.append({
+                            'Date'          : str(day),
+                            'Symbol'        : sym,
+                            'Direction'     : direction,
+                            'Session'       : 'New York',
+                            'Entry Time'    : trigger_ts.strftime('%H:%M'),
+                            'Exit Time'     : exit_ts.strftime('%H:%M'),
+                            'Entry Price'   : round(entry_price, 5),
+                            'Exit Price'    : round(exit_price, 5),
+                            'SL'            : round(sl_level, 5),
+                            'TP'            : round(tp_level, 5),
+                            'Asian High'    : round(asian_high, 5),
+                            'Asian Low'     : round(asian_low, 5),
+                            'Range (pips)'  : round(range_pips, 1),
+                            'SL (pips)'     : round(sl_pips, 1),
+                            'TP (pips)'     : round(tp_pips, 1),
+                            'Lots'          : ny_lots,
+                            'Pips'          : round(pips, 1),
+                            'P&L (USD)'     : pnl,
+                            'Balance'       : balance,
+                            'Exit Reason'   : exit_reason,
+                            'Result'        : 'WIN' if pnl > 0 else ('LOSS' if pnl < 0 else 'BE'),
+                        })
+                        if pnl <= 0:
+                            pair_consec_losses[sym] += 1
+                            if pair_consec_losses[sym] >= MAX_CONSEC_LOSSES:
+                                pair_pause_until[sym]   = day + timedelta(days=1)
+                                pair_consec_losses[sym] = 0
+                        else:
+                            pair_consec_losses[sym] = 0
 
-            # -- Execute trade bar-by-bar from trigger bar to 22:00 UTC ------
-            trigger_ts    = signal['trigger_ts']
-            tradeable_bars = day_bars[
-                (day_bars.index >= trigger_ts) &
-                (day_bars.index.hour < EOD_HOUR)
-            ]
-            if tradeable_bars.empty:
-                continue
-
-            exit_price, exit_reason, exit_ts = execute_trade(
-                signal, tradeable_bars, sl_pips, tp_pips, sym
-            )
-
-            direction   = signal['direction']
-            entry_price = signal['entry_price']
-            pip_size    = PAIRS[sym]['pip_size']
-
-            pips = ((exit_price - entry_price) if direction == 'LONG'
-                    else (entry_price - exit_price)) / pip_size
-            pnl  = round(pips * PAIRS[sym]['pip_value'] * lots, 2)
-
-            balance   = round(balance + pnl, 2)
-            daily_pnl += pnl
-
-            # SL/TP price levels for the trade log
-            if direction == 'LONG':
-                sl_level = entry_price - sl_pips * pip_size
-                tp_level = entry_price + tp_pips * pip_size
-            else:
-                sl_level = entry_price + sl_pips * pip_size
-                tp_level = entry_price - tp_pips * pip_size
-
-            all_trades.append({
-                'Date'          : str(day),
-                'Symbol'        : sym,
-                'Direction'     : direction,
-                'Session'       : ('London' if trigger_ts.hour < NY_HOUR else 'New York'),
-                'Entry Time'    : trigger_ts.strftime('%H:%M'),
-                'Exit Time'     : exit_ts.strftime('%H:%M'),
-                'Entry Price'   : round(entry_price, 5),
-                'Exit Price'    : round(exit_price, 5),
-                'SL'            : round(sl_level, 5),
-                'TP'            : round(tp_level, 5),
-                'Asian High'    : round(asian_high, 5),
-                'Asian Low'     : round(asian_low, 5),
-                'Range (pips)'  : round(range_pips, 1),
-                'SL (pips)'     : round(sl_pips, 1),
-                'TP (pips)'     : round(tp_pips, 1),
-                'Lots'          : lots,
-                'Pips'          : round(pips, 1),
-                'P&L (USD)'     : pnl,
-                'Balance'       : balance,
-                'Exit Reason'   : exit_reason,
-                'Result'        : 'WIN' if pnl > 0 else ('LOSS' if pnl < 0 else 'BE'),
-            })
-
-            # Consecutive loss tracking
-            if pnl <= 0:
-                pair_consec_losses[sym] += 1
-                if pair_consec_losses[sym] >= MAX_CONSEC_LOSSES:
-                    pair_pause_until[sym]   = day + timedelta(days=1)
-                    pair_consec_losses[sym] = 0
-            else:
-                pair_consec_losses[sym] = 0
-
-            # Recheck daily limit after this trade
+            # Recheck daily limit after all trades for this pair
             if daily_pnl <= -daily_loss_limit:
                 break
 
