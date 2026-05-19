@@ -11,6 +11,9 @@ __pycache__/
 # Generated data/output files
 data/*.png
 data/*.csv
+data/*.txt
+data/logs/
+data/state/
 
 # OS files
 .DS_Store

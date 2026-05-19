@@ -21,6 +21,8 @@ Strategy logic:
      -- Overshoot must be <= 20 pips past the range level
 """
 
+from __future__ import annotations
+
 import logging
 import sys
 from datetime import datetime, timezone, timedelta

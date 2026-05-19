@@ -19,6 +19,8 @@ Stop loss  = Asian High/Low - 50% of Asian range
 Take profit = Asian High/Low + 100% of Asian range  (2:1 RR)
 """
 
+from __future__ import annotations
+
 import csv
 import logging
 import sys
