@@ -69,6 +69,7 @@ def setup_logger() -> logging.Logger:
 
     fmt = logging.Formatter('%(asctime)s  %(levelname)-8s  %(name)s  %(message)s',
                             datefmt='%Y-%m-%d %H:%M:%S')
+    fmt.converter = time.gmtime
 
     fh = logging.FileHandler(log_file, encoding='utf-8')
     fh.setFormatter(fmt)

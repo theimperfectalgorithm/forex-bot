@@ -22,6 +22,8 @@ import logging
 import sys
 from pathlib import Path
 
+import time
+
 import MetaTrader5 as mt5
 
 # -- logging
@@ -33,6 +35,7 @@ def _log() -> logging.Logger:
         LOGS_DIR.mkdir(parents=True, exist_ok=True)
         fmt = logging.Formatter('%(asctime)s  %(levelname)-8s  %(name)s  %(message)s',
                                 datefmt='%Y-%m-%d %H:%M:%S')
+        fmt.converter = time.gmtime
         fh = logging.FileHandler(LOGS_DIR / 'trading.log', encoding='utf-8')
         fh.setFormatter(fmt)
         ch = logging.StreamHandler(sys.stdout)
