@@ -303,11 +303,28 @@ def step_check_eurusd(state: dict, log: logging.Logger):
     Checks EURUSD for SMA Run 1 and EMA Pullback signals.
     Handles SMA cross-exit for open EURUSD SMA trades.
     """
+    eu = state.get('eurusd', {})
+
+    # ---- Entry diagnostic: log full state so every skip is visible ----
+    log.info(
+        f"EURUSD check: "
+        f"trade_allowed={state.get('trade_allowed')}  "
+        f"ny_news={state.get('ny_news_flag')}  "
+        f"daily_pnl=${state.get('daily_pnl', 0):+.2f}  "
+        f"SMA[trades={eu.get('sma_daily_trades',0)}/2 "
+        f"consec={eu.get('sma_consec_losses',0)}]  "
+        f"EMA[trades={eu.get('ema_daily_trades',0)}/2 "
+        f"consec={eu.get('ema_consec_losses',0)} "
+        f"pb_pending={eu.get('ema_pullback_pending',False)} "
+        f"pb_dir={eu.get('ema_pullback_dir','')!r}]"
+    )
+
     if not state.get('trade_allowed', False):
+        log.info("EURUSD: skipping -- AVOID day (market agent blocked trading)")
         return
 
     if state.get('ny_news_flag'):
-        log.info("EURUSD: NY news flag active -- skipping this cycle")
+        log.info("EURUSD: skipping -- NY news flag active")
         return
 
     try:
@@ -318,39 +335,67 @@ def step_check_eurusd(state: dict, log: logging.Logger):
         log.error(f"check_eurusd_signals failed: {e}", exc_info=True)
         return
 
-    daily_limit = 0.05 * 100_000   # $5,000
+    log.info(f"EURUSD: {len(signals)} actionable signal(s) returned")
+
+    # ---- Guard constants ----
+    DAILY_LOSS_LIMIT = 0.05 * 100_000   # $5,000
+    MAX_CONSEC       = 2
+    MAX_DAILY        = 2
 
     for sig in signals:
-        strategy = sig['strategy']
+        strategy  = sig['strategy']
+        direction = sig['signal']
 
         # ---- SMA cross-exit ----
-        if sig['signal'] == 'CROSS_EXIT':
+        if direction == 'CROSS_EXIT':
             ticket = sig['cross_exit_ticket']
             log.info(f"EURUSD SMA: cross-exit for ticket={ticket}  {sig['reason']}")
             try:
                 if close_trade(ticket, 'EURUSD'):
                     log.info(f"EURUSD SMA: cross-exit order accepted ticket={ticket}")
-                    # Position close is detected next cycle by monitor_positions
             except Exception as e:
                 log.error(f"close_trade EURUSD ticket={ticket}: {e}", exc_info=True)
             continue
 
-        # ---- New entry ----
-        direction = sig['signal']
-        sl_pips   = sig['sl_pips']
-        tp_pips   = sig['tp_pips']
+        # ---- New entry: log signal then check every guard in sequence ----
+        sl_pips = sig['sl_pips']
+        tp_pips = sig['tp_pips']
+        log.info(
+            f"EURUSD {strategy}: {direction} signal received  "
+            f"SL={sl_pips}p  TP={tp_pips}p  reason={sig['reason']}"
+        )
 
-        if state['daily_pnl'] <= -daily_limit:
-            log.warning(f"EURUSD {strategy}: daily loss limit -- skipping")
+        # Guard 1: daily loss limit
+        if state['daily_pnl'] <= -DAILY_LOSS_LIMIT:
+            log.warning(
+                f"EURUSD {strategy}: BLOCKED -- daily loss limit hit "
+                f"(pnl=${state['daily_pnl']:+.2f} <= -${DAILY_LOSS_LIMIT:,.0f})"
+            )
             continue
 
+        # Guard 2: consecutive losses pause
         consec_key = 'sma_consec_losses' if strategy == 'SMA' else 'ema_consec_losses'
-        if state['eurusd'].get(consec_key, 0) >= 2:
-            log.info(f"EURUSD {strategy}: paused (2 consecutive losses)")
+        consec_val = state['eurusd'].get(consec_key, 0)
+        if consec_val >= MAX_CONSEC:
+            log.info(
+                f"EURUSD {strategy}: BLOCKED -- paused "
+                f"({consec_val} consecutive losses today)"
+            )
             continue
 
-        log.info(f"EURUSD {strategy}: {direction} -- {sig['reason']}")
+        # Guard 3: daily trade count
+        daily_key = 'sma_daily_trades' if strategy == 'SMA' else 'ema_daily_trades'
+        daily_val = state['eurusd'].get(daily_key, 0)
+        if daily_val >= MAX_DAILY:
+            log.info(
+                f"EURUSD {strategy}: BLOCKED -- daily limit reached "
+                f"({daily_val}/{MAX_DAILY} trades today)"
+            )
+            continue
 
+        log.info(f"EURUSD {strategy}: all guards passed -- calling risk agent")
+
+        # Guard 4: risk agent
         try:
             risk = run_risk('EURUSD', direction, sl_pips, state)
         except Exception as e:
@@ -358,9 +403,12 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             continue
 
         if risk['decision'] == 'REJECTED':
-            log.warning(f"Risk REJECTED EURUSD {strategy}: {risk['reason']}")
+            log.warning(f"EURUSD {strategy}: BLOCKED -- risk rejected: {risk['reason']}")
             continue
 
+        log.info(f"EURUSD {strategy}: risk approved {risk['lot_size']:.2f}L -- placing order")
+
+        # Place trade
         eurusd_session = {
             'sl_pips'         : sl_pips,
             'tp_pips'         : tp_pips,
@@ -375,15 +423,14 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             continue
 
         if result['success']:
-            log.info(f"TRADE PLACED  EURUSD-{strategy} {direction}  "
-                     f"{risk['lot_size']:.2f}L  "
-                     f"entry={result['entry_price']:.5f}  "
-                     f"SL={result['sl']:.5f}  TP={result['tp']:.5f}  "
-                     f"ticket={result['ticket']}")
-
-            daily_key = 'sma_daily_trades' if strategy == 'SMA' else 'ema_daily_trades'
-            state['eurusd'][daily_key] = state['eurusd'].get(daily_key, 0) + 1
-
+            log.info(
+                f"TRADE PLACED  EURUSD-{strategy} {direction}  "
+                f"{risk['lot_size']:.2f}L  "
+                f"entry={result['entry_price']:.5f}  "
+                f"SL={result['sl']:.5f}  TP={result['tp']:.5f}  "
+                f"ticket={result['ticket']}"
+            )
+            state['eurusd'][daily_key] = daily_val + 1
             state['open_trades'].append({
                 'ticket'          : result['ticket'],
                 'symbol'          : 'EURUSD',
@@ -400,7 +447,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
                 'entry_time'      : datetime.now(timezone.utc).isoformat(),
             })
         else:
-            log.error(f"Trade placement FAILED EURUSD {strategy}: {result['error']}")
+            log.error(f"EURUSD {strategy}: order FAILED -- {result['error']}")
 
 
 def step_monitor_positions(state: dict, log: logging.Logger):

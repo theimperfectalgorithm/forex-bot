@@ -437,7 +437,10 @@ def check_eurusd_signals(eurusd_state: dict, open_trades: list) -> tuple:
         return signals, state
 
     h1_trend = _h1_ema50_trend(log)
+    h1_label = {1: 'BULLISH', -1: 'BEARISH', 0: 'NEUTRAL'}[h1_trend]
+    log.info(f"EURUSD: H1 EMA50 = {h1_label}  (needed: BULLISH for BUY, BEARISH for SELL)")
     if h1_trend == 0:
+        log.info("EURUSD: H1 trend NEUTRAL -- no signals possible this bar")
         return signals, state
 
     closes = np.array([b['close'] for b in bars])
@@ -492,53 +495,94 @@ def check_eurusd_signals(eurusd_state: dict, open_trades: list) -> tuple:
             })
 
     # New SMA entry (only when no open SMA trade and within limits)
+    sma_daily  = state.get('sma_daily_trades', 0)
+    sma_consec = state.get('sma_consec_losses', 0)
     sma_ok = (
         open_sma is None
-        and state.get('sma_daily_trades', 0) < MAX_SMA_DAILY
-        and state.get('sma_consec_losses', 0) < MAX_EURUSD_CONSEC
+        and sma_daily < MAX_SMA_DAILY
+        and sma_consec < MAX_EURUSD_CONSEC
     )
 
-    if sma_ok and not np.isnan(sma200_curr):
-        flat = abs(sma50_curr - sma100_curr) / EURUSD_PIP_SIZE < SMA_FLAT_PIPS
-        if not flat:
-            last_close    = closes[-1]
-            bull_cross    = sma50_prev <= sma100_prev and sma50_curr > sma100_curr
-            bear_cross    = sma50_prev >= sma100_prev and sma50_curr < sma100_curr
-            sma_trend_ok  = (bull_cross and h1_trend == 1 and last_close > sma200_curr) or \
-                            (bear_cross and h1_trend == -1 and last_close < sma200_curr)
+    if not sma_ok:
+        if open_sma is not None:
+            log.info(f"EURUSD SMA: skip new entry -- trade already open (ticket={open_sma['ticket']})")
+        elif sma_daily >= MAX_SMA_DAILY:
+            log.info(f"EURUSD SMA: skip -- daily trade limit reached ({sma_daily}/{MAX_SMA_DAILY})")
+        elif sma_consec >= MAX_EURUSD_CONSEC:
+            log.info(f"EURUSD SMA: skip -- paused after {sma_consec} consecutive losses")
 
-            if bull_cross and h1_trend == 1 and last_close > sma200_curr:
-                log.info("EURUSD SMA: BUY -- SMA50 x SMA100 bullish cross")
-                signals.append({
-                    'signal'  : 'BUY',
-                    'strategy': 'SMA',
-                    'sl_pips' : SMA_SL_PIPS,
-                    'tp_pips' : SMA_TP_PIPS,
-                    'reason'  : 'SMA50 crossed above SMA100, H1 EMA50 bullish, price > SMA200',
-                })
-            elif bear_cross and h1_trend == -1 and last_close < sma200_curr:
-                log.info("EURUSD SMA: SELL -- SMA50 x SMA100 bearish cross")
-                signals.append({
-                    'signal'  : 'SELL',
-                    'strategy': 'SMA',
-                    'sl_pips' : SMA_SL_PIPS,
-                    'tp_pips' : SMA_TP_PIPS,
-                    'reason'  : 'SMA50 crossed below SMA100, H1 EMA50 bearish, price < SMA200',
-                })
+    if sma_ok and not np.isnan(sma200_curr):
+        last_close = closes[-1]
+        flat       = abs(sma50_curr - sma100_curr) / EURUSD_PIP_SIZE < SMA_FLAT_PIPS
+        bull_cross = sma50_prev <= sma100_prev and sma50_curr > sma100_curr
+        bear_cross = sma50_prev >= sma100_prev and sma50_curr < sma100_curr
+
+        log.info(
+            f"EURUSD SMA: SMA50={sma50_curr:.5f}  SMA100={sma100_curr:.5f}  "
+            f"SMA200={sma200_curr:.5f}  close={last_close:.5f}  "
+            f"flat={flat}  bull_cross={bull_cross}  bear_cross={bear_cross}"
+        )
+
+        if flat:
+            log.info(f"EURUSD SMA: skip -- flat zone "
+                     f"(|SMA50-SMA100|={abs(sma50_curr-sma100_curr)/EURUSD_PIP_SIZE:.1f}p "
+                     f"< {SMA_FLAT_PIPS}p)")
+        elif bull_cross and h1_trend == 1 and last_close > sma200_curr:
+            log.info("EURUSD SMA: BUY signal -- SMA50 x SMA100 bullish cross")
+            signals.append({
+                'signal'  : 'BUY',
+                'strategy': 'SMA',
+                'sl_pips' : SMA_SL_PIPS,
+                'tp_pips' : SMA_TP_PIPS,
+                'reason'  : 'SMA50 crossed above SMA100, H1 EMA50 bullish, price > SMA200',
+            })
+        elif bear_cross and h1_trend == -1 and last_close < sma200_curr:
+            log.info("EURUSD SMA: SELL signal -- SMA50 x SMA100 bearish cross")
+            signals.append({
+                'signal'  : 'SELL',
+                'strategy': 'SMA',
+                'sl_pips' : SMA_SL_PIPS,
+                'tp_pips' : SMA_TP_PIPS,
+                'reason'  : 'SMA50 crossed below SMA100, H1 EMA50 bearish, price < SMA200',
+            })
+        elif bull_cross or bear_cross:
+            # Cross happened but other conditions blocked it -- explain why
+            if bull_cross:
+                log.info(
+                    f"EURUSD SMA: bullish cross present but no signal -- "
+                    f"H1={h1_label}  close>SMA200={last_close > sma200_curr}"
+                )
+            else:
+                log.info(
+                    f"EURUSD SMA: bearish cross present but no signal -- "
+                    f"H1={h1_label}  close<SMA200={last_close < sma200_curr}"
+                )
+        else:
+            log.info("EURUSD SMA: no crossover this bar")
 
     # ================================================================
     # EMA Pullback strategy (Test A -- no cross-exit)
     # ================================================================
 
-    open_ema = any(
+    open_ema   = any(
         t.get('symbol') == 'EURUSD' and t.get('strategy') == 'EMA'
         for t in open_trades
     )
+    ema_daily  = state.get('ema_daily_trades', 0)
+    ema_consec = state.get('ema_consec_losses', 0)
     ema_ok = (
         not open_ema
-        and state.get('ema_daily_trades', 0) < MAX_EMA_DAILY
-        and state.get('ema_consec_losses', 0) < MAX_EURUSD_CONSEC
+        and ema_daily  < MAX_EMA_DAILY
+        and ema_consec < MAX_EURUSD_CONSEC
     )
+
+    if not ema_ok:
+        if open_ema:
+            log.info("EURUSD EMA: skip -- trade already open")
+        elif ema_daily >= MAX_EMA_DAILY:
+            log.info(f"EURUSD EMA: skip -- daily trade limit reached ({ema_daily}/{MAX_EMA_DAILY})")
+        elif ema_consec >= MAX_EURUSD_CONSEC:
+            log.info(f"EURUSD EMA: skip -- paused after {ema_consec} consecutive losses")
 
     if ema_ok:
         ema5  = _ewm_ema(closes, EMA_FAST_N)
@@ -551,29 +595,63 @@ def check_eurusd_signals(eurusd_state: dict, open_trades: list) -> tuple:
         bull_aligned = e5 > e20 > e50
         bear_aligned = e5 < e20 < e50
 
-        touch = EMA_TOUCH_PIPS * EURUSD_PIP_SIZE
+        touch      = EMA_TOUCH_PIPS * EURUSD_PIP_SIZE
         pb_pending = state.get('ema_pullback_pending', False)
         pb_dir     = state.get('ema_pullback_dir', '')
 
+        log.info(
+            f"EURUSD EMA: close={last:.5f}  EMA5={e5:.5f}  EMA20={e20:.5f}  EMA50={e50:.5f}  "
+            f"bull_aligned={bull_aligned}  bear_aligned={bear_aligned}  "
+            f"pb_pending={pb_pending}  pb_dir={pb_dir!r}"
+        )
+
         if not pb_pending:
-            # Detect new pullback to EMA20
+            # Step 1: detect a pullback touch of EMA20
             if bull_aligned and h1_trend == 1:
+                dist_pips = abs(last - e20) / EURUSD_PIP_SIZE
                 if abs(last - e20) <= touch or last < e20:
                     state['ema_pullback_pending'] = True
                     state['ema_pullback_dir']     = 'BUY'
-                    log.info(f"EURUSD EMA: BUY pullback detected  "
-                             f"close={last:.5f}  EMA20={e20:.5f}")
+                    log.info(
+                        f"EURUSD EMA: BUY pullback TOUCH (step 1/2) -- "
+                        f"close={last:.5f}  EMA20={e20:.5f}  dist={dist_pips:.1f}p  "
+                        f"NO trade yet -- waiting for confirmation bar"
+                    )
+                else:
+                    log.info(
+                        f"EURUSD EMA: bullish alignment, H1 bullish, but no pullback touch -- "
+                        f"dist={dist_pips:.1f}p from EMA20 (need <= {EMA_TOUCH_PIPS}p)"
+                    )
             elif bear_aligned and h1_trend == -1:
+                dist_pips = abs(last - e20) / EURUSD_PIP_SIZE
                 if abs(last - e20) <= touch or last > e20:
                     state['ema_pullback_pending'] = True
                     state['ema_pullback_dir']     = 'SELL'
-                    log.info(f"EURUSD EMA: SELL pullback detected  "
-                             f"close={last:.5f}  EMA20={e20:.5f}")
+                    log.info(
+                        f"EURUSD EMA: SELL pullback TOUCH (step 1/2) -- "
+                        f"close={last:.5f}  EMA20={e20:.5f}  dist={dist_pips:.1f}p  "
+                        f"NO trade yet -- waiting for confirmation bar"
+                    )
+                else:
+                    log.info(
+                        f"EURUSD EMA: bearish alignment, H1 bearish, but no pullback touch -- "
+                        f"dist={dist_pips:.1f}p from EMA20 (need <= {EMA_TOUCH_PIPS}p)"
+                    )
+            else:
+                log.info(
+                    f"EURUSD EMA: no setup -- "
+                    f"bull_aligned={bull_aligned} (need True + H1 BULLISH)  "
+                    f"bear_aligned={bear_aligned} (need True + H1 BEARISH)  "
+                    f"H1={h1_label}"
+                )
         else:
-            # Pullback pending -- check for confirmation bar
+            # Step 2: confirmation bar after a pending pullback
             if pb_dir == 'BUY':
                 if last > e20 and bull_aligned and h1_trend == 1:
-                    log.info("EURUSD EMA: BUY confirmed -- close above EMA20 after pullback")
+                    log.info(
+                        f"EURUSD EMA: BUY CONFIRMED (step 2/2) -- "
+                        f"close={last:.5f} > EMA20={e20:.5f}  entry signal generated"
+                    )
                     signals.append({
                         'signal'  : 'BUY',
                         'strategy': 'EMA',
@@ -584,13 +662,24 @@ def check_eurusd_signals(eurusd_state: dict, open_trades: list) -> tuple:
                     state['ema_pullback_pending'] = False
                     state['ema_pullback_dir']     = ''
                 elif not bull_aligned or h1_trend != 1:
+                    log.info(
+                        f"EURUSD EMA: BUY pullback cancelled -- "
+                        f"bull_aligned={bull_aligned}  H1={h1_label}"
+                    )
                     state['ema_pullback_pending'] = False
                     state['ema_pullback_dir']     = ''
-                    log.info("EURUSD EMA: BUY pullback cancelled -- alignment broken")
+                else:
+                    log.info(
+                        f"EURUSD EMA: BUY pending, close={last:.5f} not yet above EMA20={e20:.5f} -- "
+                        f"still waiting"
+                    )
 
             elif pb_dir == 'SELL':
                 if last < e20 and bear_aligned and h1_trend == -1:
-                    log.info("EURUSD EMA: SELL confirmed -- close below EMA20 after pullback")
+                    log.info(
+                        f"EURUSD EMA: SELL CONFIRMED (step 2/2) -- "
+                        f"close={last:.5f} < EMA20={e20:.5f}  entry signal generated"
+                    )
                     signals.append({
                         'signal'  : 'SELL',
                         'strategy': 'EMA',
@@ -601,8 +690,16 @@ def check_eurusd_signals(eurusd_state: dict, open_trades: list) -> tuple:
                     state['ema_pullback_pending'] = False
                     state['ema_pullback_dir']     = ''
                 elif not bear_aligned or h1_trend != -1:
+                    log.info(
+                        f"EURUSD EMA: SELL pullback cancelled -- "
+                        f"bear_aligned={bear_aligned}  H1={h1_label}"
+                    )
                     state['ema_pullback_pending'] = False
                     state['ema_pullback_dir']     = ''
-                    log.info("EURUSD EMA: SELL pullback cancelled -- alignment broken")
+                else:
+                    log.info(
+                        f"EURUSD EMA: SELL pending, close={last:.5f} not yet below EMA20={e20:.5f} -- "
+                        f"still waiting"
+                    )
 
     return signals, state
