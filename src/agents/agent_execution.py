@@ -400,31 +400,42 @@ def _get_closed_deal(ticket: int, log: logging.Logger) -> dict | None:
     """
     Look up the exit deal for a closed position.
 
-    Search order:
-      1. From UTC midnight today to now (covers all intraday trades cleanly)
-      2. 48-hour fallback (catches trades opened near the previous midnight)
+    Uses calendar-day boundaries as search windows rather than
+    datetime.now() as the upper bound.  The MT5 broker server clock
+    can run several hours ahead of the Windows system clock; using
+    datetime.now() as the end time then excludes deals whose timestamps
+    are beyond the (lagging) system clock even though they are already
+    recorded in MT5 history.  Anchoring to fixed calendar windows avoids
+    that problem entirely.
 
-    Matches by position_id (primary) and order ticket (fallback) so that
-    the function works regardless of whether the stored ticket is the MT5
-    position ticket or the order ticket.
+    Search order:
+      1. UTC midnight today  ->  midnight + 28 h
+         (covers all same-day closes regardless of broker timezone offset)
+      2. UTC midnight yesterday  ->  midnight + 28 h
+         (catches trades that close in the evening near or past midnight UTC)
+
+    Matches by position_id (primary) and order ticket (fallback) to handle
+    any broker-specific difference between the two fields.
     """
     try:
         now      = datetime.now(timezone.utc)
         midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # Pass 1: today's history (fast path -- covers all normal intraday closes)
-        deals = mt5.history_deals_get(midnight, now)
+        # Pass 1: today's calendar window (midnight UTC -> midnight+28h)
+        day_end = midnight + timedelta(hours=28)
+        deals = mt5.history_deals_get(midnight, day_end)
         if deals:
             match = _find_exit_deal(deals, ticket)
             if match:
                 return _format_exit_deal(match)
 
-        # Pass 2: 48-hour window (safety net for trades near midnight boundary)
-        deals = mt5.history_deals_get(now - timedelta(hours=48), now)
+        # Pass 2: yesterday's calendar window (catches trades near day boundary)
+        yest_midnight = midnight - timedelta(days=1)
+        deals = mt5.history_deals_get(yest_midnight, yest_midnight + timedelta(hours=28))
         if deals:
             match = _find_exit_deal(deals, ticket)
             if match:
-                log.info(f"ticket {ticket}: exit deal found in 48h fallback window")
+                log.info(f"ticket {ticket}: exit deal found in yesterday's window")
                 return _format_exit_deal(match)
 
         return None
