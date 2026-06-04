@@ -47,7 +47,8 @@ def _log() -> logging.Logger:
 STARTING_BALANCE   = 100_000.00
 HARD_FLOOR         = 90_000.00
 MAX_DAILY_LOSS_PCT = 0.05        # 5%
-RISK_PER_TRADE_PCT = 0.01        # 1% of balance per trade
+RISK_PER_TRADE_PCT = 0.01        # 1% of balance per trade (GBPJPY, EURJPY)
+EURUSD_RISK_PCT    = 0.0025      # 0.25% of balance per trade (EURUSD both strategies)
 MIN_LOT            = 0.01
 MAX_LOT            = 2.00
 MAX_CONSEC_LOSSES  = 2
@@ -94,13 +95,15 @@ def _calc_lots(balance: float, sl_pips: float, symbol: str,
     """
     Lot size = risk_usd / (sl_pips x pip_value_per_lot)
     Clamped to [MIN_LOT, MAX_LOT].
+    EURUSD uses EURUSD_RISK_PCT (0.25%); other pairs use RISK_PER_TRADE_PCT (1%).
     """
-    risk_usd  = balance * RISK_PER_TRADE_PCT
+    risk_pct  = EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT
+    risk_usd  = balance * risk_pct
     pv        = _pip_value_per_lot(symbol, log)
     lots      = risk_usd / (sl_pips * pv) if sl_pips > 0 else MIN_LOT
     lots      = round(max(MIN_LOT, min(lots, MAX_LOT)), 2)
 
-    log.info(f"  Lot calc: risk=${risk_usd:.0f}  SL={sl_pips:.1f}p  "
+    log.info(f"  Lot calc: risk=${risk_usd:.2f} ({risk_pct*100:.2f}%)  SL={sl_pips:.1f}p  "
              f"pip_val=${pv:.2f}  -> {lots:.2f} lots")
     return lots
 

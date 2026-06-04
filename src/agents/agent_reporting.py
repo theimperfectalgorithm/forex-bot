@@ -122,6 +122,12 @@ def _anomalies(state: dict, stats: dict) -> list:
     if paused:
         flags.append(f"NOTICE: pairs paused today from consecutive losses: {', '.join(paused)}")
 
+    eurusd = state.get('eurusd', {})
+    if eurusd.get('sma_consec_losses', 0) >= 2:
+        flags.append("NOTICE: EURUSD-SMA paused from 2 consecutive losses")
+    if eurusd.get('ema_consec_losses', 0) >= 2:
+        flags.append("NOTICE: EURUSD-EMA paused from 2 consecutive losses")
+
     # Zero trades on a trade day
     if stats['total'] == 0 and state.get('trade_allowed', False):
         flags.append("NOTICE: trade day with zero trades -- check strategy or MT5 connectivity")
@@ -174,11 +180,19 @@ def _write_report(state: dict, stats: dict, flags: list, log: logging.Logger):
     # Per-pair summary
     consec = state.get('consec_losses', {})
     paused = state.get('pair_paused', {})
-    if consec:
+    eurusd = state.get('eurusd', {})
+    if consec or eurusd:
         lines += ["", "  PER-PAIR STATE"]
-        for pair in ['GBPJPY', 'EURJPY', 'EURUSD']:
+        for pair in ['GBPJPY', 'EURJPY']:
             status = "PAUSED" if paused.get(pair) else "active"
             lines.append(f"  {pair:<8}  consec_losses={consec.get(pair, 0)}  {status}")
+        if eurusd:
+            sma_cl = eurusd.get('sma_consec_losses', 0)
+            ema_cl = eurusd.get('ema_consec_losses', 0)
+            sma_st = "PAUSED" if sma_cl >= 2 else "active"
+            ema_st = "PAUSED" if ema_cl >= 2 else "active"
+            lines.append(f"  EURUSD-SMA  consec_losses={sma_cl}  {sma_st}")
+            lines.append(f"  EURUSD-EMA  consec_losses={ema_cl}  {ema_st}")
 
     # Trade detail
     closed = state.get('closed_today', [])

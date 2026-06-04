@@ -113,6 +113,28 @@ def _get_live_price(symbol: str, signal: str) -> float | None:
     return tick.ask if signal == 'BUY' else tick.bid
 
 
+def _get_filling_mode(symbol: str) -> int:
+    """
+    Return the best supported ORDER_FILLING_* constant for this symbol.
+
+    MT5 symbol_info.filling_mode is a bitmask:
+      bit 0 (value 1) = FOK supported
+      bit 1 (value 2) = IOC supported
+
+    Priority: FOK -> IOC -> RETURN (fallback).
+    Different brokers support different modes per instrument; using an
+    unsupported mode produces retcode 10030.
+    """
+    info = mt5.symbol_info(symbol)
+    if info is not None:
+        fm = info.filling_mode
+        if fm & 1:
+            return mt5.ORDER_FILLING_FOK
+        if fm & 2:
+            return mt5.ORDER_FILLING_IOC
+    return mt5.ORDER_FILLING_RETURN
+
+
 # ---------------------------------------------------------------------------
 # Place trade
 # ---------------------------------------------------------------------------
@@ -122,10 +144,9 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
     """
     Place a market order on MT5.
 
-    SL and TP are anchored to the Asian range breakout level (not entry),
-    matching the backtest design:
-      BUY:  entry ~ asian_high, SL = asian_high - sl_pips, TP = asian_high + tp_pips
-      SELL: entry ~ asian_low,  SL = asian_low  + sl_pips, TP = asian_low  - tp_pips
+    For GBPJPY/EURJPY (breakout): SL/TP anchored to Asian range level.
+    For EURUSD (SMA/EMA): SL/TP anchored to live entry price when
+      session_data['use_live_anchor'] is True.
 
     Returns:
         {
@@ -145,33 +166,37 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
     if not _connect(log):
         return failed("MT5 connection failed")
 
-    # Ensure the symbol is visible in the Market Watch
     if not mt5.symbol_select(symbol, True):
         return failed(f"symbol_select({symbol}) failed")
 
-    signal      = breakout['signal']
-    asian_high  = session_data['asian_high']
-    asian_low   = session_data['asian_low']
-    sl_pips     = session_data['sl_pips']
-    tp_pips     = session_data['tp_pips']
-    pip_size    = PAIRS[symbol]['pip_size']
+    signal     = breakout['signal']
+    sl_pips    = session_data['sl_pips']
+    tp_pips    = session_data['tp_pips']
+    pip_size   = PAIRS[symbol]['pip_size']
+    use_live   = session_data.get('use_live_anchor', False)
+    strategy   = session_data.get('strategy', '')
 
-    # Anchor levels come from the Asian range (not live market price)
+    # Get live entry price
+    entry_price = _get_live_price(symbol, signal)
+    if entry_price is None:
+        return failed(f"Could not get live price for {symbol}")
+
+    # Determine SL/TP anchor: live price (EURUSD) or Asian range level (others)
+    if use_live:
+        anchor = entry_price
+    else:
+        anchor = session_data['asian_high'] if signal == 'BUY' else session_data['asian_low']
+
     if signal == 'BUY':
-        anchor     = asian_high
         sl_price   = _price_round(anchor - sl_pips * pip_size, symbol)
         tp_price   = _price_round(anchor + tp_pips * pip_size, symbol)
         order_type = mt5.ORDER_TYPE_BUY
     else:
-        anchor     = asian_low
         sl_price   = _price_round(anchor + sl_pips * pip_size, symbol)
         tp_price   = _price_round(anchor - tp_pips * pip_size, symbol)
         order_type = mt5.ORDER_TYPE_SELL
 
-    # Live entry price (ask/bid at moment of order)
-    entry_price = _get_live_price(symbol, signal)
-    if entry_price is None:
-        return failed(f"Could not get live price for {symbol}")
+    comment = f"5ers_{session}_{signal}_{strategy}" if strategy else f"5ers_{session}_{signal}"
 
     request = {
         'action'      : mt5.TRADE_ACTION_DEAL,
@@ -183,9 +208,9 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         'tp'          : tp_price,
         'deviation'   : DEVIATION,
         'magic'       : MAGIC_NUMBER,
-        'comment'     : f'5ers_{session}_{signal}',
+        'comment'     : comment,
         'type_time'   : mt5.ORDER_TIME_GTC,
-        'type_filling': mt5.ORDER_FILLING_IOC,
+        'type_filling': _get_filling_mode(symbol),
     }
 
     result = mt5.order_send(request)
@@ -204,7 +229,6 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
              f"entry={actual_entry:.5f}  SL={sl_price}  TP={tp_price}  "
              f"ticket={ticket}")
 
-    # -- Log to CSV (entry row -- exit fields blank until close)
     _write_trade_log({
         'Timestamp'  : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
         'Pair'       : symbol,
@@ -214,9 +238,9 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         'EntryPrice' : actual_entry,
         'SL'         : sl_price,
         'TP'         : tp_price,
-        'AsianHigh'  : asian_high,
-        'AsianLow'   : asian_low,
-        'RangePips'  : session_data['range_pips'],
+        'AsianHigh'  : session_data.get('asian_high', ''),
+        'AsianLow'   : session_data.get('asian_low',  ''),
+        'RangePips'  : session_data.get('range_pips', ''),
         'SLPips'     : sl_pips,
         'TPPips'     : tp_pips,
         'Ticket'     : ticket,
@@ -231,6 +255,63 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         'tp'          : tp_price,
         'error'       : None,
     }
+
+
+# ---------------------------------------------------------------------------
+# Close trade (used for SMA cross-exit on EURUSD)
+# ---------------------------------------------------------------------------
+
+def close_trade(ticket: int, symbol: str) -> bool:
+    """
+    Send a market close order for an open position.
+    Returns True if the close order was accepted by MT5.
+    """
+    log = _log()
+
+    if not _connect(log):
+        return False
+
+    positions = mt5.positions_get(ticket=ticket)
+    if not positions:
+        log.warning(f"close_trade: ticket {ticket} not found in open positions")
+        return False
+
+    pos  = positions[0]
+    tick = mt5.symbol_info_tick(symbol)
+    if tick is None:
+        log.error(f"close_trade: could not get tick for {symbol}")
+        return False
+
+    # Close direction is opposite to open direction
+    if pos.type == mt5.ORDER_TYPE_BUY:
+        close_type  = mt5.ORDER_TYPE_SELL
+        close_price = tick.bid
+    else:
+        close_type  = mt5.ORDER_TYPE_BUY
+        close_price = tick.ask
+
+    request = {
+        'action'      : mt5.TRADE_ACTION_DEAL,
+        'symbol'      : symbol,
+        'volume'      : pos.volume,
+        'type'        : close_type,
+        'price'       : close_price,
+        'position'    : ticket,
+        'deviation'   : DEVIATION,
+        'magic'       : MAGIC_NUMBER,
+        'comment'     : 'SMA_cross_exit',
+        'type_time'   : mt5.ORDER_TIME_GTC,
+        'type_filling': _get_filling_mode(symbol),
+    }
+
+    result = mt5.order_send(request)
+    if result and result.retcode == mt5.TRADE_RETCODE_DONE:
+        log.info(f"CLOSE_TRADE  {symbol}  ticket={ticket}  price={close_price:.5f}")
+        return True
+
+    rc = result.retcode if result else 'None'
+    log.error(f"close_trade failed for ticket {ticket}: retcode={rc}")
+    return False
 
 
 # ---------------------------------------------------------------------------

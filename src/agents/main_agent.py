@@ -30,9 +30,9 @@ AGENTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(AGENTS_DIR))
 
 from agent_market    import run as run_market
-from agent_strategy  import prepare_session, check_breakout
+from agent_strategy  import prepare_session, check_breakout, check_eurusd_signals
 from agent_risk      import run as run_risk
-from agent_execution import place_trade, monitor_positions
+from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
 
 # -- directory paths
@@ -42,8 +42,9 @@ STATE_DIR  = DATA_DIR / 'state'
 LOGS_DIR   = DATA_DIR / 'logs'
 STATE_FILE = STATE_DIR / 'daily_state.json'
 
-# -- trading pairs
-PAIRS = ['GBPJPY', 'EURJPY', 'EURUSD']
+# -- trading pairs (breakout strategy: GBPJPY and EURJPY only)
+# EURUSD runs two separate strategies (SMA Run 1 + EMA Pullback) via step_check_eurusd
+PAIRS = ['GBPJPY', 'EURJPY']
 
 # -- schedule thresholds (minutes since UTC midnight)
 T_MARKET_AGENT   =  0 * 60 +  0    # 00:00
@@ -53,6 +54,8 @@ T_LONDON_END     = 12 * 60 + 30    # 12:30  (last bar check before NY prep)
 T_NY_PREP        = 12 * 60 + 45    # 12:45
 T_NY_START       = 13 * 60 +  0    # 13:00
 T_NY_END         = 20 * 60 + 45    # 20:45  (last bar check)
+T_EURUSD_START   = 12 * 60 +  0    # 12:00  EURUSD dual-strategy window open
+T_EURUSD_END     = 15 * 60 + 45    # 15:45  EURUSD dual-strategy window close
 T_REPORT         = 21 * 60 +  0    # 21:00
 
 
@@ -97,9 +100,9 @@ def _fresh_state(today: str) -> dict:
         'avoid_reason'     : None,
         'london_news_flag' : False,
         'ny_news_flag'     : False,
-        # strategy agent output -- Asian range + H4 trend per pair
+        # strategy agent output -- Asian range + H4 trend per breakout pair
         'session_data'     : {},
-        # per-pair session trade flags
+        # per-pair session trade flags (breakout pairs only)
         'london_traded'    : {p: False for p in PAIRS},
         'ny_traded'        : {p: False for p in PAIRS},
         # live position tracking
@@ -109,6 +112,15 @@ def _fresh_state(today: str) -> dict:
         'daily_pnl'        : 0.0,
         'consec_losses'    : {p: 0 for p in PAIRS},
         'pair_paused'      : {p: False for p in PAIRS},
+        # EURUSD dual-strategy state (SMA Run 1 + EMA Pullback)
+        'eurusd': {
+            'sma_daily_trades'    : 0,
+            'ema_daily_trades'    : 0,
+            'sma_consec_losses'   : 0,
+            'ema_consec_losses'   : 0,
+            'ema_pullback_pending': False,
+            'ema_pullback_dir'    : '',
+        },
     }
 
 
@@ -284,6 +296,112 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
             log.error(f"Trade placement FAILED {pair}: {result['error']}")
 
 
+def step_check_eurusd(state: dict, log: logging.Logger):
+    """
+    Every 15 min during 12:00-15:45 UTC.
+    Checks EURUSD for SMA Run 1 and EMA Pullback signals.
+    Handles SMA cross-exit for open EURUSD SMA trades.
+    """
+    if not state.get('trade_allowed', False):
+        return
+
+    if state.get('ny_news_flag'):
+        log.info("EURUSD: NY news flag active -- skipping this cycle")
+        return
+
+    try:
+        signals, updated_eurusd = check_eurusd_signals(
+            state['eurusd'], state['open_trades'])
+        state['eurusd'] = updated_eurusd
+    except Exception as e:
+        log.error(f"check_eurusd_signals failed: {e}", exc_info=True)
+        return
+
+    daily_limit = 0.05 * 100_000   # $5,000
+
+    for sig in signals:
+        strategy = sig['strategy']
+
+        # ---- SMA cross-exit ----
+        if sig['signal'] == 'CROSS_EXIT':
+            ticket = sig['cross_exit_ticket']
+            log.info(f"EURUSD SMA: cross-exit for ticket={ticket}  {sig['reason']}")
+            try:
+                if close_trade(ticket, 'EURUSD'):
+                    log.info(f"EURUSD SMA: cross-exit order accepted ticket={ticket}")
+                    # Position close is detected next cycle by monitor_positions
+            except Exception as e:
+                log.error(f"close_trade EURUSD ticket={ticket}: {e}", exc_info=True)
+            continue
+
+        # ---- New entry ----
+        direction = sig['signal']
+        sl_pips   = sig['sl_pips']
+        tp_pips   = sig['tp_pips']
+
+        if state['daily_pnl'] <= -daily_limit:
+            log.warning(f"EURUSD {strategy}: daily loss limit -- skipping")
+            continue
+
+        consec_key = 'sma_consec_losses' if strategy == 'SMA' else 'ema_consec_losses'
+        if state['eurusd'].get(consec_key, 0) >= 2:
+            log.info(f"EURUSD {strategy}: paused (2 consecutive losses)")
+            continue
+
+        log.info(f"EURUSD {strategy}: {direction} -- {sig['reason']}")
+
+        try:
+            risk = run_risk('EURUSD', direction, sl_pips, state)
+        except Exception as e:
+            log.error(f"risk check EURUSD {strategy}: {e}", exc_info=True)
+            continue
+
+        if risk['decision'] == 'REJECTED':
+            log.warning(f"Risk REJECTED EURUSD {strategy}: {risk['reason']}")
+            continue
+
+        eurusd_session = {
+            'sl_pips'         : sl_pips,
+            'tp_pips'         : tp_pips,
+            'use_live_anchor' : True,
+            'strategy'        : strategy,
+        }
+
+        try:
+            result = place_trade('EURUSD', sig, risk['lot_size'], eurusd_session, 'ny')
+        except Exception as e:
+            log.error(f"place_trade EURUSD {strategy}: {e}", exc_info=True)
+            continue
+
+        if result['success']:
+            log.info(f"TRADE PLACED  EURUSD-{strategy} {direction}  "
+                     f"{risk['lot_size']:.2f}L  "
+                     f"entry={result['entry_price']:.5f}  "
+                     f"SL={result['sl']:.5f}  TP={result['tp']:.5f}  "
+                     f"ticket={result['ticket']}")
+
+            daily_key = 'sma_daily_trades' if strategy == 'SMA' else 'ema_daily_trades'
+            state['eurusd'][daily_key] = state['eurusd'].get(daily_key, 0) + 1
+
+            state['open_trades'].append({
+                'ticket'          : result['ticket'],
+                'symbol'          : 'EURUSD',
+                'direction'       : direction,
+                'session'         : 'NY',
+                'strategy'        : strategy,
+                'lots'            : risk['lot_size'],
+                'entry_price'     : result['entry_price'],
+                'sl'              : result['sl'],
+                'tp'              : result['tp'],
+                'sl_pips'         : sl_pips,
+                'tp_pips'         : tp_pips,
+                'breakeven_moved' : False,
+                'entry_time'      : datetime.now(timezone.utc).isoformat(),
+            })
+        else:
+            log.error(f"Trade placement FAILED EURUSD {strategy}: {result['error']}")
+
+
 def step_monitor_positions(state: dict, log: logging.Logger):
     """Check all open positions: move to breakeven, detect closures."""
     if not state['open_trades']:
@@ -293,18 +411,28 @@ def step_monitor_positions(state: dict, log: logging.Logger):
         state['open_trades'] = still_open
 
         for trade in newly_closed:
-            pnl = trade.get('exit_pnl', 0.0)
+            pnl  = trade.get('exit_pnl', 0.0)
+            pair = trade['symbol']
             state['daily_pnl'] += pnl
             state['closed_today'].append(trade)
 
-            pair = trade['symbol']
-            if pnl <= 0:
-                state['consec_losses'][pair] += 1
-                if state['consec_losses'][pair] >= 2:
-                    state['pair_paused'][pair] = True
-                    log.warning(f"{pair} paused for today: 2 consecutive losses")
+            if pair == 'EURUSD':
+                strategy   = trade.get('strategy', '')
+                consec_key = 'sma_consec_losses' if strategy == 'SMA' else 'ema_consec_losses'
+                if pnl <= 0:
+                    state['eurusd'][consec_key] = state['eurusd'].get(consec_key, 0) + 1
+                    if state['eurusd'][consec_key] >= 2:
+                        log.warning(f"EURUSD-{strategy} paused for today: 2 consecutive losses")
+                else:
+                    state['eurusd'][consec_key] = 0
             else:
-                state['consec_losses'][pair] = 0
+                if pnl <= 0:
+                    state['consec_losses'][pair] += 1
+                    if state['consec_losses'][pair] >= 2:
+                        state['pair_paused'][pair] = True
+                        log.warning(f"{pair} paused for today: 2 consecutive losses")
+                else:
+                    state['consec_losses'][pair] = 0
 
             log.info(f"POSITION CLOSED  {pair} {trade['direction']}  "
                      f"exit={trade.get('exit_price', 0):.5f}  "
@@ -399,6 +527,11 @@ def main():
             # -- 13:00-20:45  NY breakout checks (every 15 min)
             if T_NY_START <= t <= T_NY_END and state['ny_prep_done']:
                 step_check_breakouts(state, 'ny', log)
+                save_state(state)
+
+            # -- 12:00-15:45  EURUSD dual-strategy checks (every 15 min)
+            if T_EURUSD_START <= t <= T_EURUSD_END:
+                step_check_eurusd(state, log)
                 save_state(state)
 
             # -- 21:00  Daily report (once per day)
