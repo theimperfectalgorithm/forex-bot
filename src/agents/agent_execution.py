@@ -61,6 +61,7 @@ MAGIC_NUMBER      = 200001   # unique identifier for all system trades
 DEVIATION         = 20       # max slippage in points
 BREAKEVEN_PIPS    = 25       # move SL to entry when this many pips in profit
 MAX_CLOSE_RETRIES = 3        # give up searching for exit deal after this many cycles
+MIN_TP_HEADROOM   = 5        # reject order if live entry leaves < 5 pips to TP
 
 PAIRS = {
     'GBPJPY': {'pip_size': 0.01,   'digits': 3},
@@ -199,6 +200,21 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         sl_price   = _price_round(anchor + sl_pips * pip_size, symbol)
         tp_price   = _price_round(anchor - tp_pips * pip_size, symbol)
         order_type = mt5.ORDER_TYPE_SELL
+
+    # Headroom check: reject if live entry leaves < MIN_TP_HEADROOM pips to TP.
+    # This catches the case where the market has already moved most of the way
+    # to the TP by the time the order is sent (e.g. entry at 215.010 with TP
+    # at 215.013 -- 0.3 pip reward against 31.8 pip risk).
+    if signal == 'BUY':
+        headroom_pips = (tp_price - entry_price) / pip_size
+    else:
+        headroom_pips = (entry_price - tp_price) / pip_size
+
+    if headroom_pips < MIN_TP_HEADROOM:
+        err = (f"TP headroom too small: entry={entry_price}  tp={tp_price}  "
+               f"headroom={headroom_pips:.1f}p < {MIN_TP_HEADROOM}p minimum -- order rejected")
+        log.warning(err)
+        return failed(err)
 
     comment = f"5ers_{session}_{signal}_{strategy}" if strategy else f"5ers_{session}_{signal}"
 
