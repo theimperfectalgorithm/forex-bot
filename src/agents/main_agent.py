@@ -411,10 +411,24 @@ def step_monitor_positions(state: dict, log: logging.Logger):
         state['open_trades'] = still_open
 
         for trade in newly_closed:
-            pnl  = trade.get('exit_pnl', 0.0)
-            pair = trade['symbol']
-            state['daily_pnl'] += pnl
+            pnl    = trade.get('exit_pnl', 0.0)
+            pair   = trade['symbol']
+            reason = trade.get('exit_reason', '?')
+
             state['closed_today'].append(trade)
+
+            # UNKNOWN CLOSE: exit deal was never found after MAX_CLOSE_RETRIES.
+            # Skip daily_pnl and consec_losses -- outcome is indeterminate.
+            # Real P&L impact will be visible on the next agent_market balance read.
+            if reason == 'UNKNOWN':
+                log.warning(
+                    f"UNKNOWN CLOSE recorded  {pair} {trade['direction']}  "
+                    f"ticket={trade.get('ticket')}  "
+                    f"P&L indeterminate -- check MT5 history manually"
+                )
+                continue
+
+            state['daily_pnl'] += pnl
 
             if pair == 'EURUSD':
                 strategy   = trade.get('strategy', '')
@@ -436,7 +450,7 @@ def step_monitor_positions(state: dict, log: logging.Logger):
 
             log.info(f"POSITION CLOSED  {pair} {trade['direction']}  "
                      f"exit={trade.get('exit_price', 0):.5f}  "
-                     f"reason={trade.get('exit_reason', '?')}  "
+                     f"reason={reason}  "
                      f"PnL=${pnl:+,.2f}  daily=${state['daily_pnl']:+,.2f}")
     except Exception as e:
         log.error(f"Position monitoring error: {e}", exc_info=True)

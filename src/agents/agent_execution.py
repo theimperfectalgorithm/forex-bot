@@ -54,9 +54,10 @@ def _log() -> logging.Logger:
 
 
 # -- constants
-MAGIC_NUMBER    = 200001   # unique identifier for all system trades
-DEVIATION       = 20       # max slippage in points
-BREAKEVEN_PIPS  = 25       # move SL to entry when this many pips in profit
+MAGIC_NUMBER      = 200001   # unique identifier for all system trades
+DEVIATION         = 20       # max slippage in points
+BREAKEVEN_PIPS    = 25       # move SL to entry when this many pips in profit
+MAX_CLOSE_RETRIES = 3        # give up searching for exit deal after this many cycles
 
 PAIRS = {
     'GBPJPY': {'pip_size': 0.01,   'digits': 3},
@@ -361,35 +362,72 @@ def _apply_breakeven(position, trade: dict, log: logging.Logger) -> bool:
         return False
 
 
+def _find_exit_deal(deals, ticket: int):
+    """
+    Search a sequence of deals for the exit deal matching ticket.
+    Matches on position_id first (MT5 5 standard), then on order ticket
+    as a fallback (guards against stored-ticket vs position-ticket mismatch).
+    Returns the deal object or None.
+    """
+    # Primary: position_id is the position ticket (equals opening order ticket in MT5 5)
+    match = next(
+        (d for d in deals
+         if d.position_id == ticket and d.entry == mt5.DEAL_ENTRY_OUT),
+        None
+    )
+    if match:
+        return match
+    # Fallback: match by the closing order ticket in case stored ticket differs
+    return next(
+        (d for d in deals
+         if d.order == ticket and d.entry == mt5.DEAL_ENTRY_OUT),
+        None
+    )
+
+
+def _format_exit_deal(deal) -> dict:
+    return {
+        'exit_price'  : deal.price,
+        'exit_time'   : datetime.fromtimestamp(deal.time, tz=timezone.utc).isoformat(),
+        'exit_reason' : ('TP'          if deal.reason == mt5.DEAL_REASON_TP  else
+                         'SL'          if deal.reason == mt5.DEAL_REASON_SL  else
+                         'MANUAL/OTHER'),
+        'exit_pnl'    : deal.profit,
+    }
+
+
 def _get_closed_deal(ticket: int, log: logging.Logger) -> dict | None:
     """
-    Look up the exit deal for a closed position in MT5 history.
-    Searches the last 24 hours.
+    Look up the exit deal for a closed position.
+
+    Search order:
+      1. From UTC midnight today to now (covers all intraday trades cleanly)
+      2. 48-hour fallback (catches trades opened near the previous midnight)
+
+    Matches by position_id (primary) and order ticket (fallback) so that
+    the function works regardless of whether the stored ticket is the MT5
+    position ticket or the order ticket.
     """
     try:
-        from_time = datetime.now(timezone.utc) - timedelta(hours=24)
-        deals = mt5.history_deals_get(from_time, datetime.now(timezone.utc))
-        if deals is None:
-            return None
+        now      = datetime.now(timezone.utc)
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # DEAL_ENTRY_OUT = 1 (exit deal)
-        exit_deal = next(
-            (d for d in deals
-             if d.position_id == ticket and d.entry == mt5.DEAL_ENTRY_OUT),
-            None
-        )
-        if exit_deal is None:
-            return None
+        # Pass 1: today's history (fast path -- covers all normal intraday closes)
+        deals = mt5.history_deals_get(midnight, now)
+        if deals:
+            match = _find_exit_deal(deals, ticket)
+            if match:
+                return _format_exit_deal(match)
 
-        return {
-            'exit_price'  : exit_deal.price,
-            'exit_time'   : datetime.fromtimestamp(exit_deal.time,
-                                                   tz=timezone.utc).isoformat(),
-            'exit_reason' : 'TP' if exit_deal.reason == mt5.DEAL_REASON_TP
-                            else ('SL' if exit_deal.reason == mt5.DEAL_REASON_SL
-                                  else 'MANUAL/OTHER'),
-            'exit_pnl'    : exit_deal.profit,
-        }
+        # Pass 2: 48-hour window (safety net for trades near midnight boundary)
+        deals = mt5.history_deals_get(now - timedelta(hours=48), now)
+        if deals:
+            match = _find_exit_deal(deals, ticket)
+            if match:
+                log.info(f"ticket {ticket}: exit deal found in 48h fallback window")
+                return _format_exit_deal(match)
+
+        return None
     except Exception as e:
         log.warning(f"Could not fetch exit deal for ticket {ticket}: {e}")
         return None
@@ -430,7 +468,6 @@ def monitor_positions(open_trades: list, log: logging.Logger) -> tuple:
                 closed_trade = {**trade, **exit_info}
                 newly_closed.append(closed_trade)
 
-                # Update the CSV row with exit details
                 _write_trade_log({
                     'Timestamp'  : exit_info['exit_time'],
                     'Pair'       : symbol,
@@ -453,9 +490,30 @@ def monitor_positions(open_trades: list, log: logging.Logger) -> tuple:
                     'PnL'        : exit_info['exit_pnl'],
                 })
             else:
-                # Can't find exit -- keep in list to retry next cycle
-                log.warning(f"ticket {ticket} not in positions but no exit deal found -- retrying")
-                still_open.append(trade)
+                retry = trade.get('close_retry', 0) + 1
+                if retry >= MAX_CLOSE_RETRIES:
+                    # Exhausted retries -- emit as UNKNOWN CLOSE so orchestrator
+                    # removes it from open_trades and logs it; P&L is indeterminate
+                    # (real balance impact visible on next agent_market balance read)
+                    log.warning(
+                        f"UNKNOWN CLOSE: ticket={ticket} {symbol} {trade['direction']} -- "
+                        f"not in positions and no exit deal after {retry} attempts -- "
+                        f"removing from monitoring"
+                    )
+                    now_str = datetime.now(timezone.utc).isoformat()
+                    newly_closed.append({
+                        **trade,
+                        'exit_price'  : 0.0,
+                        'exit_time'   : now_str,
+                        'exit_reason' : 'UNKNOWN',
+                        'exit_pnl'    : 0.0,
+                    })
+                else:
+                    log.warning(
+                        f"ticket {ticket} not in positions, exit deal not found -- "
+                        f"retry {retry}/{MAX_CLOSE_RETRIES}"
+                    )
+                    still_open.append({**trade, 'close_retry': retry})
             continue
 
         # Position is still open
