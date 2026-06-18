@@ -56,6 +56,7 @@ T_NY_START       = 13 * 60 +  0    # 13:00
 T_NY_END         = 20 * 60 + 45    # 20:45  (last bar check)
 T_EURUSD_START   = 12 * 60 +  0    # 12:00  EURUSD dual-strategy window open
 T_EURUSD_END     = 15 * 60 + 45    # 15:45  EURUSD dual-strategy window close
+T_EOD_CLOSE      = 17 * 60 + 30    # 17:30  Force-close all remaining positions
 T_REPORT         = 21 * 60 +  0    # 21:00
 
 
@@ -113,6 +114,9 @@ def _fresh_state(today: str) -> dict:
         'daily_pnl'        : 0.0,
         'consec_losses'    : {p: 0 for p in PAIRS},
         'pair_paused'      : {p: False for p in PAIRS},
+        # end-of-day forced close
+        'eod_close_done'     : False,
+        'eod_closed_tickets' : [],
         # EURUSD dual-strategy state (SMA Run 1 + EMA Pullback)
         'eurusd': {
             'sma_daily_trades'    : 0,
@@ -455,7 +459,8 @@ def step_monitor_positions(state: dict, log: logging.Logger):
     if not state['open_trades']:
         return
     try:
-        still_open, newly_closed = monitor_positions(state['open_trades'], log)
+        eod_tickets = set(state.get('eod_closed_tickets', []))
+        still_open, newly_closed = monitor_positions(state['open_trades'], log, eod_tickets)
         state['open_trades'] = still_open
 
         for trade in newly_closed:
@@ -513,6 +518,32 @@ def step_report(state: dict, log: logging.Logger):
     except Exception as e:
         log.error(f"Agent 5 reporting failed: {e}", exc_info=True)
         state['report_ran'] = True   # don't retry tonight
+
+
+def step_eod_close(state: dict, log: logging.Logger):
+    """17:30 UTC daily forced exit — close any position still open."""
+    state.setdefault('eod_closed_tickets', [])
+
+    if not state['open_trades']:
+        log.info("EOD close: no open trades")
+        state['eod_close_done'] = True
+        return
+
+    log.info(f"EOD CLOSE  17:30 UTC -- force-closing {len(state['open_trades'])} trade(s)")
+    for trade in list(state['open_trades']):
+        ticket = trade['ticket']
+        symbol = trade['symbol']
+        try:
+            ok = close_trade(ticket, symbol, comment='EOD_CLOSE')
+            if ok:
+                log.info(f"EOD CLOSE sent  {symbol}  ticket={ticket}")
+                if ticket not in state['eod_closed_tickets']:
+                    state['eod_closed_tickets'].append(ticket)
+            else:
+                log.error(f"EOD CLOSE FAILED  {symbol}  ticket={ticket} -- will retry next cycle")
+        except Exception as e:
+            log.error(f"EOD CLOSE error  {symbol}  ticket={ticket}: {e}", exc_info=True)
+    state['eod_close_done'] = True
 
 
 # ---------------------------------------------------------------------------
@@ -601,15 +632,32 @@ def main():
                 step_report(state, log)
                 save_state(state)
 
+            # -- 17:30  EOD forced close (runs once; monitor_positions records exit this cycle)
+            if t >= T_EOD_CLOSE and not state.get('eod_close_done', False) and state['open_trades']:
+                step_eod_close(state, log)
+                save_state(state)
+
             # -- Always: monitor open positions for breakeven / closures
             step_monitor_positions(state, log)
             save_state(state)
 
+        except KeyboardInterrupt:
+            log.info("Orchestrator stopped by user (KeyboardInterrupt)")
+            break
         except Exception as e:
             log.critical(f"Orchestrator loop error: {e}", exc_info=True)
-            # Never crash -- just log and continue
+            # Never crash -- sleep 60 s then retry so the loop can't spin tight
+            time.sleep(60)
+            continue
 
-        sleep_until_next_quarter(log)
+        try:
+            sleep_until_next_quarter(log)
+        except KeyboardInterrupt:
+            log.info("Orchestrator stopped by user (KeyboardInterrupt)")
+            break
+        except Exception as e:
+            log.error(f"Sleep error -- falling back to 60 s: {e}", exc_info=True)
+            time.sleep(60)
 
 
 if __name__ == '__main__':
