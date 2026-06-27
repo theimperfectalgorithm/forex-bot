@@ -1,0 +1,8 @@
+global:
+  max_open_trades: 3
+  news_filter: false
+  eod_close_utc: "17:30"
+  demo_mode: true
+  log_level: INFO
+  hard_floor_pct: 0.10
+  daily_loss_pct: 0.05

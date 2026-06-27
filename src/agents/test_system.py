@@ -297,18 +297,41 @@ try:
         errors='replace',
     )
 
-    deadline = time.time() + 120
-    while time.time() < deadline:
-        line = proc.stdout.readline()
-        if line:
-            print(f"  {line}", end='')
-        elif proc.poll() is not None:
-            print(f"\n  {WARN}  Orchestrator exited early (code {proc.returncode})")
-            break
-        else:
-            time.sleep(0.05)
+    # main_agent.py sleeps up to 900s between checks (perfectly normal --
+    # it only wakes on 15-minute UTC boundaries). proc.stdout.readline() is
+    # a BLOCKING call: if we call it directly in the loop below, it can
+    # block far longer than our 120s test budget waiting for the next line,
+    # which defeats the deadline entirely. Drain stdout on a background
+    # thread instead, so the main thread's deadline check below always
+    # fires on time regardless of how quiet the child currently is.
+    import threading
+    import queue
 
-    if proc.poll() is None:
+    line_queue: queue.Queue = queue.Queue()
+
+    def _drain_stdout():
+        for line in proc.stdout:
+            line_queue.put(line)
+        line_queue.put(None)   # sentinel: stdout closed (process exited)
+
+    reader = threading.Thread(target=_drain_stdout, daemon=True)
+    reader.start()
+
+    deadline = time.time() + 120
+    exited_early = False
+    while time.time() < deadline:
+        try:
+            line = line_queue.get(timeout=0.1)
+        except queue.Empty:
+            continue
+        if line is None:
+            exited_early = True
+            break
+        print(f"  {line}", end='')
+
+    if exited_early:
+        print(f"\n  {WARN}  Orchestrator exited early (code {proc.returncode})")
+    elif proc.poll() is None:
         proc.terminate()
         proc.wait(timeout=5)
         print(f"\n  Orchestrator terminated cleanly after 120s")

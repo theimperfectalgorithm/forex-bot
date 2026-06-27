@@ -29,22 +29,33 @@ from pathlib import Path
 AGENTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(AGENTS_DIR))
 
+# -- repo root also needed on path for the core/ and strategies/ packages
+BASE_DIR = AGENTS_DIR.parent.parent          # repo root
+sys.path.insert(0, str(BASE_DIR))
+
 from agent_market    import run as run_market
 from agent_strategy  import prepare_session, check_breakout, check_eurusd_signals
 from agent_risk      import run as run_risk
 from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
+from core.pair_manager import get_active_pairs
 
 # -- directory paths
-BASE_DIR   = AGENTS_DIR.parent.parent          # repo root
 DATA_DIR   = BASE_DIR / 'data'
 STATE_DIR  = DATA_DIR / 'state'
 LOGS_DIR   = DATA_DIR / 'logs'
 STATE_FILE = STATE_DIR / 'daily_state.json'
 
-# -- trading pairs (breakout strategy: GBPJPY and EURJPY only)
-# EURUSD runs two separate strategies (SMA Run 1 + EMA Pullback) via step_check_eurusd
-PAIRS = ['GBPJPY', 'EURJPY']
+# -- trading pairs, sourced from pair_manager (pairs/*.yaml with active: true)
+# rather than hardcoded -- breakout pairs use the london_breakout strategy;
+# the sma_ema_combined pair (currently EURUSD) runs via step_check_eurusd,
+# kept as a distinct orchestration path since its dual-strategy state
+# machine (SMA cross-exit, EMA 2-step pullback) differs structurally from
+# the single-signal breakout pairs.
+_ACTIVE_PAIRS = get_active_pairs()
+PAIRS = [name for name, _inst, cfg in _ACTIVE_PAIRS if cfg.get('strategy') == 'london_breakout']
+_SMA_EMA_PAIRS = [name for name, _inst, cfg in _ACTIVE_PAIRS if cfg.get('strategy') == 'sma_ema_combined']
+EURUSD_PAIR = _SMA_EMA_PAIRS[0] if _SMA_EMA_PAIRS else None
 
 # -- schedule thresholds (minutes since UTC midnight)
 T_MARKET_AGENT   =  0 * 60 +  0    # 00:00
@@ -355,7 +366,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             ticket = sig['cross_exit_ticket']
             log.info(f"EURUSD SMA: cross-exit for ticket={ticket}  {sig['reason']}")
             try:
-                if close_trade(ticket, 'EURUSD'):
+                if close_trade(ticket, EURUSD_PAIR):
                     log.info(f"EURUSD SMA: cross-exit order accepted ticket={ticket}")
             except Exception as e:
                 log.error(f"close_trade EURUSD ticket={ticket}: {e}", exc_info=True)
@@ -401,7 +412,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
 
         # Guard 4: risk agent
         try:
-            risk = run_risk('EURUSD', direction, sl_pips, state)
+            risk = run_risk(EURUSD_PAIR, direction, sl_pips, state)
         except Exception as e:
             log.error(f"risk check EURUSD {strategy}: {e}", exc_info=True)
             continue
@@ -421,7 +432,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
         }
 
         try:
-            result = place_trade('EURUSD', sig, risk['lot_size'], eurusd_session, 'ny')
+            result = place_trade(EURUSD_PAIR, sig, risk['lot_size'], eurusd_session, 'ny')
         except Exception as e:
             log.error(f"place_trade EURUSD {strategy}: {e}", exc_info=True)
             continue
@@ -437,7 +448,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             state['eurusd'][daily_key] = daily_val + 1
             state['open_trades'].append({
                 'ticket'          : result['ticket'],
-                'symbol'          : 'EURUSD',
+                'symbol'          : EURUSD_PAIR,
                 'direction'       : direction,
                 'session'         : 'NY',
                 'strategy'        : strategy,
@@ -483,7 +494,7 @@ def step_monitor_positions(state: dict, log: logging.Logger):
 
             state['daily_pnl'] += pnl
 
-            if pair == 'EURUSD':
+            if pair == EURUSD_PAIR:
                 strategy   = trade.get('strategy', '')
                 consec_key = 'sma_consec_losses' if strategy == 'SMA' else 'ema_consec_losses'
                 if pnl <= 0:
