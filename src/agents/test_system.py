@@ -278,6 +278,85 @@ except Exception as e:
     import traceback; traceback.print_exc()
 
 # ---------------------------------------------------------------------------
+# TEST 8 -- Reconciliation check (agent_reporting)
+# ---------------------------------------------------------------------------
+section("TEST 8 -- P&L reconciliation check (agent_reporting)")
+
+try:
+    from agent_reporting import (
+        _reconciliation_check,
+        _read_logged_pnl_for_date,
+        _monthly_reconciliation_lines,
+        RECON_TOLERANCE,
+        _log as rep_log,
+    )
+
+    rep_log_inst = rep_log()
+
+    # 8a: Mismatch -- logged P&L differs from actual balance change by > $1
+    #     Simulates a day where a trade closed in MT5 but was never written to CSV.
+    recon_miss = _reconciliation_check(
+        date_str        = '2026-06-30',
+        logged_pnl      = -253.50,          # what our CSV recorded
+        current_balance = 100_600.00,        # MT5 balance implies +600 change
+        prev_balance    = 100_000.00,
+        log             = rep_log_inst,
+    )
+    miss_ok = not recon_miss['matched'] and abs(recon_miss['discrepancy'] - 853.50) < 0.01
+    mark    = PASS if miss_ok else FAIL
+    print(f"  {mark}  Mismatch flagged correctly  "
+          f"(logged={recon_miss['logged_pnl']:+.2f}  "
+          f"actual={recon_miss['actual_change']:+.2f}  "
+          f"discrepancy={recon_miss['discrepancy']:+.2f})")
+
+    # 8b: Pass -- logged P&L and actual change agree within $1 tolerance
+    recon_pass = _reconciliation_check(
+        date_str        = '2026-06-30',
+        logged_pnl      = -253.50,
+        current_balance = 100_746.00,        # actual_change = -254.00, within $1
+        prev_balance    = 101_000.00,
+        log             = rep_log_inst,
+    )
+    pass_ok = recon_pass['matched']
+    mark    = PASS if pass_ok else FAIL
+    print(f"  {mark}  Pass within ${RECON_TOLERANCE:.0f} tolerance  "
+          f"(logged={recon_pass['logged_pnl']:+.2f}  "
+          f"actual={recon_pass['actual_change']:+.2f}  "
+          f"discrepancy={recon_pass['discrepancy']:+.2f})")
+
+    # 8c: Read actual logged P&L for Jun 04 from trades_log.csv
+    #     Expects GBPJPY TP +217.71 + GBPJPY TP +3.75 = +221.46
+    logged_jun04 = _read_logged_pnl_for_date('2026-06-04')
+    expected_jun04 = 221.46
+    read_ok = abs(logged_jun04 - expected_jun04) < 0.01
+    mark    = PASS if read_ok else FAIL
+    print(f"  {mark}  _read_logged_pnl_for_date('2026-06-04') = "
+          f"${logged_jun04:.2f}  (expected ${expected_jun04:.2f})")
+
+    # 8d: Read June monthly logged P&L from trades_log.csv (19 closed trades)
+    logged_jun = _read_logged_pnl_for_date('2026-06')
+    expected_jun = 1567.93
+    read_ok_m = abs(logged_jun - expected_jun) < 0.02   # allow 2c rounding
+    mark      = PASS if read_ok_m else FAIL
+    print(f"  {mark}  _read_logged_pnl_for_date('2026-06') = "
+          f"${logged_jun:.2f}  (expected ${expected_jun:.2f})")
+
+    # 8e: Monthly reconciliation lines show mismatch for June
+    #     Actual June P&L = $101,070.73 - $100,000 = +$1,070.73
+    #     Logged June P&L = +$1,567.93  =>  discrepancy = -$497.20
+    m_lines = _monthly_reconciliation_lines('2026-06', current_balance=101_070.73)
+    has_mismatch = any('MISMATCH' in l for l in m_lines)
+    has_note     = any('unlogged' in l for l in m_lines)
+    mark         = PASS if (has_mismatch and has_note) else FAIL
+    print(f"  {mark}  Monthly reconciliation correctly flags June discrepancy")
+    for line in m_lines:
+        print(f"         {line.strip()}")
+
+except Exception as e:
+    print(f"  {FAIL}  {e}")
+    import traceback; traceback.print_exc()
+
+# ---------------------------------------------------------------------------
 # TEST 7 -- Orchestrator 2-minute live run
 # ---------------------------------------------------------------------------
 section("TEST 7 -- Orchestrator (2-minute live run)")
