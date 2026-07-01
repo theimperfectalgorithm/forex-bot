@@ -23,6 +23,7 @@ Requirements:
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 try:
     import MetaTrader5 as mt5
@@ -33,6 +34,9 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core import data_loader
 
 # ── SETTINGS ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +59,10 @@ VARIANTS = [
 # ── 1. CONNECT TO MT5 ─────────────────────────────────────────────────────────
 
 def connect_mt5():
+    if not MT5_AVAILABLE:
+        print("MetaTrader5 not available -- using offline CSV data from "
+              "data/historical/\n")
+        return
     print("Connecting to MetaTrader 5...")
     if not mt5.initialize():
         print(f"ERROR: Could not connect — {mt5.last_error()}")
@@ -71,18 +79,7 @@ def connect_mt5():
 def fetch_data() -> pd.DataFrame:
     date_to   = datetime.now(timezone.utc)
     date_from = date_to - timedelta(days=MONTHS * 30)
-
-    rates = mt5.copy_rates_range(SYMBOL, mt5.TIMEFRAME_M15, date_from, date_to)
-
-    if rates is None or len(rates) == 0:
-        print(f"ERROR: No data returned — {mt5.last_error()}")
-        mt5.shutdown()
-        sys.exit(1)
-
-    df = pd.DataFrame(rates)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index('time', inplace=True)
-    df.rename(columns={'close': 'Close'}, inplace=True)
+    df = data_loader.get_bars(SYMBOL, 'M15', date_from, date_to)
     return df[['Close']]
 
 
@@ -295,8 +292,9 @@ def plot_all(results: list):
 connect_mt5()
 print(f"Fetching {MONTHS} months of {SYMBOL} M15 data (once, shared across all variants)...")
 raw = fetch_data()
-mt5.shutdown()
-print(f"Fetched {len(raw):,} bars.  Disconnected from MT5.\n")
+if MT5_AVAILABLE:
+    mt5.shutdown()
+print(f"Fetched {len(raw):,} bars.\n")
 
 results = []
 for v in VARIANTS:

@@ -27,6 +27,7 @@ Requirements:
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 try:
     import MetaTrader5 as mt5
@@ -40,6 +41,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core import data_loader
 
 # -- SETTINGS -------------------------------------------------------------------
 
@@ -69,6 +73,10 @@ PAIRS = {
 # -- 1. MT5 CONNECTION & DATA FETCH ---------------------------------------------
 
 def connect_mt5():
+    if not MT5_AVAILABLE:
+        print("MetaTrader5 not available -- using offline CSV data from "
+              "data/historical/\n")
+        return
     print("Connecting to MetaTrader 5...")
     if not mt5.initialize():
         print(f"ERROR: {mt5.last_error()}")
@@ -80,15 +88,11 @@ def connect_mt5():
     print(f"Account   : {account.login}  ({account.server})\n")
 
 
-def _fetch(symbol: str, timeframe: int, date_from: datetime, date_to: datetime):
-    rates = mt5.copy_rates_range(symbol, timeframe, date_from, date_to)
-    if rates is None or len(rates) == 0:
+def _fetch(symbol: str, timeframe: str, date_from: datetime, date_to: datetime):
+    try:
+        df = data_loader.get_bars(symbol, timeframe, date_from, date_to)
+    except (ValueError, FileNotFoundError):
         return None
-    df = pd.DataFrame(rates)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index('time', inplace=True)
-    df.rename(columns={'open': 'Open', 'high': 'High',
-                       'low': 'Low', 'close': 'Close'}, inplace=True)
     return df[['Open', 'High', 'Low', 'Close']]
 
 
@@ -101,9 +105,9 @@ def fetch_all_data() -> dict:
 
     all_data = {}
     for sym in PAIRS:
-        h4  = _fetch(sym, mt5.TIMEFRAME_H4,  date_from, date_to)
-        h1  = _fetch(sym, mt5.TIMEFRAME_H1,  date_from, date_to)
-        m15 = _fetch(sym, mt5.TIMEFRAME_M15, date_from, date_to)
+        h4  = _fetch(sym, 'H4',  date_from, date_to)
+        h1  = _fetch(sym, 'H1',  date_from, date_to)
+        m15 = _fetch(sym, 'M15', date_from, date_to)
 
         if h4 is None or h1 is None or m15 is None:
             print(f"  {sym}: SKIPPED -- missing data")
@@ -737,7 +741,8 @@ def save_trade_log(trades: list):
 
 connect_mt5()
 all_data = fetch_all_data()
-mt5.shutdown()
+if MT5_AVAILABLE:
+    mt5.shutdown()
 
 if not all_data:
     print("No data fetched. Exiting.")

@@ -33,6 +33,7 @@ Requirements:
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 try:
     import MetaTrader5 as mt5
@@ -44,6 +45,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core import data_loader
 
 # ── SETTINGS ──────────────────────────────────────────────────────────────────
 
@@ -79,6 +83,10 @@ BASELINE = {
 # ── 1. CONNECT / DISCONNECT ───────────────────────────────────────────────────
 
 def connect_mt5():
+    if not MT5_AVAILABLE:
+        print("MetaTrader5 not available -- using offline CSV data from "
+              "data/historical/\n")
+        return
     print("Connecting to MetaTrader 5...")
     if not mt5.initialize():
         print(f"ERROR: Could not connect — {mt5.last_error()}")
@@ -92,27 +100,21 @@ def connect_mt5():
 
 # ── 2. FETCH OHLCV DATA ───────────────────────────────────────────────────────
 
-def fetch_data(symbol: str, timeframe: int, months: int,
+def fetch_data(symbol: str, timeframe: str, months: int,
                extra_days: int = 0) -> pd.DataFrame:
     """
-    Fetch OHLCV bars from MT5.
+    Fetch OHLCV bars via data_loader (MT5 live, or offline CSV on Mac).
     extra_days: additional lookback beyond `months` (used for H4 SMA warmup).
     """
     date_to   = datetime.now(timezone.utc)
     date_from = date_to - timedelta(days=months * 30 + extra_days)
 
-    rates = mt5.copy_rates_range(symbol, timeframe, date_from, date_to)
-
-    if rates is None or len(rates) == 0:
-        print(f"  WARNING: No {symbol} data — {mt5.last_error()}")
+    try:
+        df = data_loader.get_bars(symbol, timeframe, date_from, date_to)
+    except (ValueError, FileNotFoundError) as e:
+        print(f"  WARNING: No {symbol} data — {e}")
         return pd.DataFrame()
 
-    df = pd.DataFrame(rates)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index('time', inplace=True)
-    df.rename(columns={
-        'close': 'Close', 'high': 'High', 'low': 'Low', 'open': 'Open'
-    }, inplace=True)
     return df[['Open', 'High', 'Low', 'Close']]
 
 
@@ -610,8 +612,8 @@ h4_raw = {}
 
 for symbol in PAIRS:
     tf_label = f'  {symbol}'
-    h1 = fetch_data(symbol, mt5.TIMEFRAME_H1, MONTHS)
-    h4 = fetch_data(symbol, mt5.TIMEFRAME_H4, MONTHS, extra_days=30)
+    h1 = fetch_data(symbol, 'H1', MONTHS)
+    h4 = fetch_data(symbol, 'H4', MONTHS, extra_days=30)
     if h1.empty or h4.empty:
         print(f"  {symbol}: skipped (no data)")
         continue
@@ -621,8 +623,9 @@ for symbol in PAIRS:
     print(f"  {symbol}: {len(h1):,} H1 bars, {len(h4):,} H4 bars  "
           f"({h1.index[0].date()} to {h1.index[-1].date()},  ~{months:.1f} months)")
 
-mt5.shutdown()
-print(f"\nDisconnected from MT5. Processing {len(h1_raw)} pairs...\n")
+if MT5_AVAILABLE:
+    mt5.shutdown()
+print(f"\nProcessing {len(h1_raw)} pairs...\n")
 
 # Process each pair
 all_trades  = []

@@ -36,6 +36,7 @@ Requirements:
 import os
 import sys
 from datetime import datetime, timedelta, timezone, date as date_type
+from pathlib import Path
 
 try:
     import MetaTrader5 as mt5
@@ -50,6 +51,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.gridspec as gridspec
 from collections import defaultdict
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core import data_loader
 
 # -- SETTINGS -------------------------------------------------------------------
 
@@ -80,6 +84,10 @@ PAIRS = {
 # -- 1. MT5 CONNECTION & DATA FETCH --------------------------------------------
 
 def connect_mt5():
+    if not MT5_AVAILABLE:
+        print("MetaTrader5 not available -- using offline CSV data from "
+              "data/historical/\n")
+        return
     print("Connecting to MetaTrader 5...")
     if not mt5.initialize():
         print(f"ERROR: {mt5.last_error()}")
@@ -91,14 +99,10 @@ def connect_mt5():
 
 
 def _fetch(symbol, date_from, date_to):
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M15, date_from, date_to)
-    if rates is None or len(rates) == 0:
+    try:
+        df = data_loader.get_bars(symbol, 'M15', date_from, date_to)
+    except (ValueError, FileNotFoundError):
         return None
-    df = pd.DataFrame(rates)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index('time', inplace=True)
-    df.rename(columns={'open': 'Open', 'high': 'High',
-                       'low': 'Low', 'close': 'Close'}, inplace=True)
     return df[['Open', 'High', 'Low', 'Close']]
 
 
@@ -937,7 +941,8 @@ def save_trade_log(trades: list):
 
 connect_mt5()
 all_data = fetch_all_data()
-mt5.shutdown()
+if MT5_AVAILABLE:
+    mt5.shutdown()
 
 if not all_data:
     print("No data fetched. Exiting.")

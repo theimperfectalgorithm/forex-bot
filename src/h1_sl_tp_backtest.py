@@ -29,6 +29,7 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
+from pathlib import Path
 
 try:
     import MetaTrader5 as mt5
@@ -40,6 +41,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core import data_loader
 
 # ── SETTINGS ──────────────────────────────────────────────────────────────────
 
@@ -77,6 +81,10 @@ H1_BASELINE = {
 # ── 1. CONNECT TO MT5 ─────────────────────────────────────────────────────────
 
 def connect_mt5():
+    if not MT5_AVAILABLE:
+        print("MetaTrader5 not available -- using offline CSV data from "
+              "data/historical/\n")
+        return
     print("Connecting to MetaTrader 5...")
     if not mt5.initialize():
         print(f"ERROR: Could not connect — {mt5.last_error()}")
@@ -96,17 +104,7 @@ def fetch_data() -> pd.DataFrame:
     date_from = date_to - timedelta(days=MONTHS * 30)
 
     print(f"Requesting H1 data from {date_from.date()} to {date_to.date()} ...")
-    rates = mt5.copy_rates_range(SYMBOL, mt5.TIMEFRAME_H1, date_from, date_to)
-
-    if rates is None or len(rates) == 0:
-        print(f"ERROR: No data returned — {mt5.last_error()}")
-        mt5.shutdown()
-        sys.exit(1)
-
-    df = pd.DataFrame(rates)
-    df['time'] = pd.to_datetime(df['time'], unit='s', utc=True)
-    df.set_index('time', inplace=True)
-    df.rename(columns={'close': 'Close', 'high': 'High', 'low': 'Low'}, inplace=True)
+    df = data_loader.get_bars(SYMBOL, 'H1', date_from, date_to)
 
     months_actual = (df.index[-1] - df.index[0]).days / 30
     print(f"Received   : {len(df):,} bars  "
@@ -550,7 +548,8 @@ def save_trade_log(trades: list):
 
 connect_mt5()
 raw = fetch_data()
-mt5.shutdown()
+if MT5_AVAILABLE:
+    mt5.shutdown()
 
 data           = apply_strategy(raw)
 trades, equity = run_backtest(data)
