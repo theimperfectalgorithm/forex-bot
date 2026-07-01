@@ -24,7 +24,11 @@ from pathlib import Path
 
 import time
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
 
 # -- logging
 LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'

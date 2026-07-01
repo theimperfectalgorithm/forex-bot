@@ -50,6 +50,28 @@ Trades **GBPJPY, EURJPY, and EURUSD** on MetaTrader 5, fully autonomously — no
 
 ---
 
+## Setup
+
+Dependencies are split across two files because `MetaTrader5` only ships wheels for Windows:
+
+- **`requirements.txt`** — cross-platform (Mac + Windows): `yfinance`, `pandas`, `matplotlib`
+- **`requirements-windows.txt`** — Windows-only: `MetaTrader5`
+
+**Mac (local development, backtesting, strategy work):**
+```
+pip install -r requirements.txt
+```
+
+**VPS / Windows (live trading, needs the MT5 terminal connection):**
+```
+pip install -r requirements.txt
+pip install -r requirements-windows.txt
+```
+
+On Mac, any module that imports `MetaTrader5` falls back gracefully (`MT5_AVAILABLE = False`) instead of crashing, so backtests and non-broker code paths still run.
+
+---
+
 ## Status
 
 Running on a MetaTrader 5 demo account, forward-testing toward a prop firm challenge target. Build process — including every failed attempt — documented on YouTube.

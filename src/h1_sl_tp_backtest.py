@@ -30,7 +30,11 @@ import sys
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
 import pandas as pd
 import matplotlib
 matplotlib.use('Agg')

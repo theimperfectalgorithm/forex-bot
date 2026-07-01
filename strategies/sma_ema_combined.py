@@ -35,7 +35,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
 import numpy as np
 
 from strategies.base_strategy import BaseStrategy

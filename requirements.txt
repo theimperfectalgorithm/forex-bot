@@ -1,4 +1,5 @@
+# Cross-platform dependencies (Mac + Windows)
+# For VPS/Windows also run: pip install -r requirements-windows.txt
 yfinance==1.2.0
 pandas==2.3.3
 matplotlib==3.9.4
-MetaTrader5==5.0.5735

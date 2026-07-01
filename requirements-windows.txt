@@ -1,0 +1,2 @@
+# Windows/VPS-only dependencies (MetaTrader5 has no Mac/Linux build)
+MetaTrader5==5.0.5735

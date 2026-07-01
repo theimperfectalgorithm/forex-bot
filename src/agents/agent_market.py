@@ -19,7 +19,11 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
 
 # -- logging (shared file, separate logger name)
 LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'

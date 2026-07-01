@@ -31,7 +31,11 @@ from pathlib import Path
 
 import time
 
-import MetaTrader5 as mt5
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
 import numpy as np
 
 # -- path setup so this module can import the repo-root strategies/core packages
