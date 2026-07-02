@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "forex-bot": {
+      "type": "http",
+      "url": "http://<VPS_IP>:8000/mcp",
+      "headers": {
+        "X-API-Key": "<YOUR_MCP_API_KEY>"
+      }
+    }
+  }
+}
