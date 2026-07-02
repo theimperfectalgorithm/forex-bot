@@ -18,6 +18,7 @@ data/state/
 # Secrets
 .env
 mcp/.env
+mcp/claude_mcp_config.json
 
 # OS files
 .DS_Store
