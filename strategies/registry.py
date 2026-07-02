@@ -10,13 +10,13 @@ imports this registry rather than maintaining its own import list.
 from strategies.london_breakout import LondonBreakout
 from strategies.sma_ema_combined import SmaEmaCombined
 from strategies.asian_breakout import AsianBreakout
+from strategies.breakout.ny_open_breakout import NyOpenBreakout
+from strategies.trend_following.h4_trend_pullback import H4TrendPullback
 
 # -- stubs, not yet implemented, NOT activated in any pairs/*.yaml
 from strategies.trend_following.ema_crossover import EmaCrossover
-from strategies.trend_following.h4_trend_pullback import H4TrendPullback
 from strategies.trend_following.macd_trend import MacdTrend
 from strategies.breakout.asian_range_breakout import AsianRangeBreakout
-from strategies.breakout.ny_open_breakout import NyOpenBreakout
 from strategies.breakout.consolidation_breakout import ConsolidationBreakout
 from strategies.reversal.rsi_reversal import RsiReversal
 from strategies.reversal.mean_reversion import MeanReversion
@@ -28,12 +28,15 @@ STRATEGY_REGISTRY = {
     "sma_ema_combined": SmaEmaCombined,
     "asian_breakout": AsianBreakout,
 
+    # -- fully implemented, but backtest-FAILED (see each class's docstring) --
+    # do not set active: true on a pairs/*.yaml without re-validating
+    "ny_open_breakout": NyOpenBreakout,
+    "h4_trend_pullback": H4TrendPullback,
+
     # -- stubs (raise NotImplementedError on use -- see each class's docstring)
     "ema_crossover": EmaCrossover,
-    "h4_trend_pullback": H4TrendPullback,
     "macd_trend": MacdTrend,
     "asian_range_breakout": AsianRangeBreakout,
-    "ny_open_breakout": NyOpenBreakout,
     "consolidation_breakout": ConsolidationBreakout,
     "rsi_reversal": RsiReversal,
     "mean_reversion": MeanReversion,
