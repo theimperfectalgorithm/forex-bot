@@ -16,6 +16,7 @@ Returns a dict -- consumed by the orchestrator.
 
 import logging
 import sys
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -58,15 +59,29 @@ NEWS_WINDOW_MINS = 30
 LONDON_OPEN_HOUR = 8    # 08:00 UTC
 NY_OPEN_HOUR     = 13   # 13:00 UTC
 
+MT5_CONNECT_MAX_RETRIES     = 3
+MT5_CONNECT_RETRY_DELAY_SECS = 60
+
 
 # ---------------------------------------------------------------------------
 # MT5 connection
 # ---------------------------------------------------------------------------
 
 def _connect(log: logging.Logger) -> bool:
-    if mt5.initialize():
-        return True
-    log.error(f"MT5 init failed: {mt5.last_error()}")
+    for attempt in range(1, MT5_CONNECT_MAX_RETRIES + 1):
+        if mt5.initialize():
+            if attempt > 1:
+                log.info(f"MT5 init succeeded on attempt {attempt}/{MT5_CONNECT_MAX_RETRIES}")
+            return True
+
+        log.error(f"MT5 init failed (attempt {attempt}/{MT5_CONNECT_MAX_RETRIES}): "
+                  f"{mt5.last_error()}")
+
+        if attempt < MT5_CONNECT_MAX_RETRIES:
+            log.info(f"Retrying MT5 connection in {MT5_CONNECT_RETRY_DELAY_SECS}s...")
+            time.sleep(MT5_CONNECT_RETRY_DELAY_SECS)
+
+    log.critical(f"MT5 init failed after {MT5_CONNECT_MAX_RETRIES} attempts -- giving up")
     return False
 
 
