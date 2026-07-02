@@ -1,0 +1,8 @@
+pair: GBPUSD
+strategy: consolidation_breakout
+active: false
+timeframe: H1
+risk_percent: 0.5
+h4_filter: true
+session: london_ny
+friday_close: true

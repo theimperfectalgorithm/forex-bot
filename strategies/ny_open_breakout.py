@@ -59,7 +59,7 @@ import numpy as np
 from strategies.base_strategy import BaseStrategy
 
 # -- logging (same setup/format as LondonBreakout's _log())
-LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'
+LOGS_DIR = Path(__file__).parent.parent / 'data' / 'logs'
 
 def _log() -> logging.Logger:
     LOGS_DIR.mkdir(parents=True, exist_ok=True)

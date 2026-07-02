@@ -1,0 +1,8 @@
+pair: AUDJPY
+strategy: asian_range_breakout
+active: false
+timeframe: H1
+risk_percent: 0.5
+h4_filter: true
+session: asian
+friday_close: true

@@ -10,18 +10,18 @@ imports this registry rather than maintaining its own import list.
 from strategies.london_breakout import LondonBreakout
 from strategies.sma_ema_combined import SmaEmaCombined
 from strategies.asian_breakout import AsianBreakout
-from strategies.breakout.ny_open_breakout import NyOpenBreakout
-from strategies.trend_following.h4_trend_pullback import H4TrendPullback
+from strategies.ny_open_breakout import NyOpenBreakout
+from strategies.h4_trend_pullback import H4TrendPullback
+from strategies.asian_range_breakout import AsianRangeBreakout
+from strategies.mean_reversion import MeanReversion
 
 # -- stubs, not yet implemented, NOT activated in any pairs/*.yaml
-from strategies.trend_following.ema_crossover import EmaCrossover
-from strategies.trend_following.macd_trend import MacdTrend
-from strategies.breakout.asian_range_breakout import AsianRangeBreakout
-from strategies.breakout.consolidation_breakout import ConsolidationBreakout
-from strategies.reversal.rsi_reversal import RsiReversal
-from strategies.reversal.mean_reversion import MeanReversion
-from strategies.volatility.atr_dynamic import AtrDynamic
-from strategies.volatility.bollinger_squeeze import BollingerSqueeze
+from strategies.ema_crossover import EmaCrossover
+from strategies.macd_trend import MacdTrend
+from strategies.consolidation_breakout import ConsolidationBreakout
+from strategies.rsi_reversal import RsiReversal
+from strategies.atr_dynamic import AtrDynamic
+from strategies.bollinger_squeeze import BollingerSqueeze
 
 STRATEGY_REGISTRY = {
     "london_breakout": LondonBreakout,
@@ -33,13 +33,16 @@ STRATEGY_REGISTRY = {
     "ny_open_breakout": NyOpenBreakout,
     "h4_trend_pullback": H4TrendPullback,
 
+    # -- fully implemented, NOT YET backtested (built in this reorganisation --
+    # no validation run yet, keep active: false until one is done)
+    "asian_range_breakout": AsianRangeBreakout,
+    "mean_reversion": MeanReversion,
+
     # -- stubs (raise NotImplementedError on use -- see each class's docstring)
     "ema_crossover": EmaCrossover,
     "macd_trend": MacdTrend,
-    "asian_range_breakout": AsianRangeBreakout,
     "consolidation_breakout": ConsolidationBreakout,
     "rsi_reversal": RsiReversal,
-    "mean_reversion": MeanReversion,
     "atr_dynamic": AtrDynamic,
     "bollinger_squeeze": BollingerSqueeze,
 }
