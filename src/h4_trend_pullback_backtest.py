@@ -2,6 +2,17 @@
 Forex Bot -- H4 Trend Pullback Backtest + Optimization (GBPJPY, H1)
       plus a correlation study against LondonBreakout on the same pair.
 
+RERUN NOTE: this replaces the first run's same-day EOD-close engine.
+That run's own diagnostic was that the daily 17:30 UTC close was
+truncating winners before they could reach the 2:1 TP (only 21% of
+trades hit TP; 27% got cut at EOD averaging near-breakeven) while losers
+still ate the full stop. This version removes the same-day forced close
+entirely -- positions now run to their natural SL/TP across multiple
+days, with a Friday-only close at 20:00 UTC (mirroring the live bot's
+own EOD->Friday-close migration) as the only forced exit. See the
+exit-reason breakdown printed by this script for the direct before/after
+comparison.
+
 Strategy under test (strategies/trend_following/h4_trend_pullback.py):
   1. H4 trend: SMA50 vs SMA200 on H4 -- bullish if 50 above 200, bearish
      if 50 below 200, AND the two SMAs must be separated by at least
@@ -15,19 +26,26 @@ Strategy under test (strategies/trend_following/h4_trend_pullback.py):
                          that same bar's Close  < EMA
      (depth_pips grid: 5/10/15 -- how close the wick must get to the EMA
      to count as a "touch"; the bar's Close confirms the reclaim.)
-  3. Session filter: only bars in 08:00-21:00 UTC are eligible signal
-     bars. Combined with the 17:30 EOD close (see below), a new entry is
-     only realistically actionable through ~17:00 UTC -- see
-     ENTRY_CUTOFF_HOUR for the explicit reasoning.
+  3. Session filter: only bars in SESSION_START_HOUR-SESSION_END_HOUR UTC
+     (08:00-21:00) are eligible ENTRY bars. Unlike the first run, this is
+     now the FULL stated window -- the old ENTRY_CUTOFF_HOUR=17 narrowing
+     existed only because entries after ~16:00 had no time left before
+     the old 17:30 EOD; with EOD removed, that reasoning no longer
+     applies. Once a position is open, it is monitored on EVERY
+     subsequent H1 bar regardless of session hours (SL/TP can trigger
+     any time the market is open), not just during the entry window.
   4. SL = the swing low (BUY) / swing high (SELL) over the last
      SL_LOOKBACK H1 bars (grid: 3/5/8), ending at the signal bar.
      TP = 2x the SL distance (2:1 reward:risk).
-  5. EOD close ~17:30 UTC if neither SL nor TP is hit. H1 data can't
-     express a 17:30 mid-bar exit exactly, so the 17:00-18:00 bar's
-     Open/Close midpoint is used (same approximation used in
-     src/ny_open_breakout_backtest.py, for consistency).
-  6. Only one trade per day per pair -- once a trade is opened, no
-     further signals are scanned for the rest of that day.
+  5. NO same-day forced close. Positions run to natural SL/TP across
+     multiple days. The ONLY forced exit is Friday at 20:00 UTC (weekend
+     gap protection) -- checked BEFORE that bar's own SL/TP, so it
+     preempts same-bar price action, and closed at that bar's Open since
+     20:00 falls exactly on an H1 boundary (no approximation needed,
+     unlike the old 17:30 mid-bar case).
+  6. Only one OPEN POSITION at a time per pair -- generalizes the first
+     run's "one trade per day" now that a position can span multiple
+     days (there's no longer a clean daily boundary to count against).
 
 Data: core/data_loader.get_bars() -- CSV-backed on this Mac, identical
 MT5 path on the VPS.
@@ -45,7 +63,10 @@ chosen by looking at forward-test results):
      logic (H1-approximated -- the live class uses M15; only H1 CSV data
      is in scope for this task) on the same GBPJPY data, and compare its
      daily P&L series against the #1-ranked h4_trend_pullback config.
-  6. Print an honest verdict.
+     (LondonBreakout's own logic is UNCHANGED from the first run -- only
+     h4_trend_pullback's engine changed.)
+  6. Print an honest verdict, plus the SL/TP/FRIDAY_CLOSE exit-reason
+     breakdown for direct comparison against the first run's numbers.
 """
 
 from __future__ import annotations
@@ -73,16 +94,10 @@ H4_SMA_SLOW      = 200
 H4_BAR_HOURS     = 4
 
 SESSION_START_HOUR = 8         # London/NY session filter: 08:00-21:00 UTC
-SESSION_END_HOUR   = 21
-EOD_HOUR            = 17       # 17:00-18:00 H1 bar approximates the 17:30 EOD close
-# A new entry after ~16:00 UTC has under 90 minutes before the 17:30 EOD
-# close forces it shut -- barely enough for SL/TP to develop. Rather than
-# silently allow (and mostly waste) entries between 17:00-21:00, entries
-# are scanned only through the bar BEFORE the EOD hour. This is an
-# explicit, documented interpretation of combining the stated session
-# filter (08:00-21:00) with the stated EOD close (17:30), not a silent
-# narrowing of the spec.
-ENTRY_CUTOFF_HOUR   = EOD_HOUR  # scan H1 bars with hour in [8, 17)
+SESSION_END_HOUR   = 21        # full window now -- no EOD-driven narrowing
+FRIDAY_CLOSE_HOUR  = 20        # weekend gap protection -- forced exit at
+                                # Friday >= 20:00 UTC, mirrors the live
+                                # bot's is_friday_close_time() exactly
 
 RISK_REWARD      = 2.0
 
@@ -183,113 +198,145 @@ def compute_swings(h1: pd.DataFrame) -> tuple[dict, dict]:
 
 
 # ── 4. BACKTEST ENGINE -- H4 Trend Pullback ──────────────────────────────────
+#
+# Continuous multi-day walk (replaces the old day-by-day loop). At most one
+# open position at a time: while flat, only bars inside the session window
+# are checked for a new entry; while a position is open, EVERY subsequent
+# bar (any hour, any day) is checked for SL/TP or the Friday 20:00 UTC
+# forced close, until it resolves.
 
-def run_backtest(h1_by_day: dict, ema_series: pd.Series, swing_low: pd.Series,
+def run_backtest(h1: pd.DataFrame, ema_series: pd.Series, swing_low: pd.Series,
                  swing_high: pd.Series, h4_trend: pd.DataFrame, close_times: np.ndarray,
-                 depth_pips: float, h4_threshold_pips: float, trading_days: list
-                 ) -> tuple[list, list]:
+                 depth_pips: float, h4_threshold_pips: float,
+                 start_ts: datetime, end_ts: datetime) -> tuple[list, list]:
     trades  = []
     balance = START_BALANCE
     equity  = [START_BALANCE]
 
-    for day in trading_days:
-        day_bars = h1_by_day.get(day)
-        if day_bars is None or day_bars.empty:
-            continue
+    bars = h1[(h1.index >= start_ts) & (h1.index <= end_ts)]
+    open_pos = None   # dict: direction, entry, sl, tp, entry_ts
 
-        session_bars = day_bars[(day_bars.index.hour >= SESSION_START_HOUR) &
-                                (day_bars.index.hour < ENTRY_CUTOFF_HOUR)]
-        if session_bars.empty:
-            continue
+    for ts, bar in bars.iterrows():
+        if open_pos is not None:
+            direction = open_pos['direction']
+            sl_price  = open_pos['sl']
+            tp_price  = open_pos['tp']
 
-        for ts, bar in session_bars.iterrows():
-            trend, diff_pips = get_h4_trend_at(h4_trend, close_times, ts)
-            if trend == 0 or diff_pips < h4_threshold_pips:
-                continue
-
-            ema_val = ema_series.loc[ts]
-            if np.isnan(ema_val):
-                continue
-
-            low, high, close = bar['Low'], bar['High'], bar['Close']
-
-            if trend == 1:
-                if not (low <= ema_val + depth_pips * PIP_SIZE and close > ema_val):
-                    continue
-                direction = 'BUY'
+            if ts.weekday() == 4 and ts.hour >= FRIDAY_CLOSE_HOUR:
+                # Weekend gap protection: forced exit at 20:00 UTC exactly,
+                # checked before this bar's own price action so it can't be
+                # preempted by a same-bar SL/TP that would only occur later
+                # within the hour.
+                exit_price, exit_reason = bar['Open'], 'FRIDAY_CLOSE'
             else:
-                if not (high >= ema_val - depth_pips * PIP_SIZE and close < ema_val):
-                    continue
-                direction = 'SELL'
-
-            entry  = close
-            sw_low  = swing_low.loc[ts]
-            sw_high = swing_high.loc[ts]
-
-            if direction == 'BUY':
-                if np.isnan(sw_low) or sw_low >= entry:
-                    continue
-                sl_price = sw_low
-                tp_price = entry + RISK_REWARD * (entry - sl_price)
-            else:
-                if np.isnan(sw_high) or sw_high <= entry:
-                    continue
-                sl_price = sw_high
-                tp_price = entry - RISK_REWARD * (sl_price - entry)
-
-            scan_bars = day_bars[(day_bars.index > ts) & (day_bars.index.hour <= EOD_HOUR)]
-            exit_price = exit_reason = exit_ts = None
-            for ts2, bar2 in scan_bars.iterrows():
+                exit_price = exit_reason = None
                 if direction == 'BUY':
-                    sl_hit = bar2['Low']  <= sl_price
-                    tp_hit = bar2['High'] >= tp_price
+                    sl_hit = bar['Low']  <= sl_price
+                    tp_hit = bar['High'] >= tp_price
                 else:
-                    sl_hit = bar2['High'] >= sl_price
-                    tp_hit = bar2['Low']  <= tp_price
+                    sl_hit = bar['High'] >= sl_price
+                    tp_hit = bar['Low']  <= tp_price
                 if sl_hit:                       # conservative tie-break: SL wins
                     exit_price, exit_reason = sl_price, 'SL'
                 elif tp_hit:
                     exit_price, exit_reason = tp_price, 'TP'
-                if exit_price is not None:
-                    exit_ts = ts2
-                    break
 
-            if exit_price is None:
-                eod_bar = day_bars[day_bars.index.hour == EOD_HOUR]
-                if not eod_bar.empty:
-                    b = eod_bar.iloc[0]
-                    exit_price = (b['Open'] + b['Close']) / 2   # ~17:30 approximation
-                    exit_ts    = eod_bar.index[0]
-                elif not scan_bars.empty:
-                    exit_price = scan_bars.iloc[-1]['Close']
-                    exit_ts    = scan_bars.index[-1]
-                else:
-                    exit_price = bar['Close']
-                    exit_ts    = ts
-                exit_reason = 'EOD'
+            if exit_price is not None:
+                entry = open_pos['entry']
+                pips = ((exit_price - entry) if direction == 'BUY'
+                        else (entry - exit_price)) / PIP_SIZE
+                pnl  = round(pips * PIP_VALUE, 2)
+                balance = round(balance + pnl, 2)
 
-            pips = ((exit_price - entry) if direction == 'BUY'
-                    else (entry - exit_price)) / PIP_SIZE
-            pnl  = round(pips * PIP_VALUE, 2)
-            balance = round(balance + pnl, 2)
+                trades.append({
+                    'Date'        : str(ts.date()),   # realized (exit) date
+                    'Direction'   : direction,
+                    'Entry Time'  : open_pos['entry_ts'].strftime('%Y-%m-%d %H:%M'),
+                    'Exit Time'   : ts.strftime('%Y-%m-%d %H:%M'),
+                    'Entry Price' : round(entry, 5),
+                    'Exit Price'  : round(exit_price, 5),
+                    'SL'          : round(sl_price, 5),
+                    'TP'          : round(tp_price, 5),
+                    'Pips'        : round(pips, 1),
+                    'P&L (USD)'   : pnl,
+                    'Balance'     : balance,
+                    'Exit Reason' : exit_reason,
+                    'Result'      : 'WIN' if pnl > 0 else ('LOSS' if pnl < 0 else 'BE'),
+                    'Hold Hours'  : round((ts - open_pos['entry_ts']).total_seconds() / 3600, 1),
+                })
+                equity.append(balance)
+                open_pos = None
+            continue   # closed or still open -- either way, no new entry on this bar
 
-            trades.append({
-                'Date'        : str(day),
-                'Direction'   : direction,
-                'Entry Time'  : ts.strftime('%H:%M'),
-                'Exit Time'   : exit_ts.strftime('%H:%M'),
-                'Entry Price' : round(entry, 5),
-                'Exit Price'  : round(exit_price, 5),
-                'SL'          : round(sl_price, 5),
-                'TP'          : round(tp_price, 5),
-                'Pips'        : round(pips, 1),
-                'P&L (USD)'   : pnl,
-                'Balance'     : balance,
-                'Exit Reason' : exit_reason,
-                'Result'      : 'WIN' if pnl > 0 else ('LOSS' if pnl < 0 else 'BE'),
-            })
-            equity.append(balance)
-            break   # only one trade per day per pair
+        # -- flat: only consider a new entry during the session window --
+        if not (SESSION_START_HOUR <= ts.hour < SESSION_END_HOUR):
+            continue
+
+        trend, diff_pips = get_h4_trend_at(h4_trend, close_times, ts)
+        if trend == 0 or diff_pips < h4_threshold_pips:
+            continue
+
+        ema_val = ema_series.loc[ts]
+        if np.isnan(ema_val):
+            continue
+
+        low, high, close = bar['Low'], bar['High'], bar['Close']
+
+        if trend == 1:
+            if not (low <= ema_val + depth_pips * PIP_SIZE and close > ema_val):
+                continue
+            direction = 'BUY'
+        else:
+            if not (high >= ema_val - depth_pips * PIP_SIZE and close < ema_val):
+                continue
+            direction = 'SELL'
+
+        entry   = close
+        sw_low  = swing_low.loc[ts]
+        sw_high = swing_high.loc[ts]
+
+        if direction == 'BUY':
+            if np.isnan(sw_low) or sw_low >= entry:
+                continue
+            sl_price = sw_low
+            tp_price = entry + RISK_REWARD * (entry - sl_price)
+        else:
+            if np.isnan(sw_high) or sw_high <= entry:
+                continue
+            sl_price = sw_high
+            tp_price = entry - RISK_REWARD * (sl_price - entry)
+
+        open_pos = {'direction': direction, 'entry': entry, 'sl': sl_price,
+                    'tp': tp_price, 'entry_ts': ts}
+
+    # Period boundary: force-close any position still open when the window
+    # ends. Should be rare -- Friday closes happen every week, so this only
+    # fires if the window itself ends before the next Friday 20:00 does.
+    if open_pos is not None and len(bars) > 0:
+        last_ts, last_bar = bars.index[-1], bars.iloc[-1]
+        direction, entry = open_pos['direction'], open_pos['entry']
+        exit_price = last_bar['Close']
+        pips = ((exit_price - entry) if direction == 'BUY'
+                else (entry - exit_price)) / PIP_SIZE
+        pnl  = round(pips * PIP_VALUE, 2)
+        balance = round(balance + pnl, 2)
+        trades.append({
+            'Date'        : str(last_ts.date()),
+            'Direction'   : direction,
+            'Entry Time'  : open_pos['entry_ts'].strftime('%Y-%m-%d %H:%M'),
+            'Exit Time'   : last_ts.strftime('%Y-%m-%d %H:%M'),
+            'Entry Price' : round(entry, 5),
+            'Exit Price'  : round(exit_price, 5),
+            'SL'          : round(open_pos['sl'], 5),
+            'TP'          : round(open_pos['tp'], 5),
+            'Pips'        : round(pips, 1),
+            'P&L (USD)'   : pnl,
+            'Balance'     : balance,
+            'Exit Reason' : 'END_OF_DATA',
+            'Result'      : 'WIN' if pnl > 0 else ('LOSS' if pnl < 0 else 'BE'),
+            'Hold Hours'  : round((last_ts - open_pos['entry_ts']).total_seconds() / 3600, 1),
+        })
+        equity.append(balance)
 
     return trades, equity
 
@@ -480,6 +527,37 @@ def daily_pnl_series(trades: list, all_days: list) -> pd.Series:
 
 # ── 7. REPORTING ──────────────────────────────────────────────────────────
 
+def print_exit_breakdown(trades: list, label: str) -> None:
+    """
+    % of trades hitting SL vs TP vs FRIDAY_CLOSE (vs END_OF_DATA, if any)
+    -- the direct before/after comparison against the first (same-day EOD)
+    run's diagnosis: 52% SL / 27% EOD (avg +$3.65, near-breakeven) / 21% TP.
+    """
+    w = 78
+    print("-" * w)
+    print(f"  EXIT REASON BREAKDOWN -- {label}")
+    print("-" * w)
+    if not trades:
+        print("  no trades")
+        print("-" * w + "\n")
+        return
+
+    df    = pd.DataFrame(trades)
+    total = len(df)
+    print(f"  {'Reason':<14} {'Count':>7} {'% of trades':>12} {'Avg P&L':>10} {'Avg hold (h)':>13}")
+    for reason in ['SL', 'TP', 'FRIDAY_CLOSE', 'END_OF_DATA']:
+        sub = df[df['Exit Reason'] == reason]
+        n = len(sub)
+        if n == 0 and reason == 'END_OF_DATA':
+            continue   # only show this row if it actually happened
+        pct      = n / total * 100 if total else 0.0
+        avg_pnl  = sub['P&L (USD)'].mean() if n else 0.0
+        avg_hold = sub['Hold Hours'].mean() if n else 0.0
+        print(f"  {reason:<14} {n:>7} {pct:>11.1f}% ${avg_pnl:>+9.2f} {avg_hold:>13.1f}")
+    print(f"  {'TOTAL':<14} {total:>7}")
+    print("-" * w + "\n")
+
+
 def print_grid_summary(results: list) -> None:
     w = 110
     print("=" * w)
@@ -521,18 +599,18 @@ def print_top3(results: list) -> list:
     return top3
 
 
-def print_forward_test(top3: list, h1_by_day: dict, emas: dict, swing_lows: dict,
-                       swing_highs: dict, h4_trend: pd.DataFrame, close_times: np.ndarray,
-                       forward_days: list) -> list:
+def print_forward_test(top3: list, h1: pd.DataFrame, emas: dict, swing_lows: dict,
+                       swing_highs: dict, h4_trend: pd.DataFrame, close_times: np.ndarray
+                       ) -> list:
     w = 100
     print("=" * w)
     print("  FORWARD TEST -- top 3 training configs, run ONCE on unseen 2022-07 to 2024-12 data")
     print("=" * w)
     forward_results = []
     for i, r in enumerate(top3, 1):
-        trades, equity = run_backtest(h1_by_day, emas[r['ema']], swing_lows[r['sl_lookback']],
+        trades, equity = run_backtest(h1, emas[r['ema']], swing_lows[r['sl_lookback']],
                                       swing_highs[r['sl_lookback']], h4_trend, close_times,
-                                      r['depth'], r['h4_threshold'], forward_days)
+                                      r['depth'], r['h4_threshold'], FORWARD_START, FORWARD_END)
         s = compute_stats(trades, equity)
         passed, reasons = passes_criteria(s)
         forward_results.append({**r, 'forward_stats': s, 'forward_passed': passed,
@@ -550,9 +628,9 @@ def print_forward_test(top3: list, h1_by_day: dict, emas: dict, swing_lows: dict
     return forward_results
 
 
-def print_walk_forward(top3: list, h1_by_day: dict, emas: dict, swing_lows: dict,
-                       swing_highs: dict, h4_trend: pd.DataFrame, close_times: np.ndarray,
-                       all_days: list) -> None:
+def print_walk_forward(top3: list, h1: pd.DataFrame, emas: dict, swing_lows: dict,
+                       swing_highs: dict, h4_trend: pd.DataFrame, close_times: np.ndarray
+                       ) -> None:
     periods = sub_periods(DATA_START, DATA_END, 6)
     w = 100
     print("=" * w)
@@ -566,10 +644,9 @@ def print_walk_forward(top3: list, h1_by_day: dict, emas: dict, swing_lows: dict
         print("  " + "-" * (w - 2))
         any_negative = False
         for p_start, p_end in periods:
-            period_days = [d for d in all_days if p_start.date() <= d <= p_end.date()]
-            trades, equity = run_backtest(h1_by_day, emas[r['ema']], swing_lows[r['sl_lookback']],
+            trades, equity = run_backtest(h1, emas[r['ema']], swing_lows[r['sl_lookback']],
                                           swing_highs[r['sl_lookback']], h4_trend, close_times,
-                                          r['depth'], r['h4_threshold'], period_days)
+                                          r['depth'], r['h4_threshold'], p_start, p_end)
             s = compute_stats(trades, equity)
             flag = ''
             if s['trades'] > 0 and s['pnl'] < 0:
@@ -602,18 +679,18 @@ def print_comparison(forward_results: list) -> None:
     print("=" * w)
 
 
-def print_correlation(top3: list, h1_by_day: dict, emas: dict, swing_lows: dict,
-                      swing_highs: dict, h4_trend: pd.DataFrame, close_times: np.ndarray,
-                      h1: pd.DataFrame, h4: pd.DataFrame, all_days: list) -> None:
+def print_correlation(top3: list, h1: pd.DataFrame, h1_by_day: dict, emas: dict,
+                      swing_lows: dict, swing_highs: dict, h4_trend: pd.DataFrame,
+                      close_times: np.ndarray, h4: pd.DataFrame, all_days: list) -> None:
     w = 90
     print("=" * w)
     print("  CORRELATION vs LONDONBREAKOUT (H1-approximated) -- full 2020-2024, GBPJPY")
     print("=" * w)
 
     best = top3[0]
-    pb_trades, pb_equity = run_backtest(h1_by_day, emas[best['ema']], swing_lows[best['sl_lookback']],
+    pb_trades, pb_equity = run_backtest(h1, emas[best['ema']], swing_lows[best['sl_lookback']],
                                         swing_highs[best['sl_lookback']], h4_trend, close_times,
-                                        best['depth'], best['h4_threshold'], all_days)
+                                        best['depth'], best['h4_threshold'], DATA_START, DATA_END)
     pb_stats = compute_stats(pb_trades, pb_equity)
 
     h4_trend_lb = compute_h4_trend_lb(h4)
@@ -691,6 +768,9 @@ def print_verdict(forward_results: list, correlation_note: str = "") -> None:
 def main() -> None:
     h1, h4 = fetch_data()
 
+    # h1_by_day / all_days are still needed for the (unchanged) LondonBreakout
+    # comparison engine and for daily_pnl_series() in the correlation section.
+    # h4_trend_pullback's own engine now walks h1 directly by timestamp range.
     h1_by_day = {d: g for d, g in h1.groupby(h1.index.date)}
     all_days  = sorted(d for d in h1_by_day if pd.Timestamp(d).weekday() < 5)
     train_days   = [d for d in all_days if TRAIN_START.date() <= d <= TRAIN_END.date()]
@@ -708,36 +788,43 @@ def main() -> None:
     # -- 1. Grid search on TRAIN data only ---------------------------------
     results = []
     n_configs = len(EMA_PERIODS) * len(PULLBACK_DEPTHS) * len(H4_THRESHOLDS) * len(SL_LOOKBACKS)
-    print(f"Running grid search: {n_configs} configs on {len(train_days)} training days ...")
+    print(f"Running grid search: {n_configs} configs on {TRAIN_START.date()} to {TRAIN_END.date()} ...")
     for ema_p in EMA_PERIODS:
         for depth in PULLBACK_DEPTHS:
             for thr in H4_THRESHOLDS:
                 for sl_lb in SL_LOOKBACKS:
                     trades, equity = run_backtest(
-                        h1_by_day, emas[ema_p], swing_lows[sl_lb], swing_highs[sl_lb],
-                        h4_trend, close_times, depth, thr, train_days)
+                        h1, emas[ema_p], swing_lows[sl_lb], swing_highs[sl_lb],
+                        h4_trend, close_times, depth, thr, TRAIN_START, TRAIN_END)
                     stats = compute_stats(trades, equity)
                     passed, reasons = passes_criteria(stats)
                     results.append({
                         'ema': ema_p, 'depth': depth, 'h4_threshold': thr, 'sl_lookback': sl_lb,
                         'stats': stats, 'passed': passed, 'fail_reasons': reasons,
+                        'trades': trades,
                     })
     print("Grid search complete.\n")
 
     print_grid_summary(results)
     top3 = print_top3(results)
 
+    print_exit_breakdown(top3[0]['trades'],
+                         "#1 TRAINING config (2020-01 to 2022-06) -- compare against "
+                         "the first run's 52% SL / 27% EOD / 21% TP")
+
     # -- 2. Forward test top 3 (run once) ----------------------------------
-    forward_results = print_forward_test(top3, h1_by_day, emas, swing_lows, swing_highs,
-                                         h4_trend, close_times, forward_days)
+    forward_results = print_forward_test(top3, h1, emas, swing_lows, swing_highs,
+                                         h4_trend, close_times)
+
+    print_exit_breakdown(forward_results[0]['forward_trades'],
+                         "#1 config, FORWARD TEST (2022-07 to 2024-12)")
 
     # -- 3. Walk-forward across the full 2020-2024 range --------------------
-    print_walk_forward(top3, h1_by_day, emas, swing_lows, swing_highs, h4_trend,
-                       close_times, all_days)
+    print_walk_forward(top3, h1, emas, swing_lows, swing_highs, h4_trend, close_times)
 
     # -- 4. Correlation vs LondonBreakout ------------------------------------
-    print_correlation(top3, h1_by_day, emas, swing_lows, swing_highs, h4_trend,
-                      close_times, h1, h4, all_days)
+    print_correlation(top3, h1, h1_by_day, emas, swing_lows, swing_highs, h4_trend,
+                      close_times, h4, all_days)
 
     # -- 5. Final comparison + verdict --------------------------------------
     print_comparison(forward_results)

@@ -2,38 +2,47 @@
 H4TrendPullback -- H4 trend filter, pullback-and-reclaim entry on the H1
 50 EMA, session-filtered to London/NY hours.
 
-VALIDATION STATUS: FAILED. See src/h4_trend_pullback_backtest.py for the
-full grid search / walk-forward / forward-test report on GBPJPY H1,
-2020-2024. Summary:
-  - ALL 81 training-grid configs (2020-01 to 2022-06) were net LOSERS
-    (profit factor < 1.0) -- this isn't a narrow miss on the pass
-    criteria, the raw signal has negative edge across the entire grid.
-    Best training config: EMA=20, depth=15p, H4_thr=30p, SL_lookback=5
-    bars -- win rate 36.2%, profit factor 0.83, max DD 8.9%, P&L -$728.55
-    over 412 trades.
-  - Top 3 training configs stay net-losing on unseen 2022-07 to 2024-12
-    forward data (profit factor 0.89 / 0.93 / 0.89), so there is no
-    train/forward gap to speak of -- the strategy simply doesn't work in
-    either period.
-  - SPECIFIC FAILURE MODE (from the exit-reason breakdown of the #1
-    config on training data, 412 trades): 213 trades (52%) hit the full
-    stop loss (avg -$17.76), 112 trades (27%) got force-closed at the
-    17:30 EOD cutoff averaging only +$3.65 (essentially breakeven --
-    barely any follow-through), and just 87 trades (21%) reached the
-    full 2:1 take-profit (avg +$30.40). The pullback-and-reclaim pattern
-    does not have enough room to run 2x its stop distance before EOD
-    closes it out -- losers get cut in full, winners get cut short.
-  - Walk-forward across 6 equal sub-periods of the full 2020-2024 range:
-    4 of 6 periods net negative for the #1 config -- no consistent edge
-    through time either.
-  - Correlation vs LondonBreakout on the same GBPJPY data: weakly
-    positive (Pearson r = 0.19 on daily P&L, 67% win/loss agreement on
-    days both traded) -- not that it matters much here, since this
-    strategy loses money on its own regardless of what it's paired with.
-  - Conclusion: NOT validated for live trading in this form. A fix would
-    need to either loosen the EOD cutoff (give winners more room) or
-    tighten the TP multiple to something the EOD window can realistically
-    reach -- both are logic changes outside the scope of this backtest.
+VALIDATION STATUS: FAILED (rerun with same-day EOD removed -- verdict
+unchanged). See src/h4_trend_pullback_backtest.py for the full grid
+search / walk-forward / forward-test report on GBPJPY H1, 2020-2024.
+
+  RUN 1 (same-day 17:30 UTC EOD close, matching the bot's old daily
+  close): ALL 81 training configs were net losers (PF < 1.0). Exit
+  breakdown of the #1 config (412 trades): 52% hit SL, 27% got cut at
+  EOD averaging only +$3.65 (near breakeven), 21% reached full TP.
+  Diagnosis: EOD was truncating winners before they could run.
+
+  RUN 2 (this rerun -- same-day EOD removed entirely, positions run to
+  natural SL/TP with only a Friday 20:00 UTC weekend close, matching the
+  live bot's actual current close behavior post-migration): the
+  diagnosis from Run 1 was directionally CONFIRMED -- TP hit rate did
+  improve (21% -> 26-27%), and Friday-close exits now average positive
+  (+$13-15 vs +$3.65 before). 11/81 training configs are now net PF > 1.0
+  (vs 0/81 before); best training PF rose to 1.07 (EMA=20, depth=15p,
+  H4_thr=30p, SL_lookback=8 bars -- note SL_lookback=8, the widest grid
+  option, now dominates the top ranks: wider stops survive the longer
+  hold times better on training data).
+
+  BUT removing the daily circuit-breaker also removed protection against
+  multi-day adverse excursions, and this cost MORE than the TP
+  improvement gained: max drawdown roughly DOUBLED (8.5% train -> 17.6%
+  forward, vs 8.9% -> 11.3% in Run 1), and forward-test P&L went from
+  modestly negative (-$649 to -$673 in Run 1) to sharply negative
+  (-$1,087 to -$1,346 in Run 2) for the same top-3-ranked configs. Train
+  PF 1.07 collapsed to forward PF 0.90 -- a WORSE train/forward gap than
+  Run 1's. Walk-forward across 6 sub-periods: 3-5 of 6 periods net
+  negative depending on config (Run 1: 4/6). Correlation vs
+  LondonBreakout unchanged (~0.17, weakly correlated) -- moot, since the
+  strategy still loses money forward-tested on its own.
+
+  CONCLUSION: the EOD close was A cause of underperformance, not THE
+  cause. Removing it trades one failure mode (winners cut short) for a
+  larger one (uncapped drawdown on adverse multi-day holds) with no net
+  improvement to the out-of-sample verdict. NOT validated for live
+  trading in either form. A real fix would need to change the entry
+  signal or SL construction itself (e.g. a hold-time cap short of a full
+  week, or volatility-scaled SL instead of a raw swing lookback) --
+  outside the scope of this backtest.
 
 Strategy logic (parameters below are the best-ranked TRAINING config --
 documented for reproducibility, not as a recommendation to trade them):
@@ -47,20 +56,19 @@ documented for reproducibility, not as a recommendation to trade them):
        bearish trend -> SELL when a bar's High >= EMA - PULLBACK_DEPTH_PIPS
                          AND that same bar's Close  < EMA
   3. Session filter: only bars in SESSION_START_HOUR-SESSION_END_HOUR UTC
-     (08:00-21:00) are eligible signal bars; combined with the 17:30 EOD
-     close, entries are only scanned through the bar before EOD_HOUR (see
-     ENTRY_CUTOFF_HOUR).
+     (08:00-21:00, the full window) are eligible ENTRY bars. Once a
+     position is open it is monitored on every subsequent bar regardless
+     of session hours, since SL/TP/Friday-close can trigger any time.
   4. SL = the swing low (BUY) / swing high (SELL) over the last
-     SL_LOOKBACK H1 bars (default 5), ending at the signal bar.
+     SL_LOOKBACK H1 bars (default 8), ending at the signal bar.
      TP = RISK_REWARD x the SL distance (default 2:1).
   5. EOD close: Friday-only, at 20:00 UTC (handled by the orchestrator,
      not this class -- see main_agent.py step_friday_close(), same as
-     LondonBreakout. Mon-Thu, positions run to natural SL/TP. NOTE: this
-     strategy's own EMA/ENTRY_CUTOFF_HOUR parameters below were validated
-     against the OLD daily-17:30-close backtest -- see VALIDATION STATUS
-     above; they were not re-validated against the new Friday-only close
-     and this strategy remains FAILED/inactive either way.)
-  6. Only one trade per day per pair.
+     LondonBreakout). Mon-Thu, positions run to natural SL/TP -- this is
+     now what both the live bot AND this class's own backtest assume
+     (re-validated in Run 2, see VALIDATION STATUS above; still FAILED).
+  6. Only one OPEN POSITION at a time per pair (generalizes "one trade
+     per day" now that a position can span multiple days).
 """
 
 from __future__ import annotations
@@ -99,8 +107,8 @@ def _log() -> logging.Logger:
         log.setLevel(logging.INFO)
     return log
 
-# -- strategy parameters (best-ranked TRAINING config -- NOT validated, see
-#    module docstring)
+# -- strategy parameters (best-ranked TRAINING config from the Run 2
+#    Friday-only-close backtest -- NOT validated, see module docstring)
 H4_SMA_FAST          = 50
 H4_SMA_SLOW          = 200
 H4_BARS_NEEDED       = 220
@@ -109,12 +117,14 @@ H4_THRESHOLD_PIPS    = 30       # min |SMA50-SMA200| separation required
 
 EMA_PERIOD           = 20
 PULLBACK_DEPTH_PIPS  = 15       # how close a wick must get to the EMA to "touch" it
-SL_LOOKBACK          = 5        # H1 bars for the swing-low/high SL
+SL_LOOKBACK          = 8        # H1 bars for the swing-low/high SL (was 5 under the
+                                 # old same-day-EOD backtest; 8 -- the widest grid
+                                 # option -- now ranks best, since wider stops
+                                 # survive the longer multi-day hold times better)
 
 SESSION_START_HOUR   = 8        # London/NY session filter: 08:00-21:00 UTC
-SESSION_END_HOUR     = 21
-EOD_HOUR             = 17       # 17:00-18:00 H1 bar approximates the 17:30 EOD close
-ENTRY_CUTOFF_HOUR    = EOD_HOUR # entries scanned only through the bar before EOD
+SESSION_END_HOUR     = 21       # full window -- no EOD-driven narrowing (positions
+                                 # now run multi-day; see module docstring Run 2)
 
 RISK_REWARD          = 2.0      # TP = RISK_REWARD x SL distance
 
@@ -123,8 +133,8 @@ REQUIRED_KEYS = ['pair', 'strategy', 'active', 'timeframe', 'risk_percent',
 
 
 def _session_window(utc_time: datetime) -> bool:
-    """London/NY session filter, capped before EOD (see ENTRY_CUTOFF_HOUR)."""
-    return SESSION_START_HOUR <= utc_time.hour < ENTRY_CUTOFF_HOUR
+    """London/NY entry session filter (08:00-21:00 UTC)."""
+    return SESSION_START_HOUR <= utc_time.hour < SESSION_END_HOUR
 
 
 class H4TrendPullback(BaseStrategy):
@@ -138,7 +148,12 @@ class H4TrendPullback(BaseStrategy):
         self.validate_config(pair_config)
         self.pip_size = 0.01 if 'JPY' in self.pair else 0.0001
         self._h1_history: list = []   # rolling H1 bars, oldest-first, for swing SL lookback
-        self._last_trade_date = None  # enforces one trade per day per pair
+        self._last_trade_date = None  # same-day dedup only (see check_pullback below) --
+                                       # the authoritative "one position at a time" gate is
+                                       # the orchestrator's own open_trades check in
+                                       # main_agent.py step_check_breakouts(), same as
+                                       # every other strategy; this is a same-day belt-
+                                       # and-braces check, not a cross-day position tracker
 
     # ------------------------------------------------------------------
     # BaseStrategy required interface
@@ -295,7 +310,7 @@ class H4TrendPullback(BaseStrategy):
             return no_signal(f'bar at {bar_time.hour:02d}:00 UTC outside session window')
 
         if self._last_trade_date == bar_time.date():
-            return no_signal('already traded this pair today (one trade/day limit)')
+            return no_signal('already fired a signal for this pair today (same-day dedup)')
 
         closes = np.array([b['close'] for b in bars])
         ema = closes[0]
