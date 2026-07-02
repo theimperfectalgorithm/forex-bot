@@ -1,0 +1,11 @@
+# Forex Bot MCP server dependencies.
+# `mcp` (the official Model Context Protocol Python SDK) is required for
+# this server to actually speak the real MCP protocol so Claude Desktop/
+# Code can connect to it -- python-dotenv comes in as its own transitive
+# dependency and is used directly here to load mcp/.env.
+fastapi==0.139.0
+uvicorn==0.49.0
+pandas==2.3.3
+MetaTrader5==5.0.5735
+mcp==1.28.1
+python-dotenv==1.2.2
