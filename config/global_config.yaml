@@ -1,7 +1,9 @@
 global:
   max_open_trades: 3
   news_filter: false
-  eod_close_utc: "17:30"
+  friday_close_utc: "20:00"
+  eod_close_enabled: false
+  friday_close_enabled: true
   demo_mode: true
   log_level: INFO
   hard_floor_pct: 0.10

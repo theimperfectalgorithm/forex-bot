@@ -7,4 +7,4 @@ risk_percent: 0.25
 sl_pips: 50
 tp_pips: 100
 session: london_ny_overlap
-eod_close_utc: "17:30"
+friday_close: true

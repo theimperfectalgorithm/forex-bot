@@ -23,7 +23,7 @@ NOT_IMPLEMENTED_MSG = (
 )
 
 REQUIRED_KEYS = ['pair', 'strategy', 'active', 'timeframe', 'risk_percent',
-                  'sl_pips', 'tp_pips', 'h4_filter', 'session', 'eod_close_utc']
+                  'sl_pips', 'tp_pips', 'h4_filter', 'session', 'friday_close']
 
 
 class AsianBreakout(BaseStrategy):

@@ -17,8 +17,9 @@ Strategy logic (unchanged from the original):
      -- Bar CLOSE must be beyond the Asian range (not just a wick)
      -- Direction must match H4 trend
      -- Overshoot must be <= 20 pips past the range level
-  4. EOD close at 17:30 UTC (handled by the orchestrator, not this class --
-     see main_agent.py step_eod_close(), unchanged)
+  4. EOD close: Friday-only, at 20:00 UTC (handled by the orchestrator,
+     not this class -- see main_agent.py step_friday_close(). Mon-Thu,
+     positions run to natural SL/TP; no daily forced close.)
 """
 
 from __future__ import annotations
@@ -67,7 +68,7 @@ MIN_ASIAN_RANGE_PIPS = 10     # skip days with tiny ranges
 MAX_OVERSHOOT_PIPS   = 20     # cancel if breakout bar closed > 20p past level
 
 REQUIRED_KEYS = ['pair', 'strategy', 'active', 'timeframe', 'risk_percent',
-                  'h4_filter', 'session', 'eod_close_utc']
+                  'h4_filter', 'session', 'friday_close']
 
 
 class LondonBreakout(BaseStrategy):

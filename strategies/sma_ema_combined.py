@@ -95,7 +95,7 @@ MAX_EMA_DAILY     = 2
 MAX_EURUSD_CONSEC = 2
 
 REQUIRED_KEYS = ['pair', 'strategy', 'active', 'timeframe', 'h1_filter',
-                  'risk_percent', 'sl_pips', 'tp_pips', 'session', 'eod_close_utc']
+                  'risk_percent', 'sl_pips', 'tp_pips', 'session', 'friday_close']
 
 
 class SmaEmaCombined(BaseStrategy):

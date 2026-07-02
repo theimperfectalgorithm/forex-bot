@@ -468,20 +468,26 @@ def _get_closed_deal(ticket: int, log: logging.Logger) -> dict | None:
 
 
 def monitor_positions(open_trades: list, log: logging.Logger,
-                       eod_tickets: set | None = None) -> tuple:
+                       friday_tickets: set | None = None) -> tuple:
     """
     Check all tracked open trades.
       - Moves SL to breakeven when >= BREAKEVEN_PIPS in profit
       - Detects positions that have been closed by MT5 (SL/TP hit)
 
     Args:
-        open_trades : list of trade dicts from daily_state['open_trades']
-        log         : logger passed from orchestrator
-        eod_tickets : tickets force-closed by the 17:30 UTC EOD close --
-                      their exit_reason is reported as 'EOD_CLOSE' instead
-                      of 'MANUAL/OTHER' (MT5 records both as a client-side
-                      close, so the trigger type can't be told apart from
-                      the deal alone)
+        open_trades    : list of trade dicts from daily_state['open_trades']
+        log            : logger passed from orchestrator
+        friday_tickets : tickets force-closed by the Friday 20:00 UTC close --
+                         their exit_reason is reported as 'FRIDAY_CLOSE'
+                         instead of 'MANUAL/OTHER' (MT5 records both as a
+                         client-side close, so the trigger type can't be
+                         told apart from the deal alone).
+
+                         Historical trades closed before this change may
+                         still carry the legacy 'EOD_CLOSE' label from the
+                         old daily 17:30 UTC forced close -- that label is
+                         never rewritten, it just won't be produced for any
+                         new close.
 
     Returns:
         (still_open, newly_closed)
@@ -491,7 +497,7 @@ def monitor_positions(open_trades: list, log: logging.Logger,
     if not _connect(log):
         return open_trades, []
 
-    eod_tickets = eod_tickets or set()
+    friday_tickets = friday_tickets or set()
 
     still_open   = []
     newly_closed = []
@@ -507,8 +513,8 @@ def monitor_positions(open_trades: list, log: logging.Logger,
             # Position no longer open -- find exit details
             exit_info = _get_closed_deal(ticket, log)
             if exit_info:
-                if ticket in eod_tickets and exit_info['exit_reason'] == 'MANUAL/OTHER':
-                    exit_info['exit_reason'] = 'EOD_CLOSE'
+                if ticket in friday_tickets and exit_info['exit_reason'] == 'MANUAL/OTHER':
+                    exit_info['exit_reason'] = 'FRIDAY_CLOSE'
 
                 closed_trade = {**trade, **exit_info}
                 newly_closed.append(closed_trade)

@@ -357,6 +357,65 @@ except Exception as e:
     import traceback; traceback.print_exc()
 
 # ---------------------------------------------------------------------------
+# TEST 9 -- Friday-only close scheduling (core.session_filter)
+# ---------------------------------------------------------------------------
+section("TEST 9 -- Friday-only close scheduling (replaces the old daily EOD close)")
+
+try:
+    from datetime import datetime as _dt, timezone as _tz
+    from core.session_filter import is_friday_close_time, is_friday
+
+    # Fixed reference dates (verified below, not assumed):
+    #   2026-07-03 is a Friday
+    #   2026-07-02 is a Thursday (non-Friday)
+    friday    = _dt(2026, 7, 3, tzinfo=_tz.utc)
+    thursday  = _dt(2026, 7, 2, tzinfo=_tz.utc)
+
+    dates_ok = friday.weekday() == 4 and thursday.weekday() == 3
+    mark = PASS if dates_ok else FAIL
+    print(f"  {mark}  Reference dates confirmed  "
+          f"(2026-07-03 weekday={friday.weekday()}, 2026-07-02 weekday={thursday.weekday()})")
+
+    # 9a: Friday close fires correctly on Friday at 20:00 UTC
+    fires_at_2000 = is_friday_close_time(friday.replace(hour=20, minute=0))
+    mark = PASS if fires_at_2000 else FAIL
+    print(f"  {mark}  Friday 20:00 UTC  ->  is_friday_close_time() == True")
+
+    # 9a (continued): still true a few minutes after 20:00 (>= semantics,
+    # so a delayed/skipped 15-min poll cycle doesn't miss the trigger)
+    fires_at_2005 = is_friday_close_time(friday.replace(hour=20, minute=5))
+    mark = PASS if fires_at_2005 else FAIL
+    print(f"  {mark}  Friday 20:05 UTC  ->  is_friday_close_time() == True  (>= semantics)")
+
+    # 9b: NO close fires on a non-Friday at 17:30 UTC (the OLD daily EOD
+    # close time -- must NOT fire anymore, on any day, Friday or not)
+    no_fire_thu_1730 = is_friday_close_time(thursday.replace(hour=17, minute=30))
+    mark = PASS if not no_fire_thu_1730 else FAIL
+    print(f"  {mark}  Thursday 17:30 UTC  ->  is_friday_close_time() == False  "
+          f"(old daily EOD time, non-Friday)")
+
+    # 9c: NO close fires on Friday itself at the old 17:30 EOD time --
+    # confirms the trigger moved to 20:00, not just "any time on Friday"
+    no_fire_fri_1730 = is_friday_close_time(friday.replace(hour=17, minute=30))
+    mark = PASS if not no_fire_fri_1730 else FAIL
+    print(f"  {mark}  Friday 17:30 UTC  ->  is_friday_close_time() == False  "
+          f"(before the 20:00 trigger)")
+
+    # 9d: NO close fires on a non-Friday even at/after 20:00 UTC
+    no_fire_thu_2000 = is_friday_close_time(thursday.replace(hour=20, minute=0))
+    mark = PASS if not no_fire_thu_2000 else FAIL
+    print(f"  {mark}  Thursday 20:00 UTC  ->  is_friday_close_time() == False  "
+          f"(right time, wrong day)")
+
+    # 9e: is_friday() helper agrees with is_friday_close_time()'s day gate
+    mark = PASS if (is_friday(friday) and not is_friday(thursday)) else FAIL
+    print(f"  {mark}  is_friday() correctly identifies Friday vs Thursday")
+
+except Exception as e:
+    print(f"  {FAIL}  {e}")
+    import traceback; traceback.print_exc()
+
+# ---------------------------------------------------------------------------
 # TEST 7 -- Orchestrator 2-minute live run
 # ---------------------------------------------------------------------------
 section("TEST 7 -- Orchestrator (2-minute live run)")

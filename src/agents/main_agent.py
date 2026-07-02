@@ -12,6 +12,12 @@ Daily schedule (UTC):
   12:45  Agent 2 -- Strategy prep for NY session
   13:00-20:45  Orchestrator -- NY M15 bar checks
   Every 15 min  Orchestrator -- Monitor open positions, apply breakeven
+  Thu 19:00  Orchestrator -- swap-fee WARNING log if positions are open
+             overnight into Friday (informational only, does not close
+             anything)
+  Fri 20:00  Orchestrator -- force-close all open positions before the
+             weekend (Mon-Thu: NO forced close -- positions run to their
+             natural SL/TP)
   21:00  Agent 5 -- Daily reporting
 
 Run from repo root:
@@ -39,6 +45,7 @@ from agent_risk      import run as run_risk
 from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
 from core.pair_manager import get_active_pairs
+from core.session_filter import is_friday_close_time
 
 # -- directory paths
 DATA_DIR   = BASE_DIR / 'data'
@@ -67,8 +74,17 @@ T_NY_START       = 13 * 60 +  0    # 13:00
 T_NY_END         = 20 * 60 + 45    # 20:45  (last bar check)
 T_EURUSD_START   = 12 * 60 +  0    # 12:00  EURUSD dual-strategy window open
 T_EURUSD_END     = 15 * 60 + 45    # 15:45  EURUSD dual-strategy window close
-T_EOD_CLOSE      = 17 * 60 + 30    # 17:30  Force-close all remaining positions
+T_THURSDAY_SWAP_WARNING = 19 * 60 + 0   # 19:00 Thu -- swap-fee WARNING log only
+T_FRIDAY_CLOSE   = 20 * 60 +  0    # 20:00 Fri  -- force-close all remaining positions
 T_REPORT         = 21 * 60 +  0    # 21:00
+
+# NOTE ON REMOVED DAILY EOD CLOSE: positions used to be force-closed every
+# day at 17:30 UTC regardless of day. That is gone -- Mon-Thu, positions
+# now run to their natural SL/TP with no forced close at all. Only Friday
+# still force-closes, at 20:00 UTC (see step_friday_close() /
+# is_friday_close_time()). Sat/Sun: no trading, no scheduled steps fire
+# (the market itself is closed, so breakout/pullback checks simply find
+# no data -- this was already true before this change).
 
 
 # ---------------------------------------------------------------------------
@@ -125,9 +141,11 @@ def _fresh_state(today: str) -> dict:
         'daily_pnl'        : 0.0,
         'consec_losses'    : {p: 0 for p in PAIRS},
         'pair_paused'      : {p: False for p in PAIRS},
-        # end-of-day forced close
-        'eod_close_done'     : False,
-        'eod_closed_tickets' : [],
+        # Friday-only forced close (positions run to natural SL/TP Mon-Thu)
+        'friday_close_done'     : False,
+        'friday_closed_tickets' : [],
+        # Thursday evening swap-fee awareness (log-only, fires once)
+        'thursday_swap_warned'  : False,
         # EURUSD dual-strategy state (SMA Run 1 + EMA Pullback)
         'eurusd': {
             'sma_daily_trades'    : 0,
@@ -141,20 +159,39 @@ def _fresh_state(today: str) -> dict:
 
 
 def load_state() -> dict:
-    """Load today's state from disk; create fresh state if date changed."""
+    """
+    Load today's state from disk; create fresh state if date changed.
+
+    Positions can now stay open across multiple calendar days (only
+    Friday force-closes), so open_trades must survive the daily state
+    reset -- otherwise a position still open in MT5 would silently drop
+    out of tracking the moment the date rolls over (no more breakeven
+    checks, no more close detection) even though the broker still holds
+    it. This is the same code path used on a mid-week restart, so it
+    covers both cases: a live rollover at UTC midnight, and a fresh
+    process start days after the position was opened.
+    """
     today = datetime.now(timezone.utc).date().isoformat()
     STATE_DIR.mkdir(parents=True, exist_ok=True)
 
+    carried_open_trades = None
     if STATE_FILE.exists():
         try:
             with open(STATE_FILE, encoding='utf-8') as f:
                 state = json.load(f)
             if state.get('date') == today:
                 return state
+            # Date has rolled over (or this is a restart on a later day) --
+            # carry open positions forward. Everything else (daily
+            # counters, session flags, pause state) is genuinely per-day
+            # and should reset.
+            carried_open_trades = state.get('open_trades', [])
         except Exception:
-            pass  # corrupt file -- start fresh
+            pass  # corrupt file -- start fresh, nothing to carry forward
 
     state = _fresh_state(today)
+    if carried_open_trades:
+        state['open_trades'] = carried_open_trades
     save_state(state)
     return state
 
@@ -222,14 +259,16 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
         if state[f'{session}_traded'][pair]:
             continue
 
-        # For NY: skip if a London position for this pair is still open
-        if session == 'ny':
-            london_open = any(
-                t['symbol'] == pair and t['session'] == 'London'
-                for t in state['open_trades']
-            )
-            if london_open:
-                continue
+        # Skip if this pair already has an open position -- one position
+        # per pair at a time. This used to only need checking for NY vs a
+        # same-day London position (EOD guaranteed everything was flat by
+        # the next session); now that positions can run for multiple days
+        # with no daily forced close, a pair's *_traded flags reset fresh
+        # every morning even if yesterday's (or last week's) position on
+        # that same pair is still open, so the check must be general.
+        pair_open = any(t['symbol'] == pair for t in state['open_trades'])
+        if pair_open:
+            continue
 
         # Skip if pair paused after 2 consecutive losses
         if state['pair_paused'][pair]:
@@ -408,6 +447,24 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             )
             continue
 
+        # Guard 3b: concurrent open positions for this strategy. daily_val
+        # above only counts entries opened TODAY; now that positions can
+        # run for multiple days with no daily forced close, a position
+        # opened yesterday (or earlier) doesn't show up in today's fresh
+        # daily counter but is still open. Cap on currently-open positions
+        # for this strategy directly so the pre-existing "at most 2
+        # concurrent SMA / 2 concurrent EMA" intent still holds.
+        open_for_strategy = sum(
+            1 for t in state['open_trades']
+            if t['symbol'] == EURUSD_PAIR and t.get('strategy') == strategy
+        )
+        if open_for_strategy >= MAX_DAILY:
+            log.info(
+                f"EURUSD {strategy}: BLOCKED -- {open_for_strategy} position(s) "
+                f"already open for this strategy (limit {MAX_DAILY})"
+            )
+            continue
+
         log.info(f"EURUSD {strategy}: all guards passed -- calling risk agent")
 
         # Guard 4: risk agent
@@ -470,8 +527,8 @@ def step_monitor_positions(state: dict, log: logging.Logger):
     if not state['open_trades']:
         return
     try:
-        eod_tickets = set(state.get('eod_closed_tickets', []))
-        still_open, newly_closed = monitor_positions(state['open_trades'], log, eod_tickets)
+        friday_tickets = set(state.get('friday_closed_tickets', []))
+        still_open, newly_closed = monitor_positions(state['open_trades'], log, friday_tickets)
         state['open_trades'] = still_open
 
         for trade in newly_closed:
@@ -531,30 +588,45 @@ def step_report(state: dict, log: logging.Logger):
         state['report_ran'] = True   # don't retry tonight
 
 
-def step_eod_close(state: dict, log: logging.Logger):
-    """17:30 UTC daily forced exit — close any position still open."""
-    state.setdefault('eod_closed_tickets', [])
+def step_friday_close(state: dict, log: logging.Logger):
+    """
+    Friday 20:00 UTC forced exit -- close any position still open before
+    the weekend. Mon-Thu, this never runs; positions run to their natural
+    SL/TP instead (see the module docstring / T_FRIDAY_CLOSE).
+    """
+    state.setdefault('friday_closed_tickets', [])
 
     if not state['open_trades']:
-        log.info("EOD close: no open trades")
-        state['eod_close_done'] = True
+        log.info("Friday close: no open trades")
+        state['friday_close_done'] = True
         return
 
-    log.info(f"EOD CLOSE  17:30 UTC -- force-closing {len(state['open_trades'])} trade(s)")
+    log.info(f"FRIDAY CLOSE  20:00 UTC -- force-closing {len(state['open_trades'])} trade(s)")
     for trade in list(state['open_trades']):
         ticket = trade['ticket']
         symbol = trade['symbol']
         try:
-            ok = close_trade(ticket, symbol, comment='EOD_CLOSE')
+            ok = close_trade(ticket, symbol, comment='FRIDAY_CLOSE')
             if ok:
-                log.info(f"EOD CLOSE sent  {symbol}  ticket={ticket}")
-                if ticket not in state['eod_closed_tickets']:
-                    state['eod_closed_tickets'].append(ticket)
+                log.info(f"FRIDAY CLOSE sent  {symbol}  ticket={ticket}")
+                if ticket not in state['friday_closed_tickets']:
+                    state['friday_closed_tickets'].append(ticket)
             else:
-                log.error(f"EOD CLOSE FAILED  {symbol}  ticket={ticket} -- will retry next cycle")
+                log.error(f"FRIDAY CLOSE FAILED  {symbol}  ticket={ticket} -- will retry next cycle")
         except Exception as e:
-            log.error(f"EOD CLOSE error  {symbol}  ticket={ticket}: {e}", exc_info=True)
-    state['eod_close_done'] = True
+            log.error(f"FRIDAY CLOSE error  {symbol}  ticket={ticket}: {e}", exc_info=True)
+    state['friday_close_done'] = True
+
+
+def step_thursday_swap_warning(state: dict, log: logging.Logger):
+    """
+    Thursday 19:00 UTC -- log-only swap-fee awareness check. Does not
+    close or modify any position; just flags that positions are about to
+    sit open into the weekend rollover.
+    """
+    if state['open_trades']:
+        log.warning("Positions open overnight into Friday — monitor swap conditions")
+    state['thursday_swap_warned'] = True
 
 
 # ---------------------------------------------------------------------------
@@ -643,9 +715,18 @@ def main():
                 step_report(state, log)
                 save_state(state)
 
-            # -- 17:30  EOD forced close (runs once; monitor_positions records exit this cycle)
-            if t >= T_EOD_CLOSE and not state.get('eod_close_done', False) and state['open_trades']:
-                step_eod_close(state, log)
+            # -- Thu 19:00  Swap-fee warning (log-only; fires once per Thursday)
+            if (now.weekday() == 3 and t >= T_THURSDAY_SWAP_WARNING
+                    and not state.get('thursday_swap_warned', False)):
+                step_thursday_swap_warning(state, log)
+                save_state(state)
+
+            # -- Fri 20:00  Friday forced close (runs once; monitor_positions
+            #    records the exit next cycle). Mon-Thu this never fires --
+            #    positions run to their natural SL/TP with no daily forced
+            #    close at all.
+            if is_friday_close_time(now) and not state.get('friday_close_done', False):
+                step_friday_close(state, log)
                 save_state(state)
 
             # -- Always: monitor open positions for breakeven / closures

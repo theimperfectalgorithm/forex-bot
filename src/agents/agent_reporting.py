@@ -13,6 +13,13 @@ Responsibilities:
 
 Reads the orchestrator's daily_state dict directly (no MT5 calls needed
 for reporting -- all data is already in state, except for live balance).
+
+Exit reason labels: the TRADE DETAIL section below prints whatever
+exit_reason string agent_execution.py already assigned to each trade
+(SL, TP, FRIDAY_CLOSE, MANUAL/OTHER, UNKNOWN, or -- on trades closed
+before the daily-EOD-close removal -- the legacy EOD_CLOSE label). This
+module does no reason-specific branching, so both old and new labels
+display correctly with no code path needed for either one.
 """
 
 import csv

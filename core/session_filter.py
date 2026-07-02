@@ -2,7 +2,7 @@
 Session window predicates -- single source of truth for the UTC trading
 session boundaries that were previously duplicated/scattered across
 agent_strategy.py (LONDON_START/END, NY_START/END, EURUSD_SESSION_START/END,
-ASIAN_END_HOUR) and main_agent.py (T_LONDON_*, T_NY_*, T_EOD_CLOSE).
+ASIAN_END_HOUR) and main_agent.py (T_LONDON_*, T_NY_*, T_FRIDAY_CLOSE).
 
 These functions reproduce the exact hour boundaries used by the original
 agent_strategy.py session checks inside check_breakout() and
@@ -15,6 +15,11 @@ choice), which is a different concern from "is this UTC time inside the
 London/NY/Asian session" used by the strategy logic itself. Merging them
 would change orchestrator polling behavior, which is out of scope for a
 no-logic-change refactor.
+
+EOD close history: this module previously exposed is_eod_close_time(), a
+daily 17:30 UTC forced-close check. That was replaced by a Friday-only
+close (is_friday_close_time() below) -- positions now run to their natural
+SL/TP Monday-Thursday, and are only force-closed ahead of the weekend.
 """
 
 from __future__ import annotations
@@ -53,14 +58,28 @@ def london_ny_overlap(utc_time: datetime) -> bool:
     return OVERLAP_START_HOUR <= utc_time.hour < OVERLAP_END_HOUR
 
 
-def is_eod_close_time(utc_time: datetime, eod_time_str: str) -> bool:
+FRIDAY_CLOSE_HOUR   = 20   # 20:00 UTC
+FRIDAY_CLOSE_MINUTE = 0
+
+
+def is_friday(utc_time: datetime) -> bool:
+    """True if utc_time falls on a Friday (UTC calendar day)."""
+    return utc_time.weekday() == 4
+
+
+def is_friday_close_time(utc_time: datetime) -> bool:
     """
-    True once utc_time is at or past the EOD close time of day given as
-    "HH:MM" (e.g. "17:30"). Matches the >= semantics main_agent.py uses for
-    T_EOD_CLOSE (fires once and stays true for the rest of the day, gated
-    by the orchestrator's own eod_close_done flag).
+    True only if utc_time is a Friday AND at or past 20:00 UTC.
+
+    Uses >= semantics (fires and stays true for the rest of Friday) rather
+    than an exact-minute match, matching the same robustness pattern the
+    old EOD check used: the orchestrator only polls on 15-minute
+    boundaries, so a >= comparison means a delayed or skipped poll cycle
+    still catches the trigger. The orchestrator's own friday_close_done
+    flag (reset fresh each day) ensures this only actually fires once.
     """
-    hh, mm = eod_time_str.split(':')
-    eod_minutes = int(hh) * 60 + int(mm)
-    now_minutes = utc_time.hour * 60 + utc_time.minute
-    return now_minutes >= eod_minutes
+    if not is_friday(utc_time):
+        return False
+    now_minutes   = utc_time.hour * 60 + utc_time.minute
+    close_minutes = FRIDAY_CLOSE_HOUR * 60 + FRIDAY_CLOSE_MINUTE
+    return now_minutes >= close_minutes

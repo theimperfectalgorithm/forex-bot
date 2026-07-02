@@ -5,4 +5,4 @@ timeframe: M15
 risk_percent: 1.0
 h4_filter: true
 session: london_ny
-eod_close_utc: "17:30"
+friday_close: true

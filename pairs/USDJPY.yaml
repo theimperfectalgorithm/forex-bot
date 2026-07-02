@@ -7,4 +7,4 @@ sl_pips: 40
 tp_pips: 80
 h4_filter: true
 session: asian
-eod_close_utc: "17:30"
+friday_close: true
