@@ -17,21 +17,25 @@ place orders or modify any bot file/state.
 
 from __future__ import annotations
 
+# Load mcp/.env by absolute path (relative to this file, not the process's
+# cwd) before anything else that might reference MCP_API_KEY.
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / '.env')
+
 import argparse
 import asyncio
 import json
 import os
 import sys
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 import httpx
-from dotenv import load_dotenv
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
 MCP_DIR = Path(__file__).parent
-load_dotenv(MCP_DIR / '.env')
 
 PASS = "[PASS]"
 FAIL = "[FAIL]"

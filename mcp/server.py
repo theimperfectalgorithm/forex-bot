@@ -28,6 +28,14 @@ data/logs/mcp_access.log.
 
 from __future__ import annotations
 
+# Load mcp/.env by absolute path (relative to this file, not the process's
+# cwd) before anything else -- this must run before any MCP_API_KEY
+# reference, and cwd isn't reliable when launched via Task Scheduler.
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / '.env')
+
 import csv
 import json
 import logging
@@ -37,9 +45,7 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
@@ -63,7 +69,6 @@ import backtest_engine  # mcp/backtest_engine.py (same directory)
 
 # ── API key ──────────────────────────────────────────────────────────────
 
-load_dotenv(MCP_DIR / '.env')
 API_KEY = os.environ.get('MCP_API_KEY')
 if not API_KEY:
     raise RuntimeError(
