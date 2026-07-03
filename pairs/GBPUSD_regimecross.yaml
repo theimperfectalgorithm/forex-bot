@@ -1,8 +1,10 @@
 pair: GBPUSD
-strategy: consolidation_breakout
+strategy: regime_filtered_ma_cross
 active: false
 timeframe: H1
 risk_percent: 0.5
+sl_pips: 30
+tp_pips: 60
 h4_filter: true
-session: london_ny
+session: london
 friday_close: true

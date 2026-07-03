@@ -1,11 +1,11 @@
-pair: AUDUSD
+pair: GBPUSD
 strategy: volatility_regime_trend
 active: false
 timeframe: H1
 risk_percent: 0.5
-sl_pips: 25
-tp_pips: 50
-atr_min_pips: 7
+sl_pips: 30
+tp_pips: 60
+atr_min_pips: 10
 h4_filter: false
 session: london_ny
 friday_close: true

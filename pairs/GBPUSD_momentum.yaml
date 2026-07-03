@@ -1,10 +1,9 @@
-pair: USDCAD
-strategy: regime_filtered_ma_cross
+pair: GBPUSD
+strategy: momentum_divergence_session
 active: false
 timeframe: H1
 risk_percent: 0.5
 sl_pips: 25
 tp_pips: 50
-h4_filter: true
-session: london
+session: london_ny_overlap
 friday_close: true
