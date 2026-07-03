@@ -1,0 +1,9 @@
+pair: NZDUSD
+strategy: momentum_divergence_session
+active: false
+timeframe: H1
+risk_percent: 0.5
+sl_pips: 20
+tp_pips: 40
+session: london_ny_overlap
+friday_close: true

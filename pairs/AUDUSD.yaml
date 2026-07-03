@@ -1,0 +1,11 @@
+pair: AUDUSD
+strategy: volatility_regime_trend
+active: false
+timeframe: H1
+risk_percent: 0.5
+sl_pips: 25
+tp_pips: 50
+atr_min_pips: 7
+h4_filter: false
+session: london_ny
+friday_close: true
