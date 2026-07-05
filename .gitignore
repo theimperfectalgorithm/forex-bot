@@ -26,3 +26,4 @@ Thumbs.db
 
 # Claude Code settings
 .claude/
+data/strategy_matrix_trades/
