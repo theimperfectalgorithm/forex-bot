@@ -1,0 +1,13 @@
+# CADJPY Asian-range breakout -- validated 2026-07-05 (phase 6):
+# IS PF 1.15 / DD 7.7%; OOS PF 1.38 / +$6,424 at 0.5% risk. The JPY-cross
+# session thesis replicating on a pair it was never tuned on. ACTIVE for
+# demo forward-testing alongside GBPJPY_asianrange.
+pair: CADJPY
+strategy: asian_range_breakout
+active: true
+timeframe: H1
+risk_percent: 0.5
+h4_filter: false
+tp_multiplier: 2.0
+session: asian
+friday_close: true

@@ -1,0 +1,20 @@
+﻿# GBPJPY Asian-hours reversion (AMR) -- DEMO FORWARD-TEST candidate.
+# Phase-3b in-sample-selected params (data/phase3b_results.csv):
+#   IS PF 1.16, DD 4.53%, 68% profitable months; OOS PF 2.03 (+$17,529).
+# Edge is regime-strengthening (strong only Jul25-Jun26) -- forward-test
+# 2-3 months on demo before any challenge use. ACTIVATED 2026-07-05:
+# the orchestrator now polls @amr pairs 00:00-06:00 UTC
+# (step_check_asian_reversion) and force-closes at 07:00
+# (step_asian_time_exit). Note: the phase-7 BE@0.75R exit refinement is
+# backtest-only for now -- live breakeven handling stays with
+# monitor_positions' existing 25-pip logic until demo data justifies it.
+pair: GBPJPY
+strategy: asian_hours_reversion
+active: true
+timeframe: M15
+risk_percent: 0.25
+z_threshold: 2.5
+sl_multiplier: 1.25
+entry_end_hour: 4
+session: asian
+friday_close: true

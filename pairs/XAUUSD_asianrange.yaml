@@ -1,0 +1,15 @@
+# XAUUSD Asian-range breakout -- PROVISIONAL slot (phase 7, 2026-07-05):
+# IS PF 1.45 / DD 2.9% but OOS only flat-positive (PF 1.05, +$607).
+# Small 0.25% risk; adds the safe-haven/metals leg to the book. Review
+# after 2-3 months of demo -- drop if live tracks the flat OOS year.
+# Gold conventions: pip = $0.10; min_range_pips 30 (per the backtest).
+pair: XAUUSD
+strategy: asian_range_breakout
+active: true
+timeframe: H1
+risk_percent: 0.25
+h4_filter: false
+tp_multiplier: 1.5
+min_range_pips: 30
+session: asian
+friday_close: true

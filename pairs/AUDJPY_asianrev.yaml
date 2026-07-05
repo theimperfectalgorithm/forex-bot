@@ -1,0 +1,14 @@
+﻿# AUDJPY Asian-hours reversion (AMR) -- DEMO FORWARD-TEST candidate.
+# Phase-3b in-sample-selected params (data/phase3b_results.csv):
+#   IS PF 1.17, DD 4.80%, 60% profitable months; OOS PF 1.23 (+$8,616).
+# Same regime caveat and orchestrator prerequisites as GBPJPY_asianrev.
+pair: AUDJPY
+strategy: asian_hours_reversion
+active: true
+timeframe: M15
+risk_percent: 0.25
+z_threshold: 2.0
+sl_multiplier: 1.5
+entry_end_hour: 4
+session: asian
+friday_close: true

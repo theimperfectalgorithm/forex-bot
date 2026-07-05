@@ -1,6 +1,9 @@
+# DEACTIVATED 2026-07-05: failed the walk-forward audit (IS PF 0.82 /
+# OOS PF 0.77, DD 39.6%; see data/phase6_portfolio_report.txt).
+# EURJPY continues trading via EURJPY_asianrev.yaml (AMR).
 pair: EURJPY
 strategy: london_breakout
-active: true
+active: false
 timeframe: M15
 risk_percent: 1.0
 h4_filter: true

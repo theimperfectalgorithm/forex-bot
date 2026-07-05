@@ -1,3 +1,7 @@
+# backtest FAILED 2026-07-04: in-sample PASSED (PF 1.71, DD 2.65%, 60.9%
+# profitable months) but out-of-sample collapsed (PF 0.63, -$4,080), and
+# the OOS failure held across every parameter neighbourhood tested --
+# an overfit, not bad luck. Do NOT activate. See data/phase2_results.csv.
 pair: GBPUSD
 strategy: momentum_divergence_session
 active: false

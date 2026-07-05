@@ -1,3 +1,6 @@
+# backtest FAILED 2026-07-04 (walk-forward matrix): IS PF 0.94, DD 10.7%;
+# OOS PF 0.73, -$7,313. 0 in-sample passes on any of the 9 majors.
+# Do NOT activate. See data/strategy_matrix_results.csv.
 pair: GBPUSD
 strategy: regime_filtered_ma_cross
 active: false

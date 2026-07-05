@@ -1,0 +1,31 @@
+# GBPJPY Asian-range breakout -- the ONLY strategy-pair combination that
+# passed the full walk-forward validation on 2026-07-04 (95 combinations
+# tested across src/strategy_matrix_backtest.py and
+# src/phase2_meanrev_arb_search.py; results in data/strategy_matrix_results.csv
+# and data/phase2_results.csv).
+#
+# Validated variant: tp_multiplier 2.0, NO H4 filter, 0.5% risk:
+#   In-sample  (Jul 2023 - Jun 2025): 132 trades, PF 1.45, max DD 4.67%,
+#                                     62.5% profitable months
+#   Out-of-sample (Jul 2025 - Jun 2026): 63 trades, PF 1.19, +$3,676 on
+#                                        $100k at 0.5% risk, max DD 5.54%
+#   Robustness: OOS-positive across the whole TP grid (1.5/2.0/2.5 ->
+#   PF 1.15/1.19/1.25), i.e. not a single lucky parameter cell.
+#
+# ACTIVATED 2026-07-05 for demo forward-testing after both orchestrator
+# blockers were closed: the strategy cache now keys ARB entries as
+# 'GBPJPY@arb' (no collision with london_breakout GBPJPY.yaml), and
+# agent_strategy._breakout_pairs() dispatches AsianRangeBreakout through
+# the same prepare/check_breakout path as LondonBreakout. Prep rides the
+# 07:45 London prep; breakout bars (hour 7/8) close at 08:00/09:00 inside
+# the London polling window. Compare demo results to the walk-forward
+# stats above before using on a challenge account.
+pair: GBPJPY
+strategy: asian_range_breakout
+active: true
+timeframe: H1
+risk_percent: 0.5
+h4_filter: false
+tp_multiplier: 2.0
+session: asian
+friday_close: true

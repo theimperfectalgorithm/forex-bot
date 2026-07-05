@@ -1,0 +1,14 @@
+﻿# EURJPY Asian-hours reversion (AMR) -- DEMO FORWARD-TEST candidate.
+# Phase-3b in-sample-selected params (data/phase3b_results.csv):
+#   IS PF 1.10, DD 9.24%, 60% profitable months; OOS PF 1.47 (+$15,734).
+# Same regime caveat and orchestrator prerequisites as GBPJPY_asianrev.
+pair: EURJPY
+strategy: asian_hours_reversion
+active: true
+timeframe: M15
+risk_percent: 0.25
+z_threshold: 2.0
+sl_multiplier: 1.5
+entry_end_hour: 6
+session: asian
+friday_close: true

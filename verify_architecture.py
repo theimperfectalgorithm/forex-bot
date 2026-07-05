@@ -50,9 +50,15 @@ section("CHECK 1+2 -- Active pairs scan")
 
 active = get_active_pairs()
 active_names = sorted(name for name, _inst, _cfg in active)
-expected = sorted(['GBPJPY', 'EURJPY', 'EURUSD'])
+# The 2026-07-05 portfolio deployment (Book B+): london_breakout and
+# sma_ema_combined are DEACTIVATED (failed walk-forward audits); the
+# active book is asian_range_breakout on GBPJPY/CADJPY/XAUUSD ('@arb'
+# cache keys) + asian_hours_reversion on GBPJPY/EURJPY/AUDJPY/CADJPY
+# ('@amr' keys). GBPJPY and CADJPY each appear twice (two strategies).
+expected = sorted(['GBPJPY', 'GBPJPY', 'CADJPY', 'CADJPY',
+                   'EURJPY', 'AUDJPY', 'XAUUSD'])
 
-check("Active pairs == GBPJPY, EURJPY, EURUSD",
+check("Active pairs == Book B+ (ARB x3 + AMR x4; GBPJPY/CADJPY twice)",
       active_names == expected,
       f"got {active_names}")
 check("USDJPY NOT in active pairs (active: false)",
@@ -145,6 +151,14 @@ for name, inst, cfg in active:
         check(f"{name}: get_session_windows() includes 'london_ny_overlap' AND "
               f"session_filter.london_ny_overlap(13:30 UTC) == True",
               overlap_window_present and matches_filter)
+    elif cfg['strategy'] in ('asian_range_breakout', 'asian_hours_reversion'):
+        # 03:00 UTC -- inside the Asian session window (00:00-07:00)
+        asian_sample = datetime(2026, 1, 5, 3, 0, tzinfo=timezone.utc)
+        asian_window_present = any(w['name'] == 'asian' for w in windows)
+        matches_filter = sf.asian_session(asian_sample)
+        check(f"{name} ({cfg['strategy']}): get_session_windows() includes "
+              f"'asian' AND session_filter.asian_session(03:00 UTC) == True",
+              asian_window_present and matches_filter)
     else:
         check(f"{name}: unexpected strategy type {cfg['strategy']!r} in check 6", False)
 

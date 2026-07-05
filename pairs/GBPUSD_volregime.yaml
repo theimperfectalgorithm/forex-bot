@@ -1,3 +1,6 @@
+# backtest FAILED 2026-07-04 (walk-forward matrix): IS PF 0.93, DD 19.2%,
+# 44% profitable months; OOS PF 0.93, -$4,585. Failed on ALL 9 majors.
+# Do NOT activate. See data/strategy_matrix_results.csv.
 pair: GBPUSD
 strategy: volatility_regime_trend
 active: false

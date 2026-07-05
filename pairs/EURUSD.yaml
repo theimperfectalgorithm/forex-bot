@@ -1,6 +1,12 @@
+# DEACTIVATED 2026-07-05: re-validation (src/revalidate_eurusd_live.py)
+# found the SMA book structurally cannot fire (flat-filter vetoes its own
+# cross trigger -- 0 trades in 3 years) and the EMA book is a net loser
+# (435 trades, PF 0.95, -$3,717/3y). EURUSD/GBPUSD price signals are
+# settled dead ground (~450 tests, phases 1-5). Candidate replacement:
+# the Monday-drift strategy (phase 7), pending harness validation.
 pair: EURUSD
 strategy: sma_ema_combined
-active: true
+active: false
 timeframe: M15
 h1_filter: true
 risk_percent: 0.25

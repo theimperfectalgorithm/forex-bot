@@ -1,0 +1,13 @@
+# CADJPY Asian-hours reversion (AMR) -- phase 6 (2026-07-05):
+# IS PF 1.10 / OOS PF 1.35 (+$4,792 at 0.25%). Same regime caveat as the
+# other AMR pairs: demo-confirm before challenge use.
+pair: CADJPY
+strategy: asian_hours_reversion
+active: true
+timeframe: M15
+risk_percent: 0.25
+z_threshold: 2.0
+sl_multiplier: 1.5
+entry_end_hour: 4
+session: asian
+friday_close: true
