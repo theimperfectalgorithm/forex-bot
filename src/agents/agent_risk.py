@@ -4,10 +4,24 @@ Agent 3 -- Risk Management
 Called before every trade attempt.
 
 Checks (in order):
-  1. Hard floor -- is balance above $90,000?
+  1. Hard floor -- are balance AND equity above $90,000? (equity matters:
+     a large floating loss can breach the prop-firm floor before any
+     trade is closed, so balance alone is blind to it)
   2. Daily loss limit -- has the 5% ($5,000) daily cap been hit?
+     Two layers: (a) closed-trade daily_pnl (original check) and
+     (b) equity drawdown vs the day's first-seen equity anchor, with a
+     4% SOFT stop -- trading halts before the firm's 5% hard breach,
+     leaving room for open-position slippage.
   3. Consecutive losses -- has the 2-loss per-pair limit been hit today?
   4. News flag -- is a high-impact event flagged for this session?
+  5. Aggregate open risk -- sum of (entry -> SL) risk across all open
+     positions plus the new trade must stay under 3% of balance, so a
+     single bad day where every open position stops out cannot come
+     close to the 5% daily limit on its own. Any open position missing
+     an SL blocks new trades entirely.
+  6. Currency concentration -- max 2 open positions sharing one currency
+     (e.g. GBPJPY + EURJPY = 2 JPY exposures; a third JPY trade is
+     rejected as one adverse JPY move would hit all three at once).
 
 If all checks pass, calculates dynamic lot size:
   Risk per trade  = 1% of current balance (= 20% of 5% daily limit)
@@ -17,6 +31,8 @@ If all checks pass, calculates dynamic lot size:
 
 Returns APPROVED with lot size, or REJECTED with reason.
 """
+
+from __future__ import annotations
 
 import logging
 import sys
@@ -53,7 +69,13 @@ def _log() -> logging.Logger:
 # -- constants
 STARTING_BALANCE   = 100_000.00
 HARD_FLOOR         = 90_000.00
-MAX_DAILY_LOSS_PCT = 0.05        # 5%
+MAX_DAILY_LOSS_PCT = 0.05        # 5% -- the prop firm's hard daily limit
+DAILY_EQUITY_SOFT_STOP_PCT = 0.04  # halt NEW trades at -4% equity on the day,
+                                   # leaving a 1% buffer of open-position
+                                   # slippage before the firm's 5% breach
+MAX_TOTAL_OPEN_RISK_PCT = 0.03   # aggregate entry->SL risk across all open
+                                 # positions + the new trade, as pct of balance
+MAX_SAME_CURRENCY  = 2           # max open positions sharing one currency
 RISK_PER_TRADE_PCT = 0.01        # 1% of balance per trade (GBPJPY, EURJPY)
 EURUSD_RISK_PCT    = 0.0025      # 0.25% of balance per trade (EURUSD both strategies)
 MIN_LOT            = 0.01
@@ -83,7 +105,16 @@ def _pip_value_per_lot(symbol: str, log: logging.Logger) -> float:
         # Fallback: hardcoded approximations from backtest
         return 6.67 if 'JPY' in symbol else 10.00
 
-    pip_size   = 0.01   if 'JPY' in symbol else 0.0001
+    # gold: 1 'pip' = $0.10 (matches strategies + agent_execution PAIRS).
+    # Computed from contract size, NOT trade_tick_value -- MetaQuotes
+    # reports inconsistent tick values for metals when the market is
+    # closed (observed: tick_value 0.1 vs contract 100 oz). For a
+    # USD-quoted metal, pip value per lot = contract_size x pip_size
+    # exactly ($10 for 100 oz x $0.10).
+    if symbol.startswith('XAU'):
+        return info.trade_contract_size * 0.1
+
+    pip_size = 0.01 if 'JPY' in symbol else 0.0001
     tick_size  = info.trade_tick_size     # smallest price move
     tick_value = info.trade_tick_value    # value of one tick per lot in account currency
 
@@ -94,17 +125,68 @@ def _pip_value_per_lot(symbol: str, log: logging.Logger) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Portfolio-level risk helpers
+# ---------------------------------------------------------------------------
+
+def _open_risk_usd(log: logging.Logger) -> tuple:
+    """
+    Sum the worst-case loss (entry -> SL) across every open position, in
+    account currency. Returns (total_risk_usd, positions_without_sl).
+
+    A position with no SL has unbounded risk -- callers should treat
+    any positions_without_sl > 0 as a blocker for new trades.
+    """
+    positions = mt5.positions_get()
+    if positions is None or len(positions) == 0:
+        return 0.0, 0
+
+    total, no_sl = 0.0, 0
+    for p in positions:
+        if not p.sl:
+            no_sl += 1
+            continue
+        info = mt5.symbol_info(p.symbol)
+        if info is None or info.trade_tick_size == 0:
+            log.warning(f"  open-risk calc: no symbol_info for {p.symbol} -- "
+                        f"counting as unbounded")
+            no_sl += 1
+            continue
+        risk = (abs(p.price_open - p.sl) / info.trade_tick_size
+                * info.trade_tick_value * p.volume)
+        total += risk
+    return total, no_sl
+
+
+def _same_currency_count(symbol: str) -> int:
+    """Number of open positions sharing either currency with `symbol`
+    (e.g. for GBPJPY: any open *JPY* or *GBP* position counts)."""
+    positions = mt5.positions_get()
+    if positions is None:
+        return 0
+    base, quote = symbol[:3], symbol[3:6]
+    n = 0
+    for p in positions:
+        sym = p.symbol[:6]
+        if base in (sym[:3], sym[3:6]) or quote in (sym[:3], sym[3:6]):
+            n += 1
+    return n
+
+
+# ---------------------------------------------------------------------------
 # Lot size calculation
 # ---------------------------------------------------------------------------
 
 def _calc_lots(balance: float, sl_pips: float, symbol: str,
-               log: logging.Logger) -> float:
+               log: logging.Logger, risk_pct: float | None = None) -> float:
     """
     Lot size = risk_usd / (sl_pips x pip_value_per_lot)
     Clamped to [MIN_LOT, MAX_LOT].
-    EURUSD uses EURUSD_RISK_PCT (0.25%); other pairs use RISK_PER_TRADE_PCT (1%).
+    risk_pct: the strategy's own risk fraction (from its pair YAML
+    risk_percent), passed by the orchestrator. Fallback when None
+    preserves legacy behaviour: EURUSD 0.25%, others 1%.
     """
-    risk_pct  = EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT
+    if risk_pct is None:
+        risk_pct = EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT
     risk_usd  = balance * risk_pct
     pv        = _pip_value_per_lot(symbol, log)
     lots      = risk_usd / (sl_pips * pv) if sl_pips > 0 else MIN_LOT
@@ -119,7 +201,8 @@ def _calc_lots(balance: float, sl_pips: float, symbol: str,
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def run(symbol: str, signal: str, sl_pips: float, daily_state: dict) -> dict:
+def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
+        risk_pct: float | None = None) -> dict:
     """
     Called by the orchestrator before every trade.
 
@@ -152,16 +235,39 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict) -> dict:
         return reject("Could not read account info")
 
     balance = acct.balance
+    equity  = acct.equity
 
-    # -- 2. Hard floor check
+    # -- 2. Hard floor check (balance AND equity -- floating losses count)
     if balance <= HARD_FLOOR:
         return reject(f"Hard floor breached: balance ${balance:,.2f} <= ${HARD_FLOOR:,.0f}")
+    if equity <= HARD_FLOOR:
+        return reject(f"Hard floor breached on EQUITY: ${equity:,.2f} <= "
+                      f"${HARD_FLOOR:,.0f} (floating losses)")
 
-    # -- 3. Daily loss limit
+    # -- 3a. Daily loss limit (closed trades -- original check)
     daily_limit = balance * MAX_DAILY_LOSS_PCT
     daily_pnl   = daily_state.get('daily_pnl', 0.0)
     if daily_pnl <= -daily_limit:
         return reject(f"Daily loss limit hit: ${daily_pnl:,.2f} (limit -${daily_limit:,.0f})")
+
+    # -- 3b. Daily EQUITY drawdown soft stop (includes floating P&L).
+    # Anchor = first equity seen today. daily_state is rebuilt fresh at each
+    # UTC date rollover, so the anchor resets daily. Anchored at the first
+    # risk call of the day rather than exactly 00:00 -- if equity has RISEN
+    # since midnight this is stricter than the firm's rule (anchor is
+    # higher), never looser than measuring from midnight balance would be
+    # in a losing day, because losses only lower equity below any anchor.
+    anchor = daily_state.get('day_start_equity')
+    if not anchor:
+        daily_state['day_start_equity'] = equity
+        anchor = equity
+    equity_dd = (anchor - equity) / anchor if anchor > 0 else 0.0
+    if equity_dd >= DAILY_EQUITY_SOFT_STOP_PCT:
+        return reject(
+            f"Daily equity soft stop: equity ${equity:,.2f} is "
+            f"{equity_dd*100:.2f}% below today's anchor ${anchor:,.2f} "
+            f"(soft stop {DAILY_EQUITY_SOFT_STOP_PCT*100:.0f}%, firm limit "
+            f"{MAX_DAILY_LOSS_PCT*100:.0f}%)")
 
     # -- 4. Consecutive losses for this pair
     consec = daily_state.get('consec_losses', {}).get(symbol, 0)
@@ -176,8 +282,30 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict) -> dict:
     if sl_pips <= 0:
         return reject(f"Invalid SL pips: {sl_pips}")
 
+    # -- 7. Aggregate open risk cap (portfolio-level)
+    open_risk, no_sl = _open_risk_usd(log)
+    if no_sl > 0:
+        return reject(f"{no_sl} open position(s) have NO stop loss -- "
+                      f"unbounded book risk, no new trades until fixed")
+    eff_pct   = risk_pct if risk_pct is not None else (
+        EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT)
+    new_risk  = balance * eff_pct
+    max_total = balance * MAX_TOTAL_OPEN_RISK_PCT
+    if open_risk + new_risk > max_total:
+        return reject(
+            f"Aggregate open risk cap: ${open_risk:,.0f} open + "
+            f"${new_risk:,.0f} new > ${max_total:,.0f} "
+            f"({MAX_TOTAL_OPEN_RISK_PCT*100:.0f}% of balance)")
+
+    # -- 8. Currency concentration cap
+    shared = _same_currency_count(symbol)
+    if shared >= MAX_SAME_CURRENCY:
+        return reject(
+            f"Currency concentration: {shared} open position(s) already "
+            f"share a currency with {symbol} (max {MAX_SAME_CURRENCY})")
+
     # -- All checks passed -- calculate lot size
-    lots = _calc_lots(balance, sl_pips, symbol, log)
+    lots = _calc_lots(balance, sl_pips, symbol, log, risk_pct)
 
     log.info(f"Risk APPROVED: {symbol} {signal}  {lots:.2f}L  "
              f"SL={sl_pips:.1f}p  balance=${balance:,.2f}")
