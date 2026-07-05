@@ -17,6 +17,7 @@ from strategies.mean_reversion import MeanReversion
 from strategies.volatility_regime_trend import VolatilityRegimeTrend
 from strategies.momentum_divergence_session import MomentumDivergenceSession
 from strategies.regime_filtered_ma_cross import RegimeFilteredMACross
+from strategies.asian_hours_reversion import AsianHoursReversion
 
 # -- stubs, not yet implemented, NOT activated in any pairs/*.yaml
 from strategies.ema_crossover import EmaCrossover
@@ -36,9 +37,27 @@ STRATEGY_REGISTRY = {
     "ny_open_breakout": NyOpenBreakout,
     "h4_trend_pullback": H4TrendPullback,
 
-    # -- fully implemented, NOT YET backtested (keep active: false until
-    # a walk-forward validation run is complete and passes criteria)
+    # -- VALIDATED 2026-07-04 on GBPJPY ONLY (tp_multiplier=2.0,
+    # h4_filter=false). ACTIVE since 2026-07-05 (demo forward-test) via
+    # the '@arb' dispatch path in agent_strategy. Other pairs FAILED.
     "asian_range_breakout": AsianRangeBreakout,
+
+    # -- FORWARD-TEST CANDIDATE (2026-07-05): all 36 backtest variants
+    # OOS-positive on GBPJPY/EURJPY/AUDJPY but IS PF 1.10-1.17 < 1.3 bar
+    # (regime-strengthening edge). Keep active: false until the
+    # orchestrator gains Asian-hours polling + a 07:00 time-exit step --
+    # see the class docstring for the integration spec.
+    "asian_hours_reversion": AsianHoursReversion,
+
+    # -- backtest-FAILED 2026-07-04 walk-forward matrix across all 9
+    # majors (data/strategy_matrix_results.csv, data/phase2_results.csv).
+    # Do not set active: true without a structural rework:
+    #   mean_reversion             : PF < 1.1 everywhere, incl. GBPUSD
+    #   volatility_regime_trend    : trades ~daily, IS PF 0.8-1.1, DD to 28%
+    #   momentum_divergence_session: lone GBPUSD in-sample pass collapsed
+    #                                out-of-sample (PF 0.63) across every
+    #                                parameter neighbourhood -- overfit
+    #   regime_filtered_ma_cross   : 0 IS passes; OOS negative on 8/9 pairs
     "mean_reversion": MeanReversion,
     "volatility_regime_trend": VolatilityRegimeTrend,
     "momentum_divergence_session": MomentumDivergenceSession,

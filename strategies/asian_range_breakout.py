@@ -72,7 +72,11 @@ OVERLAP_END_HOUR     = 9        # H1-resolution approximation of 08:30
                                  # (bars with hour in {7, 8})
 MIN_ASIAN_RANGE_PIPS = 10       # skip degenerate near-zero ranges
 
-TP_MULTIPLIER        = 1.5      # TP = TP_MULTIPLIER x Asian range distance
+TP_MULTIPLIER        = 1.5      # default TP = TP_MULTIPLIER x Asian range
+                                 # distance; override per pair via the YAML
+                                 # `tp_multiplier` key (the GBPJPY-validated
+                                 # variant uses 2.0 -- see
+                                 # pairs/GBPJPY_asianrange.yaml)
 
 REQUIRED_KEYS = ['pair', 'strategy', 'active', 'timeframe', 'risk_percent',
                   'h4_filter', 'session', 'friday_close']
@@ -82,12 +86,17 @@ class AsianRangeBreakout(BaseStrategy):
 
     NAME = "asian_range_breakout"
     SESSION = "asian"
-    COMPATIBLE_PAIRS = ["USDJPY", "AUDJPY", "NZDJPY", "AUDUSD"]
+    # GBPJPY added 2026-07-04 (walk-forward validated, tp 2.0 / no H4);
+    # CADJPY added 2026-07-05 (phase 6: IS PF 1.15 / OOS 1.38);
+    # XAUUSD added 2026-07-05 (phase 7, PROVISIONAL: IS PF 1.45, OOS flat)
+    COMPATIBLE_PAIRS = ["USDJPY", "AUDJPY", "NZDJPY", "AUDUSD", "GBPJPY",
+                        "CADJPY", "XAUUSD"]
 
     def __init__(self, pair_config: dict):
         super().__init__(pair_config)
         self.validate_config(pair_config)
-        self.pip_size = 0.01 if 'JPY' in self.pair else 0.0001
+        self.pip_size = (0.1 if self.pair.startswith('XAU')
+                         else 0.01 if 'JPY' in self.pair else 0.0001)
         self._last_trade_date = None  # same-day dedup (see check_breakout below) --
                                        # the authoritative "one position at a time"
                                        # gate is the orchestrator's own open_trades
@@ -228,13 +237,15 @@ class AsianRangeBreakout(BaseStrategy):
         low  = min(b['low']  for b in asian_bars)
         range_pips = (high - low) / self.pip_size
 
-        if range_pips < MIN_ASIAN_RANGE_PIPS:
+        min_range = self.pair_config.get('min_range_pips', MIN_ASIAN_RANGE_PIPS)
+        if range_pips < min_range:
             log.info(f"{self.pair}: Asian range too tight ({range_pips:.1f}p < "
-                     f"{MIN_ASIAN_RANGE_PIPS}p)")
+                     f"{min_range}p)")
             return None
 
+        tp_mult = self.pair_config.get('tp_multiplier', TP_MULTIPLIER)
         sl_pips = range_pips                    # opposite side of the range
-        tp_pips = range_pips * TP_MULTIPLIER
+        tp_pips = range_pips * tp_mult
 
         return {
             'asian_high' : high,
@@ -253,8 +264,13 @@ class AsianRangeBreakout(BaseStrategy):
         if not self._connect(log):
             return None
 
-        trend = self.h4_trend(log)
-        if trend == 0:
+        # h4_filter: false in the pair YAML disables the trend gate --
+        # breakouts are then taken in EITHER direction. The walk-forward
+        # search found the H4 gate reduced GBPJPY performance (it lags the
+        # early-London move this strategy trades); other pairs keep it on.
+        use_h4 = self.pair_config.get('h4_filter', True)
+        trend  = self.h4_trend(log) if use_h4 else 0
+        if use_h4 and trend == 0:
             log.info(f"  {self.pair}: NEUTRAL H4 trend -- skipping")
             return None
 
@@ -263,8 +279,9 @@ class AsianRangeBreakout(BaseStrategy):
             log.info(f"  {self.pair}: Asian range unavailable -- skipping")
             return None
 
-        result = {'h4_trend': trend, **asian}
-        trend_label = 'BULLISH' if trend == 1 else 'BEARISH'
+        result = {'h4_trend': trend, 'h4_filter': use_h4, **asian}
+        trend_label = ('BULLISH' if trend == 1
+                       else 'BEARISH' if trend == -1 else 'ANY (no H4 gate)')
         log.info(f"  {self.pair}: {trend_label}  range={asian['range_pips']:.1f}p  "
                  f"H={asian['asian_high']:.5f}  L={asian['asian_low']:.5f}  "
                  f"SL={asian['sl_pips']:.1f}p  TP={asian['tp_pips']:.1f}p")
@@ -296,6 +313,7 @@ class AsianRangeBreakout(BaseStrategy):
         asian_high = session_data['asian_high']
         asian_low  = session_data['asian_low']
         trend      = session_data['h4_trend']
+        use_h4     = session_data.get('h4_filter', True)
 
         if not self._connect(log):
             return no_signal('MT5 connection failed')
@@ -314,25 +332,30 @@ class AsianRangeBreakout(BaseStrategy):
         if self._last_trade_date == bar_time.date():
             return no_signal('already traded this pair today (one trade/day limit)')
 
-        if trend == 1 and bar_close > asian_high:
+        if bar_close > asian_high and (not use_h4 or trend == 1):
             self._last_trade_date = bar_time.date()
             return {
                 'signal'            : 'BUY',
-                'reason'            : 'close above Asian High, H4 BULLISH',
+                'reason'            : ('close above Asian High, H4 BULLISH'
+                                       if use_h4 else
+                                       'close above Asian High (no H4 gate)'),
                 'trigger_bar_close' : bar_close,
                 'trigger_bar_time'  : bar_time.isoformat(),
                 'entry_price'       : asian_high,
             }
 
-        if trend == -1 and bar_close < asian_low:
+        if bar_close < asian_low and (not use_h4 or trend == -1):
             self._last_trade_date = bar_time.date()
             return {
                 'signal'            : 'SELL',
-                'reason'            : 'close below Asian Low, H4 BEARISH',
+                'reason'            : ('close below Asian Low, H4 BEARISH'
+                                       if use_h4 else
+                                       'close below Asian Low (no H4 gate)'),
                 'trigger_bar_close' : bar_close,
                 'trigger_bar_time'  : bar_time.isoformat(),
                 'entry_price'       : asian_low,
             }
 
-        trend_label = 'BULLISH' if trend == 1 else 'BEARISH'
+        trend_label = ('BULLISH' if trend == 1
+                       else 'BEARISH' if trend == -1 else 'either-direction')
         return no_signal(f'no {trend_label} close beyond range on bar {bar_time.strftime("%H:%M")}')
