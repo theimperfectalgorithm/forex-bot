@@ -40,7 +40,8 @@ BASE_DIR = AGENTS_DIR.parent.parent          # repo root
 sys.path.insert(0, str(BASE_DIR))
 
 from agent_market    import run as run_market
-from agent_strategy  import prepare_session, check_breakout, check_eurusd_signals
+from agent_strategy  import (prepare_session, check_breakout,
+                             check_eurusd_signals, check_asian_reversion)
 from agent_risk      import run as run_risk
 from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
@@ -64,6 +65,36 @@ PAIRS = [name for name, _inst, cfg in _ACTIVE_PAIRS if cfg.get('strategy') == 'l
 _SMA_EMA_PAIRS = [name for name, _inst, cfg in _ACTIVE_PAIRS if cfg.get('strategy') == 'sma_ema_combined']
 EURUSD_PAIR = _SMA_EMA_PAIRS[0] if _SMA_EMA_PAIRS else None
 
+# asian_range_breakout pairs ride the same prep/check path as london_breakout
+# (identical prepare()/check_breakout() interface and session_data shape) but
+# are keyed '<PAIR>@arb' so one pair can run both strategies without the
+# second silently shadowing the first (see agent_strategy._get_strategies()).
+# key.split('@')[0] recovers the MT5 symbol wherever a real symbol is needed.
+ARB_KEYS = [f"{name}@arb" for name, _inst, cfg in _ACTIVE_PAIRS
+            if cfg.get('strategy') == 'asian_range_breakout']
+BREAKOUT_KEYS = PAIRS + ARB_KEYS
+
+# asian_hours_reversion pairs -- checked during Asian hours (00:00 to the
+# per-pair entry_end_hour) via step_check_asian_reversion(); any position
+# still open is force-closed at 07:00 UTC (step_asian_time_exit).
+AMR_KEYS = [f"{name}@amr" for name, _inst, cfg in _ACTIVE_PAIRS
+            if cfg.get('strategy') == 'asian_hours_reversion']
+
+# per-key trade flags + per-symbol risk counters both live in daily state
+_STATE_KEYS = BREAKOUT_KEYS + AMR_KEYS + sorted(
+    {k.split('@')[0] for k in ARB_KEYS + AMR_KEYS})
+
+# each strategy's own risk fraction (YAML risk_percent), keyed like the
+# strategy cache -- passed to agent_risk so lot sizing honours the config
+# instead of the legacy 1%-per-trade default.
+def _key_of(name, cfg):
+    s = cfg.get('strategy')
+    return (f"{name}@arb" if s == 'asian_range_breakout'
+            else f"{name}@amr" if s == 'asian_hours_reversion' else name)
+
+RISK_PCT_BY_KEY = {_key_of(name, cfg): cfg.get('risk_percent', 1.0) / 100.0
+                   for name, _inst, cfg in _ACTIVE_PAIRS}
+
 # -- schedule thresholds (minutes since UTC midnight)
 T_MARKET_AGENT   =  0 * 60 +  0    # 00:00
 T_LONDON_PREP    =  7 * 60 + 45    # 07:45
@@ -74,6 +105,10 @@ T_NY_START       = 13 * 60 +  0    # 13:00
 T_NY_END         = 20 * 60 + 45    # 20:45  (last bar check)
 T_EURUSD_START   = 12 * 60 +  0    # 12:00  EURUSD dual-strategy window open
 T_EURUSD_END     = 15 * 60 + 45    # 15:45  EURUSD dual-strategy window close
+T_ASIAN_END      =  6 * 60 +  0    # 06:00  last AMR entry-check cycle (each
+                                   #        strategy also enforces its own
+                                   #        tighter entry_end_hour internally)
+T_ASIAN_EXIT     =  7 * 60 +  0    # 07:00  force-close any open @amr position
 T_THURSDAY_SWAP_WARNING = 19 * 60 + 0   # 19:00 Thu -- swap-fee WARNING log only
 T_FRIDAY_CLOSE   = 20 * 60 +  0    # 20:00 Fri  -- force-close all remaining positions
 T_REPORT         = 21 * 60 +  0    # 21:00
@@ -131,16 +166,23 @@ def _fresh_state(today: str) -> dict:
         'ny_news_flag'     : False,
         # strategy agent output -- Asian range + H4 trend per breakout pair
         'session_data'     : {},
-        # per-pair session trade flags (breakout pairs only)
-        'london_traded'    : {p: False for p in PAIRS},
-        'ny_traded'        : {p: False for p in PAIRS},
+        # per-key session trade flags (breakout keys incl. '@arb' entries;
+        # plain symbols included too for the risk counters below)
+        'london_traded'    : {p: False for p in _STATE_KEYS},
+        'ny_traded'        : {p: False for p in _STATE_KEYS},
+        'asian_traded'     : {p: False for p in _STATE_KEYS},
+        'asian_exit_done'  : False,
         # live position tracking
         'open_trades'      : [],
         'closed_today'     : [],
         # running daily P&L and risk state
         'daily_pnl'        : 0.0,
-        'consec_losses'    : {p: 0 for p in PAIRS},
-        'pair_paused'      : {p: False for p in PAIRS},
+        # first equity seen today -- set lazily by agent_risk.run() on the
+        # day's first trade attempt, used for the 4% daily equity soft stop.
+        # Persisted here so a mid-day restart keeps the same anchor.
+        'day_start_equity' : None,
+        'consec_losses'    : {p: 0 for p in _STATE_KEYS},
+        'pair_paused'      : {p: False for p in _STATE_KEYS},
         # Friday-only forced close (positions run to natural SL/TP Mon-Thu)
         'friday_close_done'     : False,
         'friday_closed_tickets' : [],
@@ -254,9 +296,15 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
     if not state.get('session_data'):
         return
 
-    for pair in PAIRS:
-        # Skip if already traded this session
-        if state[f'{session}_traded'][pair]:
+    for pair in BREAKOUT_KEYS:
+        # pair may be a plain name ('GBPJPY', london_breakout) or a
+        # suffixed key ('GBPJPY@arb', asian_range_breakout); symbol is
+        # what MT5/risk/execution need.
+        symbol = pair.split('@')[0]
+
+        # Skip if already traded this session (.get(): a state file written
+        # before an @arb key was activated won't have the new key yet)
+        if state[f'{session}_traded'].get(pair, False):
             continue
 
         # Skip if this pair already has an open position -- one position
@@ -266,12 +314,14 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
         # with no daily forced close, a pair's *_traded flags reset fresh
         # every morning even if yesterday's (or last week's) position on
         # that same pair is still open, so the check must be general.
-        pair_open = any(t['symbol'] == pair for t in state['open_trades'])
+        pair_open = any(t['symbol'] == symbol for t in state['open_trades'])
         if pair_open:
             continue
 
-        # Skip if pair paused after 2 consecutive losses
-        if state['pair_paused'][pair]:
+        # Skip if pair paused after 2 consecutive losses (symbol-level:
+        # losses on either strategy of a symbol pause them both)
+        if state['pair_paused'].get(pair, False) \
+                or state['pair_paused'].get(symbol, False):
             continue
 
         try:
@@ -285,7 +335,7 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
 
         log.info(f"BREAKOUT CONFIRMED  {pair} {session.upper()} "
                  f"{breakout['signal']}  bar_close={breakout['trigger_bar_close']:.5f}  "
-                 f"+{breakout['overshoot_pips']:.0f}p past range")
+                 f"+{breakout.get('overshoot_pips', 0.0):.0f}p past range")
 
         # Daily loss limit guard
         daily_limit = 0.05 * 100_000   # $5,000 -- absolute floor check
@@ -304,7 +354,8 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
         # Risk management
         try:
             sl_pips = state['session_data'][pair]['sl_pips']
-            risk = run_risk(pair, breakout['signal'], sl_pips, state)
+            risk = run_risk(symbol, breakout['signal'], sl_pips, state,
+                            risk_pct=RISK_PCT_BY_KEY.get(pair))
         except Exception as e:
             log.error(f"Agent 3 risk check {pair}: {e}", exc_info=True)
             continue
@@ -317,7 +368,7 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
 
         # Trade execution
         try:
-            result = place_trade(pair, breakout, risk['lot_size'],
+            result = place_trade(symbol, breakout, risk['lot_size'],
                                  state['session_data'][pair], session)
         except Exception as e:
             log.error(f"Agent 4 place_trade {pair}: {e}", exc_info=True)
@@ -333,7 +384,8 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
             state[f'{session}_traded'][pair] = True
             state['open_trades'].append({
                 'ticket'        : result['ticket'],
-                'symbol'        : pair,
+                'symbol'        : symbol,
+                'strategy_key'  : pair,
                 'direction'     : breakout['signal'],
                 'session'       : session.capitalize(),
                 'lots'          : risk['lot_size'],
@@ -349,6 +401,111 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
             })
         else:
             log.error(f"Trade placement FAILED {pair}: {result['error']}")
+
+
+def step_check_asian_reversion(state: dict, log: logging.Logger):
+    """
+    Every 15 min during 00:00-06:00 UTC: check each active @amr pair for a
+    quiet-hours reversion signal. The strategy is self-contained (reads its
+    own closed M15 bars, enforces its per-pair entry_end_hour and one-trade-
+    per-day internally); this step handles the portfolio gates + execution.
+    SL/TP are DYNAMIC (returned in the signal), anchored to live entry.
+    """
+    for key in AMR_KEYS:
+        symbol = key.split('@')[0]
+
+        # .get chain: a state file written before this deploy has no
+        # 'asian_traded' dict until the next midnight rollover
+        if state.get('asian_traded', {}).get(key, False):
+            continue
+        if any(t['symbol'] == symbol for t in state['open_trades']):
+            continue
+        if state['pair_paused'].get(key, False) \
+                or state['pair_paused'].get(symbol, False):
+            continue
+
+        try:
+            res = check_asian_reversion(key)
+        except Exception as e:
+            log.error(f"Agent 2 check_asian_reversion {key}: {e}", exc_info=True)
+            continue
+        if res['signal'] == 'NO_SIGNAL':
+            continue
+
+        log.info(f"AMR SIGNAL  {key} {res['signal']}  "
+                 f"SL={res['sl_pips']:.1f}p  TP={res['tp_pips']:.1f}p  "
+                 f"{res['reason']}")
+
+        daily_limit = 0.05 * 100_000
+        if state['daily_pnl'] <= -daily_limit:
+            log.warning(f"Daily loss limit reached -- skipping {key}")
+            continue
+
+        try:
+            risk = run_risk(symbol, res['signal'], res['sl_pips'], state,
+                            risk_pct=RISK_PCT_BY_KEY.get(key))
+        except Exception as e:
+            log.error(f"Agent 3 risk check {key}: {e}", exc_info=True)
+            continue
+        if risk['decision'] == 'REJECTED':
+            log.warning(f"Risk REJECTED {key}: {risk['reason']}")
+            continue
+
+        exec_data = {'sl_pips': res['sl_pips'], 'tp_pips': res['tp_pips'],
+                     'use_live_anchor': True, 'strategy': 'AMR'}
+        try:
+            result = place_trade(symbol, res, risk['lot_size'],
+                                 exec_data, 'asian')
+        except Exception as e:
+            log.error(f"Agent 4 place_trade {key}: {e}", exc_info=True)
+            continue
+
+        if result['success']:
+            log.info(f"TRADE PLACED  {key} {res['signal']}  "
+                     f"{risk['lot_size']:.2f}L  ticket={result['ticket']}")
+            state.setdefault('asian_traded', {})[key] = True
+            state['open_trades'].append({
+                'ticket'         : result['ticket'],
+                'symbol'         : symbol,
+                'strategy_key'   : key,
+                'direction'      : res['signal'],
+                'session'        : 'Asian',
+                'lots'           : risk['lot_size'],
+                'entry_price'    : result['entry_price'],
+                'sl'             : result['sl'],
+                'tp'             : result['tp'],
+                'sl_pips'        : res['sl_pips'],
+                'tp_pips'        : res['tp_pips'],
+                'breakeven_moved': False,
+                'entry_time'     : datetime.now(timezone.utc).isoformat(),
+            })
+        else:
+            log.error(f"Trade placement FAILED {key}: {result['error']}")
+
+
+def step_asian_time_exit(state: dict, log: logging.Logger):
+    """
+    07:00 UTC: force-close any still-open @amr position -- the reversion
+    thesis is Asian-hours-only and the book must be flat before London
+    opens. monitor_positions records the exit on the next cycle.
+    (5ers news rule: if a high-impact event ever falls exactly here, the
+    future news-blackout gate must shift this close a few minutes.)
+    """
+    amr_open = [t for t in state['open_trades']
+                if str(t.get('strategy_key', '')).endswith('@amr')]
+    all_closed = True
+    for t in amr_open:
+        try:
+            ok = close_trade(t['ticket'], t['symbol'], comment='AMR_time_exit')
+            log.info(f"AMR TIME EXIT  {t['symbol']} ticket={t['ticket']}  "
+                     f"{'closed' if ok else 'CLOSE FAILED -- will retry next cycle'}")
+            all_closed = all_closed and ok
+        except Exception as e:
+            log.error(f"AMR time exit {t['ticket']}: {e}", exc_info=True)
+            all_closed = False
+    # mark done only when every close succeeded -- a failure retries next cycle
+    if all_closed:
+        state['asian_exit_done'] = True
 
 
 def step_check_eurusd(state: dict, log: logging.Logger):
@@ -677,6 +834,20 @@ def main():
                 step_market(state, log)
                 save_state(state)
 
+            # -- 00:00-06:00  Asian-hours reversion checks (every 15 min).
+            #    Runs only after the market agent has cleared the day.
+            if (t <= T_ASIAN_END and AMR_KEYS
+                    and state.get('market_ran')
+                    and state.get('trade_allowed', False)):
+                step_check_asian_reversion(state, log)
+                save_state(state)
+
+            # -- 07:00  Asian time exit: flat all @amr positions pre-London
+            if (t >= T_ASIAN_EXIT and AMR_KEYS
+                    and not state.get('asian_exit_done', False)):
+                step_asian_time_exit(state, log)
+                save_state(state)
+
             # -- 07:45  London session prep (once per day)
             if t >= T_LONDON_PREP and not state['london_prep_done']:
                 if state.get('trade_allowed', False):
@@ -705,8 +876,10 @@ def main():
                 step_check_breakouts(state, 'ny', log)
                 save_state(state)
 
-            # -- 12:00-15:45  EURUSD dual-strategy checks (every 15 min)
-            if T_EURUSD_START <= t <= T_EURUSD_END:
+            # -- 12:00-15:45  EURUSD dual-strategy checks (every 15 min).
+            #    EURUSD_PAIR is None when no sma_ema_combined pair is active
+            #    (deactivated 2026-07-05 after failing re-validation).
+            if EURUSD_PAIR and T_EURUSD_START <= t <= T_EURUSD_END:
                 step_check_eurusd(state, log)
                 save_state(state)
 

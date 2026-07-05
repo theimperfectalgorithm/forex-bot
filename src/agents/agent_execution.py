@@ -71,6 +71,12 @@ PAIRS = {
     'GBPJPY': {'pip_size': 0.01,   'digits': 3},
     'EURJPY': {'pip_size': 0.01,   'digits': 3},
     'EURUSD': {'pip_size': 0.0001, 'digits': 5},
+    'AUDJPY': {'pip_size': 0.01,   'digits': 3},
+    'CADJPY': {'pip_size': 0.01,   'digits': 3},
+    'NZDJPY': {'pip_size': 0.01,   'digits': 3},
+    'GBPUSD': {'pip_size': 0.0001, 'digits': 5},
+    # gold: 1 'pip' = $0.10; broker quotes 2 decimals
+    'XAUUSD': {'pip_size': 0.1,    'digits': 2},
 }
 
 

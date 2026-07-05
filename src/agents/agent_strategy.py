@@ -73,19 +73,62 @@ _STRATEGY_CACHE: dict | None = None
 
 def _get_strategies() -> dict:
     """Lazily load active pairs via pair_manager; cached for the process lifetime.
-    Returns {pair_name: strategy_instance}."""
+
+    Returns {key: strategy_instance} where key is the plain pair name for
+    every strategy EXCEPT asian_range_breakout, which gets '<PAIR>@arb'.
+    The suffix exists because one pair can now run two active strategies
+    (e.g. GBPJPY london_breakout AND GBPJPY@arb asian_range_breakout) --
+    a plain pair-name dict would silently shadow one with the other.
+    Non-ARB keys are unchanged so existing state files and logs keep
+    working. Use key.split('@')[0] to recover the MT5 symbol."""
     global _STRATEGY_CACHE
     if _STRATEGY_CACHE is None:
         active = get_active_pairs(log=_log())
-        _STRATEGY_CACHE = {name: inst for name, inst, cfg in active}
+        cache = {}
+        for name, inst, cfg in active:
+            strat = cfg.get('strategy')
+            if strat == 'asian_range_breakout':
+                key = f"{name}@arb"
+            elif strat == 'asian_hours_reversion':
+                key = f"{name}@amr"
+            else:
+                key = name
+            cache[key] = inst
+        _STRATEGY_CACHE = cache
     return _STRATEGY_CACHE
 
 
+def amr_keys() -> list:
+    """Keys of active AsianHoursReversion pairs ('<PAIR>@amr')."""
+    from strategies.asian_hours_reversion import AsianHoursReversion
+    return [k for k, inst in _get_strategies().items()
+            if isinstance(inst, AsianHoursReversion)]
+
+
+def check_asian_reversion(key: str) -> dict:
+    """15-min cycle check for an @amr pair during Asian hours. The strategy
+    is self-contained (reads its own closed M15 bars from MT5), so no
+    session prep is required. Returns the signal dict with DYNAMIC
+    sl_pips/tp_pips (distance to the M15 SMA20 mean)."""
+    inst = _get_strategies().get(key)
+    if inst is None:
+        return {'signal': 'NO_SIGNAL', 'reason': f'{key}: not loaded',
+                'entry_price': 0.0, 'sl_pips': 0.0, 'tp_pips': 0.0}
+    return inst.check_signal({'armed': True}, 'asian')
+
+
 def _breakout_pairs() -> list:
-    """Names of active pairs whose strategy is london_breakout."""
+    """Keys of active pairs whose strategy follows the breakout interface
+    (prepare() once per session + check_breakout() each cycle, identical
+    session_data shape): london_breakout and asian_range_breakout.
+    ARB prep timing rides the existing 07:45 London prep -- the Asian
+    range is complete at 07:00 and ARB's hour-7/8 breakout bars close at
+    08:00/09:00, inside the orchestrator's London polling window; its own
+    check_breakout() rejects any bar outside the 07:00-09:00 window."""
     from strategies.london_breakout import LondonBreakout
-    return [name for name, inst in _get_strategies().items()
-            if isinstance(inst, LondonBreakout)]
+    from strategies.asian_range_breakout import AsianRangeBreakout
+    return [key for key, inst in _get_strategies().items()
+            if isinstance(inst, (LondonBreakout, AsianRangeBreakout))]
 
 
 # ---------------------------------------------------------------------------
