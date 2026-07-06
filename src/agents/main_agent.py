@@ -24,6 +24,8 @@ Run from repo root:
   python src/agents/main_agent.py
 """
 
+from __future__ import annotations
+
 import sys
 import time
 import json
@@ -80,9 +82,14 @@ BREAKOUT_KEYS = PAIRS + ARB_KEYS
 AMR_KEYS = [f"{name}@amr" for name, _inst, cfg in _ACTIVE_PAIRS
             if cfg.get('strategy') == 'asian_hours_reversion']
 
+# monday_drift pairs -- checked in the first cycles of Monday (the signal
+# bar is Monday's 00:00-01:00 H1 bar), force-closed 21:00 UTC Monday.
+MON_KEYS = [f"{name}@mon" for name, _inst, cfg in _ACTIVE_PAIRS
+            if cfg.get('strategy') == 'monday_drift']
+
 # per-key trade flags + per-symbol risk counters both live in daily state
-_STATE_KEYS = BREAKOUT_KEYS + AMR_KEYS + sorted(
-    {k.split('@')[0] for k in ARB_KEYS + AMR_KEYS})
+_STATE_KEYS = BREAKOUT_KEYS + AMR_KEYS + MON_KEYS + sorted(
+    {k.split('@')[0] for k in ARB_KEYS + AMR_KEYS + MON_KEYS})
 
 # each strategy's own risk fraction (YAML risk_percent), keyed like the
 # strategy cache -- passed to agent_risk so lot sizing honours the config
@@ -90,7 +97,8 @@ _STATE_KEYS = BREAKOUT_KEYS + AMR_KEYS + sorted(
 def _key_of(name, cfg):
     s = cfg.get('strategy')
     return (f"{name}@arb" if s == 'asian_range_breakout'
-            else f"{name}@amr" if s == 'asian_hours_reversion' else name)
+            else f"{name}@amr" if s == 'asian_hours_reversion'
+            else f"{name}@mon" if s == 'monday_drift' else name)
 
 RISK_PCT_BY_KEY = {_key_of(name, cfg): cfg.get('risk_percent', 1.0) / 100.0
                    for name, _inst, cfg in _ACTIVE_PAIRS}
@@ -109,6 +117,9 @@ T_ASIAN_END      =  6 * 60 +  0    # 06:00  last AMR entry-check cycle (each
                                    #        strategy also enforces its own
                                    #        tighter entry_end_hour internally)
 T_ASIAN_EXIT     =  7 * 60 +  0    # 07:00  force-close any open @amr position
+T_MONDAY_END     =  2 * 60 +  0    # 02:00  last @mon entry-check cycle (the
+                                   #        signal bar closes at 01:00)
+T_MONDAY_EXIT    = 21 * 60 +  0    # 21:00  force-close any open @mon position
 T_THURSDAY_SWAP_WARNING = 19 * 60 + 0   # 19:00 Thu -- swap-fee WARNING log only
 T_FRIDAY_CLOSE   = 20 * 60 +  0    # 20:00 Fri  -- force-close all remaining positions
 T_REPORT         = 21 * 60 +  0    # 21:00
@@ -172,6 +183,8 @@ def _fresh_state(today: str) -> dict:
         'ny_traded'        : {p: False for p in _STATE_KEYS},
         'asian_traded'     : {p: False for p in _STATE_KEYS},
         'asian_exit_done'  : False,
+        'monday_traded'    : {p: False for p in _STATE_KEYS},
+        'monday_exit_done' : False,
         # live position tracking
         'open_trades'      : [],
         'closed_today'     : [],
@@ -403,20 +416,25 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
             log.error(f"Trade placement FAILED {pair}: {result['error']}")
 
 
-def step_check_asian_reversion(state: dict, log: logging.Logger):
+def step_check_asian_reversion(state: dict, log: logging.Logger,
+                               keys: list | None = None,
+                               flag: str = 'asian_traded',
+                               label: str = 'AMR',
+                               session_name: str = 'asian'):
     """
-    Every 15 min during 00:00-06:00 UTC: check each active @amr pair for a
-    quiet-hours reversion signal. The strategy is self-contained (reads its
-    own closed M15 bars, enforces its per-pair entry_end_hour and one-trade-
-    per-day internally); this step handles the portfolio gates + execution.
-    SL/TP are DYNAMIC (returned in the signal), anchored to live entry.
+    Every 15 min inside the window: check each self-contained strategy key
+    for a signal. Serves BOTH @amr (00:00-06:00 daily) and @mon (Monday
+    00:00-02:00) -- the strategies read their own closed bars, enforce
+    their entry windows and one-trade-per-day internally; this step
+    handles the portfolio gates + execution. SL/TP are DYNAMIC (returned
+    in the signal), anchored to live entry.
     """
-    for key in AMR_KEYS:
+    for key in (keys if keys is not None else AMR_KEYS):
         symbol = key.split('@')[0]
 
         # .get chain: a state file written before this deploy has no
-        # 'asian_traded' dict until the next midnight rollover
-        if state.get('asian_traded', {}).get(key, False):
+        # per-strategy flag dict until the next midnight rollover
+        if state.get(flag, {}).get(key, False):
             continue
         if any(t['symbol'] == symbol for t in state['open_trades']):
             continue
@@ -432,7 +450,7 @@ def step_check_asian_reversion(state: dict, log: logging.Logger):
         if res['signal'] == 'NO_SIGNAL':
             continue
 
-        log.info(f"AMR SIGNAL  {key} {res['signal']}  "
+        log.info(f"{label} SIGNAL  {key} {res['signal']}  "
                  f"SL={res['sl_pips']:.1f}p  TP={res['tp_pips']:.1f}p  "
                  f"{res['reason']}")
 
@@ -452,10 +470,10 @@ def step_check_asian_reversion(state: dict, log: logging.Logger):
             continue
 
         exec_data = {'sl_pips': res['sl_pips'], 'tp_pips': res['tp_pips'],
-                     'use_live_anchor': True, 'strategy': 'AMR'}
+                     'use_live_anchor': True, 'strategy': label}
         try:
             result = place_trade(symbol, res, risk['lot_size'],
-                                 exec_data, 'asian')
+                                 exec_data, session_name)
         except Exception as e:
             log.error(f"Agent 4 place_trade {key}: {e}", exc_info=True)
             continue
@@ -463,13 +481,13 @@ def step_check_asian_reversion(state: dict, log: logging.Logger):
         if result['success']:
             log.info(f"TRADE PLACED  {key} {res['signal']}  "
                      f"{risk['lot_size']:.2f}L  ticket={result['ticket']}")
-            state.setdefault('asian_traded', {})[key] = True
+            state.setdefault(flag, {})[key] = True
             state['open_trades'].append({
                 'ticket'         : result['ticket'],
                 'symbol'         : symbol,
                 'strategy_key'   : key,
                 'direction'      : res['signal'],
-                'session'        : 'Asian',
+                'session'        : session_name.capitalize(),
                 'lots'           : risk['lot_size'],
                 'entry_price'    : result['entry_price'],
                 'sl'             : result['sl'],
@@ -483,29 +501,45 @@ def step_check_asian_reversion(state: dict, log: logging.Logger):
             log.error(f"Trade placement FAILED {key}: {result['error']}")
 
 
-def step_asian_time_exit(state: dict, log: logging.Logger):
+def step_asian_time_exit(state: dict, log: logging.Logger,
+                         suffix: str = '@amr',
+                         done_flag: str = 'asian_exit_done',
+                         label: str = 'AMR'):
     """
-    07:00 UTC: force-close any still-open @amr position -- the reversion
-    thesis is Asian-hours-only and the book must be flat before London
-    opens. monitor_positions records the exit on the next cycle.
-    (5ers news rule: if a high-impact event ever falls exactly here, the
-    future news-blackout gate must shift this close a few minutes.)
+    Force-close any still-open position whose strategy_key ends in
+    `suffix` (07:00 UTC for @amr, 21:00 Monday for @mon) -- both books
+    are time-boxed by design. monitor_positions records the exit next
+    cycle. 5ers news rule: a close that lands inside a high-impact news
+    blackout is DEFERRED to the next 15-min cycle (the step retries
+    until every close succeeds outside a blackout window).
     """
-    amr_open = [t for t in state['open_trades']
-                if str(t.get('strategy_key', '')).endswith('@amr')]
+    keyed_open = [t for t in state['open_trades']
+                  if str(t.get('strategy_key', '')).endswith(suffix)]
     all_closed = True
-    for t in amr_open:
+    for t in keyed_open:
         try:
-            ok = close_trade(t['ticket'], t['symbol'], comment='AMR_time_exit')
-            log.info(f"AMR TIME EXIT  {t['symbol']} ticket={t['ticket']}  "
+            from core.news_calendar import is_blackout
+            blocked, why = is_blackout(t['symbol'])
+            if blocked:
+                log.warning(f"{label} TIME EXIT deferred for {t['symbol']} "
+                            f"ticket={t['ticket']}: {why}")
+                all_closed = False
+                continue
+        except Exception as e:
+            log.warning(f"{label} time-exit news check failed ({e}) -- "
+                        f"closing anyway")
+        try:
+            ok = close_trade(t['ticket'], t['symbol'],
+                             comment=f'{label}_time_exit')
+            log.info(f"{label} TIME EXIT  {t['symbol']} ticket={t['ticket']}  "
                      f"{'closed' if ok else 'CLOSE FAILED -- will retry next cycle'}")
             all_closed = all_closed and ok
         except Exception as e:
-            log.error(f"AMR time exit {t['ticket']}: {e}", exc_info=True)
+            log.error(f"{label} time exit {t['ticket']}: {e}", exc_info=True)
             all_closed = False
     # mark done only when every close succeeded -- a failure retries next cycle
     if all_closed:
-        state['asian_exit_done'] = True
+        state[done_flag] = True
 
 
 def step_check_eurusd(state: dict, log: logging.Logger):
@@ -846,6 +880,24 @@ def main():
             if (t >= T_ASIAN_EXIT and AMR_KEYS
                     and not state.get('asian_exit_done', False)):
                 step_asian_time_exit(state, log)
+                save_state(state)
+
+            # -- Monday 00:00-02:00  Monday-drift entry checks (@mon)
+            if (now.weekday() == 0 and t <= T_MONDAY_END and MON_KEYS
+                    and state.get('market_ran')
+                    and state.get('trade_allowed', False)):
+                step_check_asian_reversion(state, log, keys=MON_KEYS,
+                                           flag='monday_traded',
+                                           label='MON',
+                                           session_name='monday')
+                save_state(state)
+
+            # -- Monday 21:00  Monday-drift time exit (@mon flat pre-rollover)
+            if (now.weekday() == 0 and t >= T_MONDAY_EXIT and MON_KEYS
+                    and not state.get('monday_exit_done', False)):
+                step_asian_time_exit(state, log, suffix='@mon',
+                                     done_flag='monday_exit_done',
+                                     label='MON')
                 save_state(state)
 
             # -- 07:45  London session prep (once per day)

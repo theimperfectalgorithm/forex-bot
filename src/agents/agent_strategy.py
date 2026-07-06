@@ -91,6 +91,8 @@ def _get_strategies() -> dict:
                 key = f"{name}@arb"
             elif strat == 'asian_hours_reversion':
                 key = f"{name}@amr"
+            elif strat == 'monday_drift':
+                key = f"{name}@mon"
             else:
                 key = name
             cache[key] = inst
@@ -106,10 +108,9 @@ def amr_keys() -> list:
 
 
 def check_asian_reversion(key: str) -> dict:
-    """15-min cycle check for an @amr pair during Asian hours. The strategy
-    is self-contained (reads its own closed M15 bars from MT5), so no
-    session prep is required. Returns the signal dict with DYNAMIC
-    sl_pips/tp_pips (distance to the M15 SMA20 mean)."""
+    """15-min cycle check for a self-contained strategy key (@amr, @mon --
+    both read their own closed bars from MT5, need no session prep, and
+    return DYNAMIC sl_pips/tp_pips in the signal dict)."""
     inst = _get_strategies().get(key)
     if inst is None:
         return {'signal': 'NO_SIGNAL', 'reason': f'{key}: not loaded',

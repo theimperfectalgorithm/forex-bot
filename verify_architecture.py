@@ -56,9 +56,9 @@ active_names = sorted(name for name, _inst, _cfg in active)
 # cache keys) + asian_hours_reversion on GBPJPY/EURJPY/AUDJPY/CADJPY
 # ('@amr' keys). GBPJPY and CADJPY each appear twice (two strategies).
 expected = sorted(['GBPJPY', 'GBPJPY', 'CADJPY', 'CADJPY',
-                   'EURJPY', 'AUDJPY', 'XAUUSD'])
+                   'EURJPY', 'AUDJPY', 'XAUUSD', 'GBPUSD'])
 
-check("Active pairs == Book B+ (ARB x3 + AMR x4; GBPJPY/CADJPY twice)",
+check("Active pairs == Book B+ (ARB x3 + AMR x4 + Monday drift)",
       active_names == expected,
       f"got {active_names}")
 check("USDJPY NOT in active pairs (active: false)",
@@ -151,6 +151,10 @@ for name, inst, cfg in active:
         check(f"{name}: get_session_windows() includes 'london_ny_overlap' AND "
               f"session_filter.london_ny_overlap(13:30 UTC) == True",
               overlap_window_present and matches_filter)
+    elif cfg['strategy'] == 'monday_drift':
+        monday_window_present = any(w['name'] == 'monday' for w in windows)
+        check(f"{name} (monday_drift): get_session_windows() includes 'monday'",
+              monday_window_present)
     elif cfg['strategy'] in ('asian_range_breakout', 'asian_hours_reversion'):
         # 03:00 UTC -- inside the Asian session window (00:00-07:00)
         asian_sample = datetime(2026, 1, 5, 3, 0, tzinfo=timezone.utc)

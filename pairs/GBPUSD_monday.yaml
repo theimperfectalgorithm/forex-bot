@@ -1,0 +1,15 @@
+# GBPUSD Monday drift -- VALIDATED 2026-07-05 (phase 8), the strongest
+# pass of the project: IS PF 1.97 / DD 0.66% / 66.7% prof. months;
+# OOS PF 3.08 / +$2,573 at 0.25% / DD 0.42%. Robust across the grid
+# (OOS PF 2.9-3.1); EURUSD control weak -> GBPUSD-specific effect.
+# ~52 trades/year, long-only, flat by 21:00 UTC Monday. Discovered via
+# the phase-7 calendar screen (Monday drift t=+3.3 IS / +4.0 OOS).
+pair: GBPUSD
+strategy: monday_drift
+active: true
+timeframe: H1
+risk_percent: 0.25
+sl_atr_mult: 1.25
+tp_atr_mult: 1.0
+session: monday
+friday_close: true

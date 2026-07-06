@@ -18,6 +18,7 @@ from strategies.volatility_regime_trend import VolatilityRegimeTrend
 from strategies.momentum_divergence_session import MomentumDivergenceSession
 from strategies.regime_filtered_ma_cross import RegimeFilteredMACross
 from strategies.asian_hours_reversion import AsianHoursReversion
+from strategies.monday_drift import MondayDrift
 
 # -- stubs, not yet implemented, NOT activated in any pairs/*.yaml
 from strategies.ema_crossover import EmaCrossover
@@ -48,6 +49,10 @@ STRATEGY_REGISTRY = {
     # orchestrator gains Asian-hours polling + a 07:00 time-exit step --
     # see the class docstring for the integration spec.
     "asian_hours_reversion": AsianHoursReversion,
+
+    # -- VALIDATED 2026-07-05 (phase 8) -- the project's strongest pass:
+    # GBPUSD IS PF 1.97 / OOS PF 3.08, DD < 1%. Long-only Monday session.
+    "monday_drift": MondayDrift,
 
     # -- backtest-FAILED 2026-07-04 walk-forward matrix across all 9
     # majors (data/strategy_matrix_results.csv, data/phase2_results.csv).
