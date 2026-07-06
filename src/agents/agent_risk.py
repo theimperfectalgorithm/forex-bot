@@ -304,6 +304,15 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
             f"Currency concentration: {shared} open position(s) already "
             f"share a currency with {symbol} (max {MAX_SAME_CURRENCY})")
 
+    # -- 9. High-impact news blackout (5ers: no entries +/-5 min of news)
+    try:
+        from core.news_calendar import is_blackout
+        blocked, news_reason = is_blackout(symbol)
+        if blocked:
+            return reject(f"News blackout: {news_reason}")
+    except Exception as e:
+        log.warning(f"news blackout check failed ({e}) -- proceeding")
+
     # -- All checks passed -- calculate lot size
     lots = _calc_lots(balance, sl_pips, symbol, log, risk_pct)
 
