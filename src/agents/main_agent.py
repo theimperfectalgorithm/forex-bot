@@ -43,7 +43,8 @@ sys.path.insert(0, str(BASE_DIR))
 
 from agent_market    import run as run_market
 from agent_strategy  import (prepare_session, check_breakout,
-                             check_eurusd_signals, check_asian_reversion)
+                             check_eurusd_signals, check_asian_reversion,
+                             server_utc_offset_hours)
 from agent_risk      import run as run_risk
 from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
@@ -103,7 +104,17 @@ def _key_of(name, cfg):
 RISK_PCT_BY_KEY = {_key_of(name, cfg): cfg.get('risk_percent', 1.0) / 100.0
                    for name, _inst, cfg in _ACTIVE_PAIRS}
 
-# -- schedule thresholds (minutes since UTC midnight)
+# -- schedule thresholds (minutes since midnight)
+#
+# TIMEZONE NOTE (fix 2026-07-07): MT5 bar timestamps are SERVER time
+# (UTC+3 in summer / UTC+2 in winter -- see
+# agent_strategy.server_utc_offset_hours()). All strategy bar-hour rules
+# and every backtest window are in SERVER coordinates, so all SESSION
+# steps below are gated on server minutes (srv), computed each cycle.
+# Only day-cycle steps (market agent, report, Thursday warning, Friday
+# close, state rollover) stay on real UTC. Without this, ARB and
+# monday_drift could never fire (their signal bars closed hours before
+# the real-UTC windows opened) and AMR ran on a truncated window.
 T_MARKET_AGENT   =  0 * 60 +  0    # 00:00
 T_LONDON_PREP    =  7 * 60 + 45    # 07:45
 T_LONDON_START   =  8 * 60 +  0    # 08:00
@@ -863,27 +874,38 @@ def main():
             state = load_state()
             t     = minutes_since_midnight(now)
 
+            # server-clock coordinates for all session-window gating
+            # (bar stamps + backtest windows are SERVER time; see the
+            # timezone note by the schedule constants)
+            offset     = server_utc_offset_hours()
+            server_now = now + timedelta(hours=offset)
+            srv        = minutes_since_midnight(server_now)
+
             # -- 00:00  Market Intelligence (once per day)
             if t >= T_MARKET_AGENT and not state['market_ran']:
                 step_market(state, log)
                 save_state(state)
 
-            # -- 00:00-06:00  Asian-hours reversion checks (every 15 min).
-            #    Runs only after the market agent has cleared the day.
-            if (t <= T_ASIAN_END and AMR_KEYS
+            # -- server 00:00-06:00  Asian-hours reversion checks (every
+            #    15 min; = real ~21:00-03:00 UTC). NOTE: the window spans
+            #    the real-UTC state rollover; re-entry after the rollover
+            #    is blocked by the strategy's own server-date dedup plus
+            #    the one-open-position-per-symbol check.
+            if (srv <= T_ASIAN_END and AMR_KEYS
                     and state.get('market_ran')
                     and state.get('trade_allowed', False)):
                 step_check_asian_reversion(state, log)
                 save_state(state)
 
-            # -- 07:00  Asian time exit: flat all @amr positions pre-London
-            if (t >= T_ASIAN_EXIT and AMR_KEYS
+            # -- server 07:00  Asian time exit: flat all @amr pre-London
+            if (srv >= T_ASIAN_EXIT and AMR_KEYS
                     and not state.get('asian_exit_done', False)):
                 step_asian_time_exit(state, log)
                 save_state(state)
 
-            # -- Monday 00:00-02:00  Monday-drift entry checks (@mon)
-            if (now.weekday() == 0 and t <= T_MONDAY_END and MON_KEYS
+            # -- server Monday 00:00-02:00  Monday-drift entry checks
+            #    (= real Sunday evening -- the weekly open bar)
+            if (server_now.weekday() == 0 and srv <= T_MONDAY_END and MON_KEYS
                     and state.get('market_ran')
                     and state.get('trade_allowed', False)):
                 step_check_asian_reversion(state, log, keys=MON_KEYS,
@@ -892,16 +914,17 @@ def main():
                                            session_name='monday')
                 save_state(state)
 
-            # -- Monday 21:00  Monday-drift time exit (@mon flat pre-rollover)
-            if (now.weekday() == 0 and t >= T_MONDAY_EXIT and MON_KEYS
+            # -- server Monday 21:00  Monday-drift time exit
+            if (server_now.weekday() == 0 and srv >= T_MONDAY_EXIT and MON_KEYS
                     and not state.get('monday_exit_done', False)):
                 step_asian_time_exit(state, log, suffix='@mon',
                                      done_flag='monday_exit_done',
                                      label='MON')
                 save_state(state)
 
-            # -- 07:45  London session prep (once per day)
-            if t >= T_LONDON_PREP and not state['london_prep_done']:
+            # -- server 07:45  session prep (ARB Asian ranges complete at
+            #    server 07:00; breakout bars close server 08:00/09:00)
+            if srv >= T_LONDON_PREP and not state['london_prep_done']:
                 if state.get('trade_allowed', False):
                     step_session_prep(state, 'london', log)
                 else:
@@ -909,13 +932,13 @@ def main():
                     state['london_prep_done'] = True
                 save_state(state)
 
-            # -- 08:00-12:30  London breakout checks (every 15 min)
-            if T_LONDON_START <= t <= T_LONDON_END and state['london_prep_done']:
+            # -- server 08:00-12:30  breakout checks (every 15 min)
+            if T_LONDON_START <= srv <= T_LONDON_END and state['london_prep_done']:
                 step_check_breakouts(state, 'london', log)
                 save_state(state)
 
-            # -- 12:45  NY session prep (once per day)
-            if t >= T_NY_PREP and not state['ny_prep_done']:
+            # -- server 12:45  NY session prep (once per day)
+            if srv >= T_NY_PREP and not state['ny_prep_done']:
                 if state.get('trade_allowed', False):
                     step_session_prep(state, 'ny', log)
                 else:
@@ -923,15 +946,15 @@ def main():
                     state['ny_prep_done'] = True
                 save_state(state)
 
-            # -- 13:00-20:45  NY breakout checks (every 15 min)
-            if T_NY_START <= t <= T_NY_END and state['ny_prep_done']:
+            # -- server 13:00-20:45  NY breakout checks (every 15 min)
+            if T_NY_START <= srv <= T_NY_END and state['ny_prep_done']:
                 step_check_breakouts(state, 'ny', log)
                 save_state(state)
 
-            # -- 12:00-15:45  EURUSD dual-strategy checks (every 15 min).
+            # -- server 12:00-15:45  EURUSD dual-strategy checks.
             #    EURUSD_PAIR is None when no sma_ema_combined pair is active
             #    (deactivated 2026-07-05 after failing re-validation).
-            if EURUSD_PAIR and T_EURUSD_START <= t <= T_EURUSD_END:
+            if EURUSD_PAIR and T_EURUSD_START <= srv <= T_EURUSD_END:
                 step_check_eurusd(state, log)
                 save_state(state)
 

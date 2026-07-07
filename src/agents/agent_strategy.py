@@ -100,6 +100,35 @@ def _get_strategies() -> dict:
     return _STRATEGY_CACHE
 
 
+def server_utc_offset_hours() -> int:
+    """
+    MT5 SERVER clock offset vs real UTC, in whole hours. MetaQuotes-style
+    brokers run UTC+3 during US daylight saving and UTC+2 otherwise (so
+    the trading day rolls at New York close). Every bar timestamp MT5
+    returns -- and therefore every session-hour rule in the strategies
+    and every backtest window -- is in SERVER time, while the orchestrator
+    wall clock is real UTC. This helper is the single source of truth for
+    converting between the two.
+
+    Detection: live tick timestamp vs real UTC when the market is open
+    (accepted only if it lands on a plausible value); DST-calendar
+    fallback when ticks are stale (weekend).
+    """
+    from datetime import datetime, timezone
+    try:
+        if mt5.initialize():
+            tick = mt5.symbol_info_tick('EURUSD')
+            if tick and tick.time:
+                diff = round((tick.time
+                              - datetime.now(timezone.utc).timestamp()) / 3600)
+                if diff in (2, 3):
+                    return diff
+    except Exception:
+        pass
+    # fallback: US DST runs Mar-Nov; +/- a week at the edges is acceptable
+    return 3 if 3 <= datetime.now(timezone.utc).month <= 10 else 2
+
+
 def amr_keys() -> list:
     """Keys of active AsianHoursReversion pairs ('<PAIR>@amr')."""
     from strategies.asian_hours_reversion import AsianHoursReversion
