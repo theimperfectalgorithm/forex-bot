@@ -13,8 +13,10 @@ global:
   daily_loss_pct: 0.05
 
   # ---- per-instance account settings (multi-account support, 2026-07-09)
-  # Each bot clone (demo / prop firm) edits ONLY this block. agent_risk
-  # derives: HARD_FLOOR = starting_balance * (1 - hard_floor_pct);
+  # DO NOT edit these on a VPS clone -- put overrides in the gitignored
+  # config/local_config.yaml instead (same schema: a top-level 'global:'
+  # block with just the keys you override). That keeps 'git pull' clean.
+  # agent_risk derives: HARD_FLOOR = starting_balance * (1-hard_floor_pct);
   # daily limit = starting_balance * daily_loss_pct.
   starting_balance: 100000
   # broker cap on lot size -- SCALE THIS WITH THE ACCOUNT (2.0 fits 100k;

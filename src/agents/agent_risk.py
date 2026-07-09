@@ -72,15 +72,29 @@ def _log() -> logging.Logger:
 # keys fall back to the original hardcoded $100k-account values.
 import yaml
 
-_CONFIG_FILE = Path(__file__).parent.parent.parent / 'config' / 'global_config.yaml'
+_CONFIG_DIR  = Path(__file__).parent.parent.parent / 'config'
+_CONFIG_FILE = _CONFIG_DIR / 'global_config.yaml'
+_LOCAL_FILE  = _CONFIG_DIR / 'local_config.yaml'   # gitignored per-instance
+                                                    # overrides -- edit THIS
+                                                    # on each VPS clone, never
+                                                    # the tracked global file
 
 
 def _load_global_config() -> dict:
+    cfg = {}
     try:
         with open(_CONFIG_FILE, encoding='utf-8') as f:
-            return (yaml.safe_load(f) or {}).get('global', {})
+            cfg = (yaml.safe_load(f) or {}).get('global', {})
     except Exception:
-        return {}
+        pass
+    try:
+        with open(_LOCAL_FILE, encoding='utf-8') as f:
+            cfg.update((yaml.safe_load(f) or {}).get('global', {}))
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    return cfg
 
 
 GLOBAL_CFG = _load_global_config()

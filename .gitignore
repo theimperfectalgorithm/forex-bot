@@ -15,6 +15,9 @@ data/*.txt
 data/logs/
 data/state/
 
+# Per-instance account overrides (each VPS clone: demo / prop firm)
+config/local_config.yaml
+
 # Secrets
 .env
 mcp/.env

@@ -41,14 +41,25 @@ log = logging.getLogger('NEWS')
 
 
 def _news_filter_enabled() -> bool:
+    enabled = False
     try:
         with open(CONFIG_FILE, encoding='utf-8') as f:
             cfg = yaml.safe_load(f) or {}
-        return bool(cfg.get('global', {}).get('news_filter', False))
+        enabled = bool(cfg.get('global', {}).get('news_filter', False))
     except Exception as e:
         log.warning(f"news_calendar: could not read global_config ({e}) -- "
                     f"treating news_filter as DISABLED")
-        return False
+    try:  # gitignored per-instance override (config/local_config.yaml)
+        with open(CONFIG_FILE.parent / 'local_config.yaml',
+                  encoding='utf-8') as f:
+            loc = (yaml.safe_load(f) or {}).get('global', {})
+        if 'news_filter' in loc:
+            enabled = bool(loc['news_filter'])
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    return enabled
 
 
 def _load_cache() -> dict | None:
