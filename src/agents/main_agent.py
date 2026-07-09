@@ -884,6 +884,8 @@ def _bind_mt5_terminal(log: logging.Logger):
         import os
         import MetaTrader5 as mt5
         kwargs = {'path': path}
+        if GLOBAL_CFG.get('mt5_portable', False):
+            kwargs['portable'] = True   # terminal copies launched /portable
         login = int(GLOBAL_CFG.get('mt5_login') or 0)
         if login:
             kwargs.update(login=login,

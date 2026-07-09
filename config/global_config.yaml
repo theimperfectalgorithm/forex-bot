@@ -32,3 +32,6 @@ global:
   # stored in this file (this repo is public).
   mt5_login: 0
   mt5_server: ""
+  # true only if this instance's terminal is a folder-copy launched with
+  # the /portable flag (Method B) rather than a normal second install
+  mt5_portable: false
