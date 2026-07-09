@@ -66,10 +66,31 @@ def _log() -> logging.Logger:
     return log
 
 
+# -- per-instance account settings from config/global_config.yaml
+# (multi-account support 2026-07-09: each bot clone -- demo / prop firm --
+# sets its own starting_balance / max_lot / risk_scale there). Missing
+# keys fall back to the original hardcoded $100k-account values.
+import yaml
+
+_CONFIG_FILE = Path(__file__).parent.parent.parent / 'config' / 'global_config.yaml'
+
+
+def _load_global_config() -> dict:
+    try:
+        with open(_CONFIG_FILE, encoding='utf-8') as f:
+            return (yaml.safe_load(f) or {}).get('global', {})
+    except Exception:
+        return {}
+
+
+GLOBAL_CFG = _load_global_config()
+
 # -- constants
-STARTING_BALANCE   = 100_000.00
-HARD_FLOOR         = 90_000.00
-MAX_DAILY_LOSS_PCT = 0.05        # 5% -- the prop firm's hard daily limit
+STARTING_BALANCE   = float(GLOBAL_CFG.get('starting_balance', 100_000.00))
+HARD_FLOOR         = STARTING_BALANCE * (1.0 - float(GLOBAL_CFG.get('hard_floor_pct', 0.10)))
+MAX_DAILY_LOSS_PCT = float(GLOBAL_CFG.get('daily_loss_pct', 0.05))  # firm's hard daily limit
+RISK_SCALE         = float(GLOBAL_CFG.get('risk_scale', 1.0))   # multiplies every
+                                                                # strategy's risk_percent
 DAILY_EQUITY_SOFT_STOP_PCT = 0.04  # halt NEW trades at -4% equity on the day,
                                    # leaving a 1% buffer of open-position
                                    # slippage before the firm's 5% breach
@@ -79,7 +100,7 @@ MAX_SAME_CURRENCY  = 2           # max open positions sharing one currency
 RISK_PER_TRADE_PCT = 0.01        # 1% of balance per trade (GBPJPY, EURJPY)
 EURUSD_RISK_PCT    = 0.0025      # 0.25% of balance per trade (EURUSD both strategies)
 MIN_LOT            = 0.01
-MAX_LOT            = 2.00
+MAX_LOT            = float(GLOBAL_CFG.get('max_lot', 2.00))
 MAX_CONSEC_LOSSES  = 2
 
 
@@ -187,7 +208,7 @@ def _calc_lots(balance: float, sl_pips: float, symbol: str,
     """
     if risk_pct is None:
         risk_pct = EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT
-    risk_usd  = balance * risk_pct
+    risk_usd  = balance * risk_pct * RISK_SCALE
     pv        = _pip_value_per_lot(symbol, log)
     lots      = risk_usd / (sl_pips * pv) if sl_pips > 0 else MIN_LOT
     lots      = round(max(MIN_LOT, min(lots, MAX_LOT)), 2)
@@ -289,7 +310,7 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
                       f"unbounded book risk, no new trades until fixed")
     eff_pct   = risk_pct if risk_pct is not None else (
         EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT)
-    new_risk  = balance * eff_pct
+    new_risk  = balance * eff_pct * RISK_SCALE
     max_total = balance * MAX_TOTAL_OPEN_RISK_PCT
     if open_risk + new_risk > max_total:
         return reject(

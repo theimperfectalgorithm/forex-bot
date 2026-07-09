@@ -45,7 +45,8 @@ from agent_market    import run as run_market
 from agent_strategy  import (prepare_session, check_breakout,
                              check_eurusd_signals, check_asian_reversion,
                              server_utc_offset_hours)
-from agent_risk      import run as run_risk
+from agent_risk      import (run as run_risk, GLOBAL_CFG,
+                             STARTING_BALANCE, MAX_DAILY_LOSS_PCT)
 from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
 from core.pair_manager import get_active_pairs
@@ -361,8 +362,9 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                  f"{breakout['signal']}  bar_close={breakout['trigger_bar_close']:.5f}  "
                  f"+{breakout.get('overshoot_pips', 0.0):.0f}p past range")
 
-        # Daily loss limit guard
-        daily_limit = 0.05 * 100_000   # $5,000 -- absolute floor check
+        # Daily loss limit guard (per-instance: starting_balance x
+        # daily_loss_pct from global_config)
+        daily_limit = MAX_DAILY_LOSS_PCT * STARTING_BALANCE
         if state['daily_pnl'] <= -daily_limit:
             log.warning(f"Daily loss limit reached -- skipping {pair}")
             continue
@@ -465,7 +467,7 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                  f"SL={res['sl_pips']:.1f}p  TP={res['tp_pips']:.1f}p  "
                  f"{res['reason']}")
 
-        daily_limit = 0.05 * 100_000
+        daily_limit = MAX_DAILY_LOSS_PCT * STARTING_BALANCE
         if state['daily_pnl'] <= -daily_limit:
             log.warning(f"Daily loss limit reached -- skipping {key}")
             continue
@@ -861,12 +863,54 @@ def sleep_until_next_quarter(log: logging.Logger):
 # Main loop
 # ---------------------------------------------------------------------------
 
+def _bind_mt5_terminal(log: logging.Logger):
+    """
+    One explicit MT5 initialize() against the terminal configured in
+    global_config (mt5_terminal_path). With TWO terminals installed on
+    the VPS (demo + prop firm), a bare initialize() is ambiguous about
+    which it attaches to -- this pins the process to its own terminal.
+    Every later bare mt5.initialize() call in the strategy/agent code is
+    a no-op against this established connection. If mt5_login is set,
+    the password comes from the MT5_PASSWORD env var (never from the
+    config file -- this repo is public); with login 0 the terminal's own
+    saved credentials are used (preferred).
+    """
+    path = (GLOBAL_CFG.get('mt5_terminal_path') or '').strip()
+    if not path:
+        log.info("mt5_terminal_path not set -- attaching to default terminal "
+                 "(fine while only ONE terminal is installed)")
+        return
+    try:
+        import os
+        import MetaTrader5 as mt5
+        kwargs = {'path': path}
+        login = int(GLOBAL_CFG.get('mt5_login') or 0)
+        if login:
+            kwargs.update(login=login,
+                          server=str(GLOBAL_CFG.get('mt5_server', '')),
+                          password=os.environ.get('MT5_PASSWORD', ''))
+        ok = mt5.initialize(**kwargs)
+        if ok:
+            acct = mt5.account_info()
+            log.info(f"MT5 terminal bound: {path}  account="
+                     f"{acct.login if acct else '?'}")
+        else:
+            log.error(f"MT5 terminal bind FAILED for {path}: {mt5.last_error()}")
+    except Exception as e:
+        log.error(f"MT5 terminal bind error: {e}", exc_info=True)
+
+
 def main():
     log = setup_logger()
     log.info("=" * 60)
     log.info("The5ers Trading System -- Orchestrator Started")
-    log.info(f"Pairs: {', '.join(PAIRS)}")
+    log.info(f"Strategy keys: {', '.join(BREAKOUT_KEYS + AMR_KEYS + MON_KEYS) or '(none)'}")
+    log.info(f"Account config: start=${STARTING_BALANCE:,.0f}  "
+             f"daily_limit={MAX_DAILY_LOSS_PCT*100:.0f}%  "
+             f"risk_scale={GLOBAL_CFG.get('risk_scale', 1.0)}  "
+             f"max_lot={GLOBAL_CFG.get('max_lot', 2.0)}")
     log.info("=" * 60)
+    _bind_mt5_terminal(log)
 
     while True:
         try:
