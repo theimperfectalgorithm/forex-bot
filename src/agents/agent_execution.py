@@ -576,8 +576,17 @@ def monitor_positions(open_trades: list, log: logging.Logger,
         # Position is still open
         pos = positions[0]
 
-        # Apply breakeven if not already done and profit threshold reached
-        if not trade.get('breakeven_moved', False):
+        # Apply breakeven if not already done and profit threshold reached.
+        # EXCLUDED for validated-book trades (strategy_key contains '@',
+        # i.e. @arb/@amr/@mon): the phase-7 exit study showed baseline
+        # SL/TP beats breakeven moves on 5 of 6 book strategies, and the
+        # walk-forward validations were run WITHOUT any breakeven -- live
+        # must match backtest. (Observed live 2026-07-10: the legacy BE
+        # rule turned a +25p CADJPY@arb into a -$4.75 scratch instead of
+        # letting it run to its 2:1 target.) Legacy-style trades keep the
+        # original behavior.
+        if ('@' not in str(trade.get('strategy_key', ''))
+                and not trade.get('breakeven_moved', False)):
             moved = _apply_breakeven(pos, trade, log)
             if moved:
                 trade = {**trade, 'breakeven_moved': True}
