@@ -461,6 +461,18 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
             log.error(f"Agent 2 check_asian_reversion {key}: {e}", exc_info=True)
             continue
         if res['signal'] == 'NO_SIGNAL':
+            # Silent no-signals hid a frozen terminal on 2026-07-12 (the
+            # MT5 update dialog blocked bar fetches during monday_drift's
+            # debut window and nothing was logged). Operational failures
+            # are WARNINGs; @mon checks always log (only ~52/year).
+            reason = res.get('reason', '')
+            op_fail = any(s in reason for s in
+                          ('connection failed', 'no H1 bar', 'no M15',
+                           'insufficient', 'not loaded'))
+            if op_fail:
+                log.warning(f"{label} no-signal {key}: {reason}")
+            elif label == 'MON':
+                log.info(f"{label} no-signal {key}: {reason}")
             continue
 
         log.info(f"{label} SIGNAL  {key} {res['signal']}  "
