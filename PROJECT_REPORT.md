@@ -1,6 +1,7 @@
 # Forex Bot — Complete Project Report
 
-**Date:** 2026-07-15 · **Supersedes:** PROJECT_STATUS_2026-07-05.md
+**Date:** 2026-07-15 (rev 2, includes trade journal + health monitor) ·
+**Supersedes:** PROJECT_STATUS_2026-07-05.md
 **Purpose:** a single self-contained document from which any person or AI
 can understand what this project is, what has been built, what was tried
 and rejected (with evidence), what is running live right now, and what
@@ -108,7 +109,32 @@ plus for the prop clone: `starting_balance`, `max_lot` (scale down!),
 saved login or MT5_PASSWORD env var. Never run one process switching
 accounts (MT5 python API is a per-process singleton).
 
-### 2.6 Legacy behaviors removed/gated
+### 2.6 Data collection & self-monitoring (added fc291ed, 2026-07-15)
+- **Trade journal (core/trade_journal.py):** append-only ML-ready JSONL
+  at data/journal/events.jsonl recording every SIGNAL, **REJECTION**
+  (first-class, with gate stage + reason — the counterfactual half of a
+  future meta-labeling dataset), ENTRY (26 context fields: spread, H1
+  ATR, server hour/dow, minutes-to-next-high-impact-news, account
+  balance/equity/open-risk, slippage vs signal price, intended risk,
+  dual UTC+server timestamps) and EXIT. Hooked at every decision point
+  in both the breakout and AMR/MON orchestrator paths. Fail-safe
+  (journal errors can never block trading). Journal starts EMPTY
+  2026-07-15 — earlier trades are only in MT5 history + trades_log.csv.
+  MAE/MFE not captured live; reconstruct offline from bars if needed.
+- **Strategy Health Monitor (core/health_monitor.py):** runs in the
+  daily 21:00 report and standalone (`python -m core.health_monitor`).
+  Compares each strategy key's live win rate to its backtest
+  expectation (EXPECTED_WR table inside, conservative IS/OOS picks)
+  via exact binomial statistics: GREEN / AMBER (p<0.10) / RED (p<0.02,
+  n≥10 → logs a pause RECOMMENDATION; pausing stays a human decision
+  per the standing checkpoint rules). This is the "learning loop"
+  adopted from ML — as auditable statistics, not a neural net.
+- **Meta-labeling: EXPLICITLY PARKED** until the journal holds ~1000+
+  trades (~1 year). Price-predicting neural networks remain banned per
+  the dead-ground principles (they are the overfitting failure mode of
+  phases 1–5, scaled up).
+
+### 2.7 Legacy behaviors removed/gated
 - Daily 17:30 UTC EOD close: removed long ago in code; was still live
   on the owner's LAPTOP build through June (source of June's EXPERT
   closes — resolved, laptop retired 2026-07-01).
@@ -294,7 +320,8 @@ monitoring). Zero AMR signals on some quiet days is normal.
    demo (same signals, seconds apart → execution-quality comparison).
 
 **Near-term engineering backlog:**
-- AMR checkpoint execution (Aug 1 / 20 trades).
+- AMR checkpoint execution (Aug 1 / 20 trades) — the health monitor
+  now computes the supporting statistics daily.
 - Monitor ARB realized-risk drift; consider computing pip value from
   cross rates instead of tick_value for JPY pairs.
 - MAX_LOT interplay with AMR sizing (intended 0.25% often capped).
@@ -312,6 +339,9 @@ monitoring). Zero AMR signals on some quiet days is normal.
    book and enable USDCAD-oil correlation work.
 5. Exit study round 2 ONLY if live data suggests it (partial-TP was
    never tested).
+6. Meta-labeling (tiny logistic model on journaled signal context to
+   size/skip signals) once data/journal/events.jsonl reaches ~1000+
+   trades — the journal schema was designed for this.
 
 **Explicitly NOT planned:** any new EURUSD/GBPUSD price-signal search
 at retail data tier; ICT variants; martingale/grid anything; carry
@@ -327,11 +357,13 @@ trades (incompatible with Friday-close + daily-DD rules).
   monday_drift → e75d680 **server-time fix** → 84358fd multi-account →
   9386186 portable flag → 9a62188 local_config overlay → 4691a22
   breakeven exclusion → bfcf595 weekend maintenance → a92cdc3
-  no-signal observability.
+  no-signal observability → 893c832 this report → fc291ed trade
+  journal + health monitor.
 - **Key modules:** strategies/{asian_range_breakout, asian_hours_reversion,
-  monday_drift, registry}.py · core/{news_calendar, data_loader,
-  session_filter, pair_manager, strategy_loader}.py ·
-  src/agents/*.py · verify_architecture.py (22 checks).
+  monday_drift, registry}.py · core/{news_calendar, trade_journal,
+  health_monitor, data_loader, session_filter, pair_manager,
+  strategy_loader}.py · src/agents/*.py · verify_architecture.py
+  (22 checks).
 - **Research artifacts:** src/strategy_matrix_backtest.py (core engine)
   + src/phase*.py + src/revalidate_eurusd_live.py; results in data/*.csv
   and data/phase*_report.txt (regenerable; gitignored).
