@@ -51,6 +51,7 @@ from agent_execution import place_trade, monitor_positions, close_trade
 from agent_reporting import run as run_reporting
 from core.pair_manager import get_active_pairs
 from core.session_filter import is_friday_close_time
+from core import trade_journal as tj
 
 # -- directory paths
 DATA_DIR   = BASE_DIR / 'data'
@@ -362,11 +363,20 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                  f"{breakout['signal']}  bar_close={breakout['trigger_bar_close']:.5f}  "
                  f"+{breakout.get('overshoot_pips', 0.0):.0f}p past range")
 
+        _sig = dict(key=pair, symbol=symbol, direction=breakout['signal'],
+                    sl_pips=state['session_data'][pair].get('sl_pips'),
+                    tp_pips=state['session_data'][pair].get('tp_pips'),
+                    signal_price=breakout.get('trigger_bar_close'),
+                    strategy_reason=breakout.get('reason', ''))
+        tj.log_signal(**_sig)
+
         # Daily loss limit guard (per-instance: starting_balance x
         # daily_loss_pct from global_config)
         daily_limit = MAX_DAILY_LOSS_PCT * STARTING_BALANCE
         if state['daily_pnl'] <= -daily_limit:
             log.warning(f"Daily loss limit reached -- skipping {pair}")
+            tj.log_rejection(**_sig, stage='daily_limit',
+                             reject_reason='daily loss limit reached')
             continue
 
         # News flag guard
@@ -388,6 +398,8 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
 
         if risk['decision'] == 'REJECTED':
             log.warning(f"Risk REJECTED {pair}: {risk['reason']}")
+            tj.log_rejection(**_sig, stage='risk',
+                             reject_reason=risk['reason'])
             continue
 
         log.info(f"Risk APPROVED {pair}: {risk['lot_size']:.2f} lots")
@@ -425,8 +437,14 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                 'breakeven_moved': False,
                 'entry_time'    : datetime.now(timezone.utc).isoformat(),
             })
+            tj.log_entry(**_sig, ticket=result['ticket'],
+                         lots=risk['lot_size'],
+                         fill_price=result['entry_price'],
+                         risk_pct_config=RISK_PCT_BY_KEY.get(pair))
         else:
             log.error(f"Trade placement FAILED {pair}: {result['error']}")
+            tj.log_rejection(**_sig, stage='execution',
+                             reject_reason=str(result['error']))
 
 
 def step_check_asian_reversion(state: dict, log: logging.Logger,
@@ -479,9 +497,17 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                  f"SL={res['sl_pips']:.1f}p  TP={res['tp_pips']:.1f}p  "
                  f"{res['reason']}")
 
+        _sig = dict(key=key, symbol=symbol, direction=res['signal'],
+                    sl_pips=res['sl_pips'], tp_pips=res['tp_pips'],
+                    signal_price=res.get('entry_price'),
+                    strategy_reason=res.get('reason', ''))
+        tj.log_signal(**_sig)
+
         daily_limit = MAX_DAILY_LOSS_PCT * STARTING_BALANCE
         if state['daily_pnl'] <= -daily_limit:
             log.warning(f"Daily loss limit reached -- skipping {key}")
+            tj.log_rejection(**_sig, stage='daily_limit',
+                             reject_reason='daily loss limit reached')
             continue
 
         try:
@@ -492,6 +518,8 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
             continue
         if risk['decision'] == 'REJECTED':
             log.warning(f"Risk REJECTED {key}: {risk['reason']}")
+            tj.log_rejection(**_sig, stage='risk',
+                             reject_reason=risk['reason'])
             continue
 
         exec_data = {'sl_pips': res['sl_pips'], 'tp_pips': res['tp_pips'],
@@ -522,8 +550,14 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                 'breakeven_moved': False,
                 'entry_time'     : datetime.now(timezone.utc).isoformat(),
             })
+            tj.log_entry(**_sig, ticket=result['ticket'],
+                         lots=risk['lot_size'],
+                         fill_price=result['entry_price'],
+                         risk_pct_config=RISK_PCT_BY_KEY.get(key))
         else:
             log.error(f"Trade placement FAILED {key}: {result['error']}")
+            tj.log_rejection(**_sig, stage='execution',
+                             reject_reason=str(result['error']))
 
 
 def step_asian_time_exit(state: dict, log: logging.Logger,
@@ -785,6 +819,7 @@ def step_monitor_positions(state: dict, log: logging.Logger):
                 else:
                     state['consec_losses'][pair] = 0
 
+            tj.log_exit(trade)
             log.info(f"POSITION CLOSED  {pair} {trade['direction']}  "
                      f"exit={trade.get('exit_price', 0):.5f}  "
                      f"reason={reason}  "
@@ -802,6 +837,15 @@ def step_report(state: dict, log: logging.Logger):
     except Exception as e:
         log.error(f"Agent 5 reporting failed: {e}", exc_info=True)
         state['report_ran'] = True   # don't retry tonight
+
+    # Strategy Health Monitor: grade every strategy's live results
+    # against its backtest expectation (GREEN/AMBER/RED; RED logs a
+    # pause recommendation -- pausing stays a human decision)
+    try:
+        from core.health_monitor import run as run_health
+        run_health(log)
+    except Exception as e:
+        log.error(f"Health monitor failed: {e}", exc_info=True)
 
 
 def step_friday_close(state: dict, log: logging.Logger):

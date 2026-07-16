@@ -14,6 +14,7 @@ data/*.csv
 data/*.txt
 data/logs/
 data/state/
+data/journal/
 
 # Per-instance account overrides (each VPS clone: demo / prop firm)
 config/local_config.yaml
