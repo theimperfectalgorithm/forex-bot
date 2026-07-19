@@ -310,6 +310,29 @@ monitoring). Zero AMR signals on some quiet days is normal.
 - Sun Jul 19 ~21:00–23:00 real UTC: monday_drift's real debut — check
   `Select-String trading.log -Pattern "MON"` Monday morning.
 
+**The 5ers challenge instance ($5K 2-step CLASSIC, purchased 2026-07):**
+- Official rules (screenshots on file, FAQ dated 2026-06-14): step 1 +8%,
+  step 2 +5%, max daily loss 5%, max loss 10% STATIC from initial
+  balance (equity stop-out $4,500), unlimited time, min 3 profitable
+  days/step, $39. News: holding over news allowed; EXECUTING orders
+  ±2 min around high-impact news (Forex Factory, SERVER time)
+  prohibited — our gate uses the same feed with a ±5 min window
+  (stricter, config `news_window_min`). Overnight/weekend holds
+  allowed. Multiple logins same location/IP allowed (both bots on one
+  VPS = compliant). Metals hours 01:05–23:50 EET (gold ARB unaffected).
+- Phase-9 Monte Carlo (src/phase9_5k_challenge_sim.py) with 0.01-lot
+  granularity: **risk_scale 1.0 → 2.56%/mo; step 1: 91% pass within a
+  year / 9% bust / median 48 trading days; step 2: 94% / 6% / 28d.**
+  risk_scale 0.5 is STRICTLY WORSE (84% / 12% bust / 81d): min-lot
+  flooring keeps risk up while profit halves. Decision: run FULL risk.
+- Instance config (config/local_config.yaml in its clone):
+  starting_balance 5000, max_lot 0.5, risk_scale 1.0,
+  mt5_terminal_path C:\MT5-5ers\terminal64.exe, **news_fail_closed:
+  true** (a862894: unavailable calendar blocks entries on this
+  instance; demo stays fail-open).
+- Same 8-slot book, zero strategy changes — the demo-vs-prop twin-fill
+  comparison is the experiment.
+
 **When the 5ers account arrives:**
 1. Log into the C:\MT5-5ers terminal (File → Login, search their
    server, save credentials). 2. Second clone + its local_config.yaml
