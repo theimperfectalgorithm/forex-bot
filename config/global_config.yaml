@@ -37,3 +37,10 @@ global:
   # true only if this instance's terminal is a folder-copy launched with
   # the /portable flag (Method B) rather than a normal second install
   mt5_portable: false
+  # news gate behavior when the calendar feed AND cache are unavailable:
+  # false = fail-open (demo default), true = BLOCK entries (REQUIRED on
+  # challenge/funded instances -- set in their local_config.yaml)
+  news_fail_closed: false
+  # blackout half-window in minutes around high-impact events. The 5ers
+  # official rule is +/-2 min (server time); 5 keeps a clock-skew margin.
+  news_window_min: 5
