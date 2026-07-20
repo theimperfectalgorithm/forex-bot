@@ -45,11 +45,19 @@ EQUITY_CSV    = DATA_DIR / 'equity_curve.csv'
 REPORT_TXT    = DATA_DIR / 'daily_report.txt'
 TRADES_CSV    = DATA_DIR / 'trades_log.csv'
 
-# -- constants
-STARTING_BALANCE   = 100_000.00
-TARGET_BALANCE     = 110_000.00
-HARD_FLOOR         = 90_000.00
-MAX_DAILY_LOSS_PCT = 0.05
+# -- repo root on path so core.* is importable regardless of who imports
+# this module (mirrors agent_strategy.py's own path setup)
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+# -- constants: SINGLE SOURCE OF TRUTH in core/account_config.py.
+# INCIDENT 2026-07-19: this module's STARTING_BALANCE was hardcoded at
+# $100,000 while the $5,000 challenge clone's real balance is $5,000 --
+# every reconciliation compared against the wrong baseline and reported
+# a nonsensical "-$95,000 / 95% drawdown". Now derived from the same
+# starting_balance every other agent uses.
+from core.account_config import (STARTING_BALANCE, TARGET_BALANCE,
+                                 HARD_FLOOR, MAX_DAILY_LOSS_PCT)
 RECON_TOLERANCE    = 1.00   # dollar tolerance for P&L reconciliation
 
 EQUITY_HEADERS = [
@@ -325,7 +333,7 @@ def _write_report(state: dict, stats: dict, flags: list, log: logging.Logger,
         f"  Balance          : ${stats['balance']:>12,.2f}",
         f"  Daily P&L        : ${stats['daily_pnl']:>+12,.2f}  ({stats['daily_pct']:+.2f}%)",
         f"  Cumulative return: {stats['cum_return']:>+11.2f}%",
-        f"  vs Target $110k  : ${stats['balance'] - TARGET_BALANCE:>+11,.2f}",
+        f"  vs Target ${TARGET_BALANCE/1000:.0f}k    : ${stats['balance'] - TARGET_BALANCE:>+11,.2f}",
         f"  vs Hard Floor    : ${stats['balance'] - HARD_FLOOR:>+11,.2f}",
         "",
         "  TODAY'S TRADING",

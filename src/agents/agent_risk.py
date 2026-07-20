@@ -46,6 +46,12 @@ try:
 except ImportError:
     MT5_AVAILABLE = False
 
+# -- repo root on path so core.* is importable regardless of who imports
+# this module (mirrors agent_strategy.py's own path setup)
+_REPO_ROOT = Path(__file__).parent.parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 # -- logging
 LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'
 
@@ -66,45 +72,15 @@ def _log() -> logging.Logger:
     return log
 
 
-# -- per-instance account settings from config/global_config.yaml
-# (multi-account support 2026-07-09: each bot clone -- demo / prop firm --
-# sets its own starting_balance / max_lot / risk_scale there). Missing
-# keys fall back to the original hardcoded $100k-account values.
-import yaml
+# -- per-instance account settings: SINGLE SOURCE OF TRUTH in
+# core/account_config.py (2026-07-19: agent_market.py and
+# agent_reporting.py each carried their OWN hardcoded $100k constants
+# that drifted from this module's -- see that module's docstring for
+# the incident this fixed). Every agent now imports from the same place.
+from core.account_config import (GLOBAL_CFG, STARTING_BALANCE, HARD_FLOOR,
+                                 MAX_DAILY_LOSS_PCT, MAX_LOT, RISK_SCALE)
 
-_CONFIG_DIR  = Path(__file__).parent.parent.parent / 'config'
-_CONFIG_FILE = _CONFIG_DIR / 'global_config.yaml'
-_LOCAL_FILE  = _CONFIG_DIR / 'local_config.yaml'   # gitignored per-instance
-                                                    # overrides -- edit THIS
-                                                    # on each VPS clone, never
-                                                    # the tracked global file
-
-
-def _load_global_config() -> dict:
-    cfg = {}
-    try:
-        with open(_CONFIG_FILE, encoding='utf-8') as f:
-            cfg = (yaml.safe_load(f) or {}).get('global', {})
-    except Exception:
-        pass
-    try:
-        with open(_LOCAL_FILE, encoding='utf-8') as f:
-            cfg.update((yaml.safe_load(f) or {}).get('global', {}))
-    except FileNotFoundError:
-        pass
-    except Exception:
-        pass
-    return cfg
-
-
-GLOBAL_CFG = _load_global_config()
-
-# -- constants
-STARTING_BALANCE   = float(GLOBAL_CFG.get('starting_balance', 100_000.00))
-HARD_FLOOR         = STARTING_BALANCE * (1.0 - float(GLOBAL_CFG.get('hard_floor_pct', 0.10)))
-MAX_DAILY_LOSS_PCT = float(GLOBAL_CFG.get('daily_loss_pct', 0.05))  # firm's hard daily limit
-RISK_SCALE         = float(GLOBAL_CFG.get('risk_scale', 1.0))   # multiplies every
-                                                                # strategy's risk_percent
+# -- risk-agent-specific constants (not shared with other agents)
 DAILY_EQUITY_SOFT_STOP_PCT = 0.04  # halt NEW trades at -4% equity on the day,
                                    # leaving a 1% buffer of open-position
                                    # slippage before the firm's 5% breach
@@ -114,7 +90,6 @@ MAX_SAME_CURRENCY  = 2           # max open positions sharing one currency
 RISK_PER_TRADE_PCT = 0.01        # 1% of balance per trade (GBPJPY, EURJPY)
 EURUSD_RISK_PCT    = 0.0025      # 0.25% of balance per trade (EURUSD both strategies)
 MIN_LOT            = 0.01
-MAX_LOT            = float(GLOBAL_CFG.get('max_lot', 2.00))
 MAX_CONSEC_LOSSES  = 2
 
 

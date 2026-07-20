@@ -11,13 +11,21 @@ global:
   log_level: INFO
   hard_floor_pct: 0.10
   daily_loss_pct: 0.05
+  # step-1 profit target as a fraction of starting_balance (5ers Classic:
+  # 8%). Used only for reporting's "vs Target" line -- no gate depends on it.
+  profit_target_pct: 0.08
 
   # ---- per-instance account settings (multi-account support, 2026-07-09)
   # DO NOT edit these on a VPS clone -- put overrides in the gitignored
   # config/local_config.yaml instead (same schema: a top-level 'global:'
   # block with just the keys you override). That keeps 'git pull' clean.
-  # agent_risk derives: HARD_FLOOR = starting_balance * (1-hard_floor_pct);
-  # daily limit = starting_balance * daily_loss_pct.
+  # core/account_config.py is the SINGLE SOURCE OF TRUTH derived from
+  # starting_balance -- agent_risk, agent_market, and agent_reporting all
+  # import from it (never hardcode account numbers in an agent again;
+  # see core/account_config.py's docstring for the 2026-07-19 incident
+  # this fixed). HARD_FLOOR = starting_balance * (1-hard_floor_pct);
+  # daily limit = starting_balance * daily_loss_pct; TARGET_BALANCE =
+  # starting_balance * (1+profit_target_pct).
   starting_balance: 100000
   # broker cap on lot size -- SCALE THIS WITH THE ACCOUNT (2.0 fits 100k;
   # a 5k-20k account needs ~0.1-0.5 or tight-SL trades will over-risk)

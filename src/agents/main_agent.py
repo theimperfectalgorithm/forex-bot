@@ -642,7 +642,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
     log.info(f"EURUSD: {len(signals)} actionable signal(s) returned")
 
     # ---- Guard constants ----
-    DAILY_LOSS_LIMIT = 0.05 * 100_000   # $5,000
+    DAILY_LOSS_LIMIT = MAX_DAILY_LOSS_PCT * STARTING_BALANCE
     MAX_CONSEC       = 2
     MAX_DAILY        = 2
 

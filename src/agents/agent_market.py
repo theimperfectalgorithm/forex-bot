@@ -6,7 +6,8 @@ Runs at 00:00 UTC each day.
 Responsibilities:
   - Connect to MT5 and read current account balance
   - Calculate daily P&L vs starting balance
-  - Verify account is above the $90,000 hard floor
+  - Verify account is above the hard floor (starting_balance x (1 - hard_floor_pct);
+    see config/global_config.yaml, per-instance override in local_config.yaml)
   - Fetch the economic calendar for high-impact events
   - Flag any event within 30 minutes of London open (08:00) or NY open (13:00)
   - Return TRADE_DAY or AVOID with reason
@@ -25,6 +26,12 @@ try:
     MT5_AVAILABLE = True
 except ImportError:
     MT5_AVAILABLE = False
+
+# -- repo root on path so core.* is importable regardless of who imports
+# this module (mirrors agent_strategy.py's own path setup)
+_REPO_ROOT = Path(__file__).parent.parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 # -- logging (shared file, separate logger name)
 LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'
@@ -45,10 +52,13 @@ def _log() -> logging.Logger:
     return log
 
 
-# -- constants
-STARTING_BALANCE   = 100_000.00
-HARD_FLOOR         = 90_000.00
-MAX_DAILY_LOSS_PCT = 0.05
+# -- constants: SINGLE SOURCE OF TRUTH in core/account_config.py.
+# INCIDENT 2026-07-19: this module's HARD_FLOOR was hardcoded at
+# $90,000 while the $5,000 challenge clone's real balance is $5,000 --
+# every day compared $5,000 <= $90,000, declared HARD FLOOR BREACHED,
+# and returned AVOID, so the bot never traded from launch. Now derived
+# from the same starting_balance every other agent uses.
+from core.account_config import STARTING_BALANCE, HARD_FLOOR, MAX_DAILY_LOSS_PCT
 
 # currencies relevant to our pairs (GBPJPY, EURJPY, EURUSD)
 WATCHED_CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY']
