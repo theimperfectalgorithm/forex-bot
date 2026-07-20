@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
+import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -32,12 +34,45 @@ import yaml
 REPO_ROOT   = Path(__file__).parent.parent
 CACHE_FILE  = REPO_ROOT / 'data' / 'news_calendar.json'
 CONFIG_FILE = REPO_ROOT / 'config' / 'global_config.yaml'
+LOGS_DIR    = REPO_ROOT / 'data' / 'logs'
 
 FEED_URL      = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
 REFRESH_HOURS = 6
 WINDOW_MIN    = 5          # +/- minutes around a high-impact event
 
-log = logging.getLogger('NEWS')
+
+def _setup_logger() -> logging.Logger:
+    """
+    BUG FIX 2026-07-21: this module previously did a bare
+    logging.getLogger('NEWS') with no handlers attached -- unlike every
+    other module in this codebase (agent_market.py, agent_risk.py, ...),
+    which all wire a FileHandler to data/logs/trading.log via this same
+    pattern. With no handler, every warning/error this module logs
+    (feed fetch failures, "NO feed and NO cache", stale-cache fallback)
+    went nowhere -- not to trading.log, not anywhere an operator would
+    see it. This is how a live news-gate fail-closed rejection on the
+    5ers account produced zero diagnostic trace: is_blackout() clearly
+    ran its fail-closed branch (confirmed by the exact rejection text in
+    the risk-reject log line), but the *why* -- the underlying fetch
+    failure -- was silently swallowed.
+    """
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    logger = logging.getLogger('NEWS')
+    if not logger.handlers:
+        fmt = logging.Formatter('%(asctime)s  %(levelname)-8s  %(name)s  %(message)s',
+                                datefmt='%Y-%m-%d %H:%M:%S')
+        fmt.converter = time.gmtime
+        fh = logging.FileHandler(LOGS_DIR / 'trading.log', encoding='utf-8')
+        fh.setFormatter(fmt)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setFormatter(fmt)
+        logger.addHandler(fh)
+        logger.addHandler(ch)
+        logger.setLevel(logging.INFO)
+    return logger
+
+
+log = _setup_logger()
 
 
 def _cfg(key: str, default):
