@@ -109,6 +109,30 @@ plus for the prop clone: `starting_balance`, `max_lot` (scale down!),
 saved login or MT5_PASSWORD env var. Never run one process switching
 accounts (MT5 python API is a per-process singleton).
 
+**Pair/strategy isolation (added 2026-07-21):** `pairs/*.yaml` is fully
+git-tracked, so both clones see identical files after `git pull` —
+`core/pair_manager.py`'s `get_active_pairs()` has no per-instance
+filtering of its own. To let the demo clone keep freely adding/testing
+new pairs via pushes to `main` without those going live on the funded
+5ers clone, the 5ers clone's `local_config.yaml` carries an optional
+top-level `locked_pairs` allowlist:
+```yaml
+locked_pairs:
+  - pair: GBPJPY
+    strategy: asian_range_breakout
+  # ... one entry per validated {pair, strategy} in the current book
+```
+`get_active_pairs()` intersects the YAML-active set against this list
+when present — a pair/strategy must be BOTH `active: true` in its YAML
+AND listed here to trade; this only ever removes, never force-adds, so
+a repo-wide `active: false` kill switch still applies everywhere. The
+demo clone leaves `locked_pairs` undefined and is unaffected. Anything
+excluded logs a WARNING in trading.log. **To promote a pair** to the
+funded account: after it clears demo forward-testing, manually add its
+`{pair, strategy}` entry to the 5ers clone's own `local_config.yaml` and
+restart — a deliberate, on-machine action, never a side effect of a
+`git push` made while working on the demo box.
+
 ### 2.6 Data collection & self-monitoring (added fc291ed, 2026-07-15)
 - **Trade journal (core/trade_journal.py):** append-only ML-ready JSONL
   at data/journal/events.jsonl recording every SIGNAL, **REJECTION**
@@ -281,10 +305,14 @@ monitoring). Zero AMR signals on some quiet days is normal.
 ## 7. OPERATIONAL RUNBOOK
 
 - **Deploy:** stop bot (Ctrl+C) → `git pull origin main` → `python
-  verify_architecture.py` (expect **22/22**, active pairs AUDJPY,
+  verify_architecture.py` (expect **24/24**, active pairs AUDJPY,
   CADJPY×2, EURJPY, GBPJPY×2, GBPUSD, XAUUSD) → restart → check banner:
   strategy keys, account config line, and `MT5 terminal bound: ...
-  account=5052472770`.
+  account=5052472770`. **On the 5ers clone**, also glance at trading.log
+  for a `pair_manager: LOCKED instance -- excluded pairs ...` WARNING
+  after restart — see §2.5 `locked_pairs`. None expected unless someone
+  pushed a new demo pair since the last deploy; if one appears and it's
+  unexpected, investigate before assuming it's fine.
 - **Weekend maintenance (prevents update-dialog outages):**
   scripts/weekend_maintenance.ps1 — Saturdays: stop bots → restart
   terminals (updates install with market closed) → start bots. Register

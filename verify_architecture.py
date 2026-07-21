@@ -4,7 +4,7 @@ Verification script for the modular pair-agnostic architecture
 
     python verify_architecture.py
 
-6 checks, all must pass:
+7 checks, all must pass:
   1. pair_manager.get_active_pairs() returns GBPJPY, EURJPY, EURUSD only
   2. USDJPY is NOT in active pairs (active: false)
   3. generate_signal() with mock data returns BUY/SELL/None for each active pair
@@ -12,6 +12,8 @@ Verification script for the modular pair-agnostic architecture
      raises NotImplementedError (expected stub behavior)
   5. USDJPY flipped back to active: false
   6. All 3 active pairs' session windows match core.session_filter predicates
+  7. locked_pairs allowlist correctly intersects active pairs (prop-firm
+     clone isolation), and is a no-op when absent
 """
 
 import sys
@@ -165,6 +167,24 @@ for name, inst, cfg in active:
               asian_window_present and matches_filter)
     else:
         check(f"{name}: unexpected strategy type {cfg['strategy']!r} in check 6", False)
+
+# ---------------------------------------------------------------------------
+# CHECK 7 -- locked_pairs allowlist (prop-firm clone isolation) intersects
+# correctly, and is fully backward-compatible when absent
+# ---------------------------------------------------------------------------
+section("CHECK 7 -- locked_pairs allowlist intersection")
+
+locked_active = get_active_pairs(locked_pairs={('GBPJPY', 'asian_range_breakout')})
+locked_names = sorted(name for name, _inst, _cfg in locked_active)
+check("locked_pairs={GBPJPY/asian_range_breakout} -> only that pair survives",
+      locked_names == ['GBPJPY'],
+      f"got {locked_names}")
+
+unrestricted = get_active_pairs(locked_pairs=None)
+unrestricted_names = sorted(name for name, _inst, _cfg in unrestricted)
+check("locked_pairs=None -> unrestricted, matches CHECK 1's full active set",
+      unrestricted_names == active_names,
+      f"got {unrestricted_names}")
 
 # ---------------------------------------------------------------------------
 # SUMMARY
