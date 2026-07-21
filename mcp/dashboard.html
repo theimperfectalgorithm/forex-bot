@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Forex Bot</title>
+<style>
+  :root {
+    --bg:      #0d0d0d;
+    --card:    #1a1a19;
+    --card2:   #222220;
+    --ink:     #ffffff;
+    --ink2:    #c3c2b7;
+    --muted:   #898781;
+    --grid:    #2c2c2a;
+    --blue:    #3987e5;
+    --green:   #0ca30c;
+    --red:     #d03b3b;
+    --amber:   #fab219;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    padding-bottom: 32px;
+    overflow-x: hidden;   /* wide tables scroll inside their own .scroll-x */
+  }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ── Header / tabs ── */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(13,13,13,.92);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--grid);
+    padding: 10px 14px 0;
+  }
+  .hdr-row { display: flex; align-items: center; justify-content: space-between;
+             max-width: 640px; margin: 0 auto; min-width: 0; }
+  #updated { color: var(--muted); font-size: 12px; white-space: nowrap; padding-left: 10px;
+             min-width: 0; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+  nav { display: flex; gap: 6px; flex: 1; min-width: 0; }
+  .tab {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 6px; border: 0; border-bottom: 2px solid transparent;
+    background: none; color: var(--ink2);
+    font: inherit; font-size: 14px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .tab.active { color: var(--ink); border-bottom-color: var(--blue); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--muted); }
+  .dot.ok    { background: var(--green); }
+  .dot.warn  { background: var(--amber); }
+  .dot.down  { background: var(--red); }
+
+  /* ── Layout ── */
+  main { max-width: 640px; margin: 0 auto; padding: 14px; }
+  .account-view { display: none; flex-direction: column; gap: 14px; }
+  .account-view.active { display: flex; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--grid);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .card h2 {
+    font-size: 12px; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+  }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 10px 0; }
+
+  /* ── Hero ── */
+  .balance { font-size: 38px; font-weight: 700; letter-spacing: -.01em; }
+  .hero-sub { color: var(--ink2); font-size: 14px; margin-top: 2px; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .stat { background: var(--card2); border-radius: 10px; padding: 10px 12px; }
+  .stat .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase;
+               letter-spacing: .06em; }
+  .stat .val { font-size: 18px; font-weight: 650; margin-top: 2px; }
+  .pos { color: var(--green); }
+  .neg { color: var(--red); }
+
+  /* ── Bars ── */
+  .bar-row { margin-bottom: 14px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-head { display: flex; justify-content: space-between; font-size: 13px;
+              color: var(--ink2); margin-bottom: 6px; }
+  .bar-head b { color: var(--ink); font-weight: 650; }
+  .bar { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 4px;
+             background: var(--blue); transition: width .5s ease; }
+  .bar > i.loss  { background: var(--amber); }
+  .bar > i.danger { background: var(--red); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-size: 11px; font-weight: 600;
+       text-transform: uppercase; letter-spacing: .05em; padding: 0 8px 7px 0; }
+  td { padding: 7px 8px 7px 0; border-top: 1px solid var(--grid); }
+  th.r, td.r { text-align: right; }
+  th:last-child, td:last-child { padding-right: 0; }
+  th.r + th, td.r + td { padding-left: 10px; }
+  .badge {
+    display: inline-block; padding: 1px 7px; border-radius: 5px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge.buy  { background: rgba(12,163,12,.15);  color: var(--green); }
+  .badge.sell { background: rgba(208,59,59,.15); color: var(--red); }
+  .sub { color: var(--muted); font-size: 11px; }
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Chart ── */
+  .chart-wrap { position: relative; }
+  svg.equity { display: block; width: 100%; height: 190px; touch-action: pan-y; }
+  .tip {
+    position: absolute; top: 4px; left: 8px; pointer-events: none;
+    background: var(--card2); border: 1px solid var(--grid); border-radius: 8px;
+    padding: 4px 9px; font-size: 12px; color: var(--ink2); display: none;
+  }
+  .tip b { color: var(--ink); }
+
+  /* ── Footer / states ── */
+  .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+          color: var(--muted); font-size: 12px; }
+  .down-card { text-align: center; padding: 34px 16px; }
+  .down-card .big { font-size: 17px; font-weight: 650; margin-bottom: 6px; }
+  .down-card p { color: var(--muted); font-size: 13px; }
+  #nokey { max-width: 640px; margin: 60px auto; padding: 0 20px;
+           text-align: center; color: var(--ink2); display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-row">
+    <nav id="tabs"></nav>
+    <span id="updated" class="num"></span>
+  </div>
+</header>
+
+<main id="views"></main>
+
+<div id="nokey">
+  <p><b>Missing dashboard key.</b></p>
+  <p style="margin-top:8px">Open this page with <span class="num">?key=&lt;token&gt;</span> in the URL.</p>
+</div>
+
+<template id="account-tpl">
+  <section class="account-view">
+    <div class="card hero">
+      <div class="balance num" data-f="balance">—</div>
+      <div class="hero-sub">Balance · <span class="num" data-f="equity">—</span> equity</div>
+      <div class="hero-grid">
+        <div class="stat"><div class="lbl">Today P&amp;L</div>
+          <div class="val num" data-f="today_pnl">—</div></div>
+        <div class="stat"><div class="lbl">Unrealized</div>
+          <div class="val num" data-f="unrealized">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Challenge progress</h2>
+      <div class="bar-row">
+        <div class="bar-head"><span>Profit target <b class="num" data-f="target_amt"></b></span>
+          <b class="num" data-f="target_pct">—</b></div>
+        <div class="bar"><i data-f="target_bar" style="width:0%"></i></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-head"><span>Daily loss limit used</span>
+          <b class="num" data-f="loss_pct">—</b></div>
+        <div class="bar"><i class="loss" data-f="loss_bar" style="width:0%"></i></div>
+      </div>
+      <div class="bar-head" style="margin-bottom:0">
+        <span>Distance to hard floor <span class="sub num" data-f="floor_amt"></span></span>
+        <b class="num" data-f="floor_dist">—</b>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Open positions</h2>
+      <div class="scroll-x"><table data-f="positions"></table></div>
+      <div class="empty" data-f="positions_empty" hidden>No open positions</div>
+    </div>
+
+    <div class="card">
+      <h2>Equity curve</h2>
+      <div class="chart-wrap">
+        <svg class="equity" data-f="chart" preserveAspectRatio="none"></svg>
+        <div class="tip" data-f="tip"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recent trades</h2>
+      <div class="scroll-x"><table data-f="trades"></table></div>
+      <div class="empty" data-f="trades_empty" hidden>No closed trades yet</div>
+    </div>
+
+    <div class="card foot">
+      <span data-f="foot_trades">—</span>
+      <span data-f="foot_bot">—</span>
+    </div>
+  </section>
+</template>
+
+<script>
+'use strict';
+
+const KEY   = new URLSearchParams(location.search).get('key') || '';
+const PORTS = [8000, 8001];
+const HOSTS = PORTS.map(p => `${location.protocol}//${location.hostname}:${p}`);
+const HDRS  = { 'X-Dash-Key': KEY };
+
+const state = HOSTS.map((h, i) => ({
+  host: h, label: `Account ${i + 1}`, up: false, mt5: false,
+  summary: null, trades: null, equity: null,
+}));
+let activeIdx = 0, lastUpdate = null;
+
+// ── formatting ─────────────────────────────────────────────────────────
+const money = v => v == null ? '—'
+  : '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function pnlCell(el, v) {
+  el.textContent = v == null ? '—' : (v >= 0 ? '+' : '−') + money(Math.abs(v));
+  el.classList.remove('pos', 'neg');
+  if (v != null) el.classList.add(v >= 0 ? 'pos' : 'neg');
+}
+
+// ── build DOM ──────────────────────────────────────────────────────────
+const tabsEl  = document.getElementById('tabs');
+const viewsEl = document.getElementById('views');
+const tpl     = document.getElementById('account-tpl');
+
+state.forEach((acc, i) => {
+  const tab = document.createElement('button');
+  tab.className = 'tab';
+  tab.innerHTML = `<span class="dot"></span><span class="tab-label">${acc.label}</span>`;
+  tab.addEventListener('click', () => setActive(i));
+  tabsEl.appendChild(tab);
+  acc.tabEl = tab;
+
+  const view = tpl.content.firstElementChild.cloneNode(true);
+  viewsEl.appendChild(view);
+  acc.viewEl = view;
+  acc.el = f => view.querySelector(`[data-f="${f}"]`);
+});
+
+function setActive(i) {
+  activeIdx = i;
+  state.forEach((acc, j) => {
+    acc.tabEl.classList.toggle('active', j === i);
+    acc.viewEl.classList.toggle('active', j === i);
+  });
+}
+setActive(Math.min(
+  parseInt(new URLSearchParams(location.search).get('tab'), 10) || 0,
+  state.length - 1));
+
+// ── fetch ──────────────────────────────────────────────────────────────
+async function j(base, path) {
+  const r = await fetch(base + path, { headers: HDRS });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function refresh() {
+  await Promise.allSettled(state.map(async acc => {
+    try {
+      const [summary, trades] = await Promise.all([
+        j(acc.host, '/api/summary'),
+        j(acc.host, '/api/trades?limit=20'),
+      ]);
+      acc.summary = summary; acc.trades = trades;
+      acc.up = true; acc.mt5 = !!summary.status.mt5_available;
+      if (summary.label) acc.label = summary.label;
+    } catch (e) {
+      acc.up = false;
+    }
+  }));
+  lastUpdate = Date.now();
+  state.forEach(renderAccount);
+}
+
+async function refreshEquity() {
+  await Promise.allSettled(state.map(async acc => {
+    try { acc.equity = await j(acc.host, '/api/equity'); } catch (e) {}
+  }));
+  state.forEach(acc => acc.equity && drawEquity(acc));
+}
+
+// ── render ─────────────────────────────────────────────────────────────
+function renderAccount(acc) {
+  acc.tabEl.querySelector('.tab-label').textContent = acc.label;
+  const dot = acc.tabEl.querySelector('.dot');
+  dot.className = 'dot ' + (!acc.up ? 'down' : acc.mt5 ? 'ok' : 'warn');
+
+  if (!acc.up) {
+    acc.viewEl.innerHTML = `<div class="card down-card">
+        <div class="big">${acc.label} unreachable</div>
+        <p>Could not reach ${acc.host}.<br>The server may be stopped, or the port blocked.</p>
+      </div>`;
+    acc.el = () => null;   // view was replaced; disable field lookups
+    return;
+  }
+  if (!acc.el('balance')) {   // was previously in "down" state -- rebuild
+    const view = tpl.content.firstElementChild.cloneNode(true);
+    acc.viewEl.replaceWith(view);
+    acc.viewEl = view;
+    acc.el = f => view.querySelector(`[data-f="${f}"]`);
+    setActive(activeIdx);
+    if (acc.equity) drawEquity(acc);
+  }
+
+  const s = acc.summary, st = s.status, t = s.today, a = s.account, p = s.progress;
+
+  acc.el('balance').textContent = money(st.balance);
+  acc.el('equity').textContent  = money(st.equity);
+  pnlCell(acc.el('today_pnl'), t.total_pnl);
+  pnlCell(acc.el('unrealized'), t.unrealized_pnl);
+
+  // challenge card
+  acc.el('target_amt').textContent = money(a.target_balance);
+  acc.el('target_pct').textContent = p.to_target_pct == null ? '—' : p.to_target_pct + '%';
+  acc.el('target_bar').style.width = Math.min(p.to_target_pct || 0, 100) + '%';
+  acc.el('loss_pct').textContent   = t.loss_limit_used_pct + '%';
+  const lb = acc.el('loss_bar');
+  lb.style.width = Math.min(t.loss_limit_used_pct, 100) + '%';
+  lb.classList.toggle('danger', t.loss_limit_used_pct >= 80);
+  acc.el('floor_amt').textContent  = '(' + money(a.hard_floor) + ')';
+  acc.el('floor_dist').textContent = money(p.floor_distance_usd);
+
+  // open positions
+  const posT = acc.el('positions');
+  const posRows = st.open_positions || [];
+  acc.el('positions_empty').hidden = posRows.length > 0;
+  posT.innerHTML = posRows.length === 0 ? '' :
+    '<tr><th>Pair</th><th>Dir</th><th class="r">Lots</th><th class="r">Entry</th>' +
+    '<th class="r">Now</th><th class="r">P&L</th></tr>' +
+    posRows.map(o => `<tr>
+      <td><b>${o.pair}</b></td>
+      <td><span class="badge ${o.direction === 'BUY' ? 'buy' : 'sell'}">${o.direction}</span></td>
+      <td class="r num">${o.lots}</td>
+      <td class="r num">${o.entry_price}</td>
+      <td class="r num">${o.current_price}</td>
+      <td class="r num ${o.pnl >= 0 ? 'pos' : 'neg'}">${(o.pnl >= 0 ? '+' : '−')}${money(Math.abs(o.pnl))}</td>
+    </tr>`).join('');
+
+  // recent trades
+  const trT = acc.el('trades');
+  const trRows = (acc.trades && acc.trades.trades) || [];
+  acc.el('trades_empty').hidden = trRows.length > 0;
+  trT.innerHTML = trRows.length === 0 ? '' :
+    '<tr><th>Date</th><th>Pair</th><th>Dir</th><th class="r">P&L</th><th>Exit</th></tr>' +
+    trRows.map(o => `<tr>
+      <td class="num sub">${(o.date || '').slice(5)}</td>
+      <td><b>${o.pair}</b></td>
+      <td><span class="badge ${o.direction === 'BUY' ? 'buy' : 'sell'}">${o.direction}</span></td>
+      <td class="r num ${o.pnl >= 0 ? 'pos' : 'neg'}">${(o.pnl >= 0 ? '+' : '−')}${money(Math.abs(o.pnl))}</td>
+      <td class="sub">${o.reason || ''}</td>
+    </tr>`).join('');
+
+  // footer
+  acc.el('foot_trades').textContent = `${st.today_trade_count} trade${st.today_trade_count === 1 ? '' : 's'} today`;
+  const pr = st.process_running || {};
+  acc.el('foot_bot').textContent =
+    pr.running === true ? 'bot process running' :
+    pr.running === false ? 'bot process NOT running' : 'bot process: unknown';
+
+  if (acc.equity) drawEquity(acc);
+}
+
+// ── equity chart (hand-rolled SVG) ─────────────────────────────────────
+function drawEquity(acc) {
+  const svg = acc.el && acc.el('chart');
+  if (!svg || !acc.equity) return;
+  const pts = (acc.equity.curve || [])
+    .filter(r => r.balance != null)
+    .map(r => ({ date: r.date, v: r.balance }));
+  if (acc.equity.live_point && acc.equity.live_point.balance != null)
+    pts.push({ date: acc.equity.live_point.date, v: acc.equity.live_point.balance, live: true });
+
+  const W = 600, H = 190, PAD = { l: 8, r: 8, t: 14, b: 18 };
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  if (pts.length < 2) {
+    svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" fill="#898781" font-size="13"
+      text-anchor="middle">Not enough history yet — check back after a few daily closes</text>`;
+    return;
+  }
+
+  const base = acc.summary ? acc.summary.account.starting_balance : pts[0].v;
+  const vals = pts.map(p => p.v).concat([base]);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const span = (hi - lo) || 1; lo -= span * .08; hi += span * .08;
+
+  const x = i => PAD.l + i / (pts.length - 1) * (W - PAD.l - PAD.r);
+  const y = v => PAD.t + (1 - (v - lo) / (hi - lo)) * (H - PAD.t - PAD.b);
+
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.v).toFixed(1)).join(' ');
+  const area = line + ` L ${x(pts.length - 1).toFixed(1)} ${H - PAD.b} L ${PAD.l} ${H - PAD.b} Z`;
+  const last = pts[pts.length - 1];
+
+  svg.innerHTML = `
+    <defs><linearGradient id="g${acc.host.slice(-4)}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3987e5" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#3987e5" stop-opacity="0"/>
+    </linearGradient></defs>
+    <line x1="${PAD.l}" y1="${y(base).toFixed(1)}" x2="${W - PAD.r}" y2="${y(base).toFixed(1)}"
+      stroke="#898781" stroke-width="1" stroke-dasharray="4 4" opacity=".6"/>
+    <path d="${area}" fill="url(#g${acc.host.slice(-4)})"/>
+    <path d="${line}" fill="none" stroke="#3987e5" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(pts.length - 1).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="4"
+      fill="#0d0d0d" stroke="#3987e5" stroke-width="2"/>
+    <line class="xhair" x1="0" y1="${PAD.t}" x2="0" y2="${H - PAD.b}"
+      stroke="#c3c2b7" stroke-width="1" opacity="0"/>
+    <text x="${PAD.l}" y="${H - 5}" fill="#898781" font-size="10">${pts[0].date}</text>
+    <text x="${W - PAD.r}" y="${H - 5}" fill="#898781" font-size="10"
+      text-anchor="end">${last.date}${last.live ? ' (live)' : ''}</text>`;
+
+  // tap / drag crosshair tooltip
+  const tip = acc.el('tip'), xhair = svg.querySelector('.xhair');
+  function showAt(clientX) {
+    const rect = svg.getBoundingClientRect();
+    const fx = (clientX - rect.left) / rect.width * W;
+    const i = Math.max(0, Math.min(pts.length - 1,
+      Math.round((fx - PAD.l) / (W - PAD.l - PAD.r) * (pts.length - 1))));
+    xhair.setAttribute('x1', x(i)); xhair.setAttribute('x2', x(i));
+    xhair.setAttribute('opacity', '.5');
+    tip.style.display = 'block';
+    tip.innerHTML = `${pts[i].date}${pts[i].live ? ' (live)' : ''} · <b class="num">${money(pts[i].v)}</b>`;
+  }
+  function hide() { xhair.setAttribute('opacity', '0'); tip.style.display = 'none'; }
+  svg.onpointerdown = e => { svg.setPointerCapture(e.pointerId); showAt(e.clientX); };
+  svg.onpointermove = e => { if (e.buttons || e.pointerType === 'touch') showAt(e.clientX); };
+  svg.onpointerup = svg.onpointercancel = hide;
+}
+
+// ── "updated Ns ago" ticker ────────────────────────────────────────────
+setInterval(() => {
+  const el = document.getElementById('updated');
+  if (!lastUpdate) { el.textContent = 'loading…'; return; }
+  const s = Math.round((Date.now() - lastUpdate) / 1000);
+  el.textContent = s < 5 ? 'updated just now' : `updated ${s}s ago`;
+}, 1000);
+
+// ── boot ───────────────────────────────────────────────────────────────
+if (!KEY) {
+  document.getElementById('nokey').style.display = 'block';
+  document.querySelector('header').style.display = 'none';
+} else {
+  refresh();
+  refreshEquity();
+  setInterval(refresh, 45_000);
+  setInterval(refreshEquity, 300_000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) { refresh(); refreshEquity(); }
+  });
+}
+</script>
+</body>
+</html>

@@ -9,3 +9,7 @@ pandas==2.3.3
 MetaTrader5==5.0.5735
 mcp==1.28.1
 python-dotenv==1.2.2
+# PyYAML: needed by core.account_config / core.mt5_connect (imported by the
+# /api/summary dashboard endpoint and the terminal-pinning patch). Already in
+# the bot's own venv, but listed here so a standalone MCP venv also works.
+PyYAML==6.0.2

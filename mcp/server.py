@@ -40,6 +40,7 @@ import csv
 import json
 import logging
 import os
+import secrets
 import subprocess
 import sys
 import time
@@ -47,7 +48,8 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 from mcp.server.fastmcp import FastMCP
 
 # ── Paths ─────────────────────────────────────────────────────────────────
@@ -65,9 +67,15 @@ MCP_LOG     = LOGS_DIR / 'mcp_access.log'
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))   # so core./strategies. imports resolve
 
+import core.mt5_connect  # noqa: F401 -- pins mt5.initialize() to THIS clone's
+                         # terminal; without it, this server's bare initialize()
+                         # can attach to the OTHER account's terminal when two
+                         # MT5 terminals run on the same VPS (see that module's
+                         # 2026-07-21 incident writeup)
+
 import backtest_engine  # mcp/backtest_engine.py (same directory)
 
-# ── API key ──────────────────────────────────────────────────────────────
+# ── API key / port / dashboard token ─────────────────────────────────────
 
 API_KEY = os.environ.get('MCP_API_KEY')
 if not API_KEY:
@@ -76,6 +84,16 @@ if not API_KEY:
         "a real key (see mcp/server.py header, or run:\n"
         "  python -c \"import secrets; print(secrets.token_hex(16))\""
     )
+
+PORT = int(os.environ.get('MCP_PORT', '8000'))
+
+# Dashboard auth is a SEPARATE token from the MCP key: the dashboard token
+# rides in a phone-bookmark URL (?key=...) and browser fetch headers, so it
+# must never be the MCP key. If unset, /dash and /api/* simply stay 401 --
+# the MCP side keeps working, which is the safe default on a clone where
+# the dashboard hasn't been configured yet.
+DASH_TOKEN = os.environ.get('DASH_TOKEN')
+DASH_LABEL = os.environ.get('DASH_LABEL', 'Account')
 
 # ── Logging ──────────────────────────────────────────────────────────────
 
@@ -160,7 +178,7 @@ def _count_today_trades() -> int:
 
 # ── MCP server + tools ───────────────────────────────────────────────────
 
-mcp = FastMCP("forex-bot", host="0.0.0.0", port=8000)
+mcp = FastMCP("forex-bot", host="0.0.0.0", port=PORT)
 
 
 @mcp.tool()
@@ -201,14 +219,9 @@ def get_historical_bars(pair: str, timeframe: str, start_date: str, end_date: st
         return {'success': False, 'error': str(e)}
 
 
-@mcp.tool()
-def get_bot_status() -> dict:
-    """Current bot status: MT5 balance/equity, open positions with live
-    P&L, last 10 lines of trading.log, whether the bot process is
-    running, and today's trade count. Read-only -- never modifies bot
-    state, never places or closes an order.
-    """
-    _log_call('get_bot_status')
+def _status_payload() -> dict:
+    """Shared body of get_bot_status -- also used by the /api/* dashboard
+    endpoints so the MCP tool and REST route can't drift apart."""
     result = {
         'timestamp'        : datetime.now(timezone.utc).isoformat(),
         'mt5_available'    : False,
@@ -252,6 +265,17 @@ def get_bot_status() -> dict:
     result['today_trade_count'] = _count_today_trades()
 
     return result
+
+
+@mcp.tool()
+def get_bot_status() -> dict:
+    """Current bot status: MT5 balance/equity, open positions with live
+    P&L, last 10 lines of trading.log, whether the bot process is
+    running, and today's trade count. Read-only -- never modifies bot
+    state, never places or closes an order.
+    """
+    _log_call('get_bot_status')
+    return _status_payload()
 
 
 @mcp.tool()
@@ -325,20 +349,11 @@ def get_trade_history(start_date: str, end_date: str) -> dict:
     return {'success': True, 'count': len(trades), 'trades': trades}
 
 
-@mcp.tool()
-def get_equity_curve() -> dict:
-    """Full balance history from equity_curve.csv.
-
-    NOTE: the underlying CSV tracks end-of-day Balance only (written once
-    daily by Agent 5, from mt5.account_info().balance) -- there is no
-    separate intraday 'equity' series recorded in the bot's current
-    design, so this returns 'balance' rather than fabricating a distinct
-    'equity' field.
-    """
-    _log_call('get_equity_curve')
+def _equity_rows() -> list[dict]:
+    """Shared body of get_equity_curve -- also used by /api/equity and
+    /api/summary (previous-close lookup)."""
     if not EQUITY_CSV.exists():
-        return {'success': True, 'count': 0, 'curve': []}
-
+        return []
     rows = []
     with open(EQUITY_CSV, newline='', encoding='utf-8') as f:
         for row in csv.DictReader(f):
@@ -351,6 +366,21 @@ def get_equity_curve() -> dict:
                 'win_rate'      : _to_float(row.get('WinRate')),
                 'cum_return_pct': _to_float(row.get('CumReturn')),
             })
+    return rows
+
+
+@mcp.tool()
+def get_equity_curve() -> dict:
+    """Full balance history from equity_curve.csv.
+
+    NOTE: the underlying CSV tracks end-of-day Balance only (written once
+    daily by Agent 5, from mt5.account_info().balance) -- there is no
+    separate intraday 'equity' series recorded in the bot's current
+    design, so this returns 'balance' rather than fabricating a distinct
+    'equity' field.
+    """
+    _log_call('get_equity_curve')
+    rows = _equity_rows()
     return {'success': True, 'count': len(rows), 'curve': rows}
 
 
@@ -418,14 +448,42 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Forex Bot MCP Server", lifespan=lifespan)
 
 
+def _dash_authorized(request: Request) -> bool:
+    """/dash and /api/* accept the dashboard token either as an
+    X-Dash-Key header (what the page's own fetch() calls send) or a
+    ?key= query param (what the phone-bookmark URL carries -- only the
+    initial page load uses this form)."""
+    if not DASH_TOKEN:
+        return False
+    supplied = request.headers.get('x-dash-key') or request.query_params.get('key') or ''
+    return secrets.compare_digest(supplied, DASH_TOKEN)
+
+
 @app.middleware("http")
 async def api_key_auth(request: Request, call_next):
-    if request.headers.get("x-api-key") != API_KEY:
-        log.warning(f"AUTH FAILED  {request.method} {request.url.path}  "
-                   f"from {request.client.host if request.client else '?'}")
-        return JSONResponse({"detail": "Unauthorized -- missing or invalid X-API-Key"},
-                           status_code=401)
-    return await call_next(request)
+    if request.headers.get("x-api-key") == API_KEY:
+        return await call_next(request)
+    path = request.url.path
+    if (path == '/dash' or path.startswith('/api/')) and _dash_authorized(request):
+        return await call_next(request)
+    log.warning(f"AUTH FAILED  {request.method} {path}  "
+               f"from {request.client.host if request.client else '?'}")
+    return JSONResponse({"detail": "Unauthorized -- missing or invalid X-API-Key"},
+                       status_code=401)
+
+
+# CORS must be OUTSIDE the auth middleware so it answers preflight OPTIONS
+# itself (preflights never carry auth headers). add_middleware() prepends,
+# so adding CORS *after* defining api_key_auth puts it outermost -- correct
+# by construction. Wildcard origin is fine here: auth is a bearer-style
+# token (no cookies), everything is read-only, and the dashboard page on
+# port A must be able to fetch the other account's API on port B.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["x-dash-key"],
+)
 
 
 @app.get("/health")
@@ -436,10 +494,115 @@ async def health():
     return {"status": "ok", "server": "forex-bot-mcp", "time": datetime.now(timezone.utc).isoformat()}
 
 
+# ── Dashboard: read-only JSON API + static page ─────────────────────────
+#
+# All routes here MUST be declared before the app.mount("/", ...) catch-all
+# below, or the MCP app swallows them. Auth: DASH_TOKEN (see middleware).
+# One server process per VPS clone (MT5's python API is a per-process
+# singleton pinned by core.mt5_connect) -- the page fetches BOTH clones'
+# APIs (ports 8000 + 8001) client-side and renders a tab per account.
+
+@app.get("/api/summary")
+async def api_summary():
+    """Everything the dashboard needs above the chart, in one call:
+    live status + this clone's account constants + today's derived
+    numbers (realized/unrealized P&L, daily-loss usage, target progress).
+    """
+    from core import account_config as ac   # reads this clone's local_config.yaml
+    _log_call('api_summary')
+    s = _status_payload()
+    rows = _equity_rows()
+    # Previous EOD close is the baseline for "today's P&L". Before the
+    # first equity_curve row exists, fall back to the starting balance.
+    prev_close = rows[-1]['balance'] if rows else float(ac.STARTING_BALANCE)
+    bal, eq = s['balance'], s['equity']
+    today_realized = round(bal - prev_close, 2) if bal is not None else None
+    today_total    = round(eq  - prev_close, 2) if eq  is not None else None
+    loss_limit_usd = round(prev_close * ac.MAX_DAILY_LOSS_PCT, 2)
+    return {
+        'label'    : DASH_LABEL,
+        'timestamp': s['timestamp'],
+        'account'  : {
+            'starting_balance'  : ac.STARTING_BALANCE,
+            'hard_floor'        : ac.HARD_FLOOR,
+            'target_balance'    : ac.TARGET_BALANCE,
+            'profit_target_pct' : ac.PROFIT_TARGET_PCT,
+            'max_daily_loss_pct': ac.MAX_DAILY_LOSS_PCT,
+        },
+        'status'   : {k: s[k] for k in ('mt5_available', 'balance', 'equity',
+                                        'open_positions', 'process_running',
+                                        'today_trade_count')},
+        'today'    : {
+            'realized_pnl'  : today_realized,
+            'total_pnl'     : today_total,     # incl. floating
+            'unrealized_pnl': (round(eq - bal, 2)
+                               if bal is not None and eq is not None else None),
+            'loss_limit_usd': loss_limit_usd,
+            'loss_limit_used_pct': (round(max(0.0, -today_total) / loss_limit_usd * 100, 1)
+                                    if today_total is not None and loss_limit_usd else 0.0),
+        },
+        'progress' : {
+            'to_target_pct': (round(max(0.0, eq - ac.STARTING_BALANCE)
+                                    / (ac.TARGET_BALANCE - ac.STARTING_BALANCE) * 100, 1)
+                              if eq is not None and ac.TARGET_BALANCE > ac.STARTING_BALANCE
+                              else None),
+            'floor_distance_usd': (round(eq - ac.HARD_FLOOR, 2)
+                                   if eq is not None else None),
+        },
+    }
+
+
+@app.get("/api/equity")
+async def api_equity():
+    """EOD equity curve plus one live point (today + current equity),
+    computed server-side because only the server has live MT5 access."""
+    _log_call('api_equity')
+    rows = _equity_rows()
+    live_point = None
+    s = _status_payload()
+    if s['equity'] is not None:
+        live_point = {'date': datetime.now(timezone.utc).date().isoformat(),
+                      'balance': s['equity']}
+    return {'success': True, 'count': len(rows), 'curve': rows,
+            'live_point': live_point}
+
+
+@app.get("/api/trades")
+async def api_trades(limit: int = 20):
+    """Last N CLOSED trades from trades_log.csv, newest first."""
+    _log_call('api_trades', limit=limit)
+    trades = []
+    if TRADES_CSV.exists():
+        with open(TRADES_CSV, newline='', encoding='utf-8') as f:
+            for row in csv.DictReader(f):
+                if row.get('Status') != 'CLOSED':
+                    continue
+                trades.append({
+                    'date'     : (row.get('ExitTime') or '')[:10],
+                    'pair'     : row.get('Pair'),
+                    'direction': row.get('Direction'),
+                    'session'  : row.get('Session'),
+                    'lots'     : _to_float(row.get('Lots')),
+                    'entry'    : _to_float(row.get('EntryPrice')),
+                    'exit'     : _to_float(row.get('ExitPrice')),
+                    'pnl'      : _to_float(row.get('PnL')),
+                    'reason'   : row.get('ExitReason'),
+                })
+    trades = trades[-max(limit, 1):][::-1]
+    return {'success': True, 'count': len(trades), 'trades': trades}
+
+
+@app.get("/dash")
+async def dash_page():
+    """The read-only mobile dashboard (single self-contained HTML file)."""
+    return FileResponse(MCP_DIR / 'dashboard.html', media_type='text/html')
+
+
 app.mount("/", mcp_asgi_app)
 
 
 if __name__ == '__main__':
     import uvicorn
-    log.info("Starting Forex Bot MCP server on 0.0.0.0:8000 (MCP endpoint: /mcp)")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    log.info(f"Starting Forex Bot MCP server on 0.0.0.0:{PORT} "
+             f"(MCP endpoint: /mcp, dashboard: /dash)")
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
