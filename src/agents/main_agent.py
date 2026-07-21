@@ -41,6 +41,14 @@ sys.path.insert(0, str(AGENTS_DIR))
 BASE_DIR = AGENTS_DIR.parent.parent          # repo root
 sys.path.insert(0, str(BASE_DIR))
 
+# INCIDENT 2026-07-21: import this FIRST, before any agent/strategy module
+# gets a chance to call mt5.initialize() -- it patches MetaTrader5.initialize
+# process-wide so every later call (bare or not, from any file) is forced
+# onto THIS instance's configured terminal. See core/mt5_connect.py for the
+# full incident writeup; a bare mt5.initialize() elsewhere was confirmed to
+# silently attach to a DIFFERENT terminal when two are running on the VPS.
+import core.mt5_connect  # noqa: F401 -- imported for its patching side effect
+
 from agent_market    import run as run_market
 from agent_strategy  import (prepare_session, check_breakout,
                              check_eurusd_signals, check_asian_reversion,

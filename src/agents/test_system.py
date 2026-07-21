@@ -17,6 +17,15 @@ from datetime import datetime, timezone
 AGENTS_DIR = Path(__file__).parent
 sys.path.insert(0, str(AGENTS_DIR))
 
+# Repo root on path too, so core.* is importable
+BASE_DIR = AGENTS_DIR.parent.parent
+sys.path.insert(0, str(BASE_DIR))
+
+# Same fix as main_agent.py -- import before anything else gets a chance
+# to call mt5.initialize() bare (see core/mt5_connect.py for why this
+# matters on a VPS running more than one MT5 terminal).
+import core.mt5_connect  # noqa: F401 -- imported for its patching side effect
+
 PASS = "[PASS]"
 FAIL = "[FAIL]"
 WARN = "[WARN]"
