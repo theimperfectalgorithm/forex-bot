@@ -45,7 +45,7 @@ import subprocess
 import sys
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,6 +63,9 @@ EQUITY_CSV  = DATA_DIR / 'equity_curve.csv'
 REPORT_TXT  = DATA_DIR / 'daily_report.txt'
 TRADING_LOG = LOGS_DIR / 'trading.log'
 MCP_LOG     = LOGS_DIR / 'mcp_access.log'
+JOURNAL_JSONL = DATA_DIR / 'journal' / 'events.jsonl'
+NEWS_JSON     = DATA_DIR / 'news_calendar.json'
+STATE_JSON    = DATA_DIR / 'state' / 'daily_state.json'
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))   # so core./strategies. imports resolve
@@ -160,6 +163,87 @@ def _is_bot_process_running() -> dict:
         return {'running': running, 'process_count': max(len(lines) - 1, 0)}
     except Exception as e:
         return {'running': None, 'error': str(e)}
+
+
+# Approximate USD value of 1 pip per 1.0 lot -- used ONLY as the R-multiple
+# FALLBACK when the journal has no risk_usd_intended for a ticket. Real risk
+# comes from the journal's entry events; this is a documented approximation
+# (JPY-quote pip value floats with USDJPY; 6.7 is a mid-2026 ballpark).
+PIP_VALUE_USD = {'default': 10.0, 'JPY': 6.7, 'XAUUSD': 10.0}
+
+
+def _pip_value_usd(pair: str) -> float:
+    if pair == 'XAUUSD':
+        return PIP_VALUE_USD['XAUUSD']
+    if pair.endswith('JPY'):
+        return PIP_VALUE_USD['JPY']
+    return PIP_VALUE_USD['default']
+
+
+def _closed_trades() -> list[dict]:
+    """All CLOSED rows from trades_log.csv, full columns, oldest first."""
+    if not TRADES_CSV.exists():
+        return []
+    with open(TRADES_CSV, newline='', encoding='utf-8') as f:
+        return [r for r in csv.DictReader(f) if r.get('Status') == 'CLOSED']
+
+
+def _journal_events(kinds: set | None = None) -> list[dict]:
+    """Parsed events.jsonl lines (malformed lines skipped), oldest first."""
+    if not JOURNAL_JSONL.exists():
+        return []
+    out = []
+    with open(JOURNAL_JSONL, encoding='utf-8') as f:
+        for line in f:
+            try:
+                ev = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if kinds is None or ev.get('kind') in kinds:
+                out.append(ev)
+    return out
+
+
+def _risk_usd_map() -> dict:
+    """Ticket -> intended risk USD from journal 'entry' events. Entries with
+    a null risk_usd_intended are skipped (the pip-value fallback covers them)."""
+    m = {}
+    for ev in _journal_events({'entry'}):
+        risk = _to_float(ev.get('risk_usd_intended'))
+        if ev.get('ticket') is not None and risk:
+            m[str(ev['ticket'])] = risk
+    return m
+
+
+def _hold_hours_map() -> dict:
+    """Ticket -> hold_hours from journal 'exit' events."""
+    m = {}
+    for ev in _journal_events({'exit'}):
+        if ev.get('ticket') is not None and ev.get('hold_hours') is not None:
+            m[str(ev['ticket'])] = ev['hold_hours']
+    return m
+
+
+def _trade_r(row: dict, risk_map: dict) -> tuple:
+    """(r, source) for a CLOSED trades_log row. r = PnL / risk-at-entry.
+    Risk source: the journal's risk_usd_intended when available ('journal'),
+    else SLPips * Lots * pip_value ('fallback' -- see PIP_VALUE_USD), else
+    (None, 'none')."""
+    pnl = _to_float(row.get('PnL'))
+    if pnl is None:
+        return None, 'none'
+    risk = risk_map.get(str(row.get('Ticket') or ''))
+    source = 'journal'
+    if not risk:
+        sl_pips = _to_float(row.get('SLPips'))
+        lots    = _to_float(row.get('Lots'))
+        if not sl_pips or not lots:
+            return None, 'none'
+        risk = abs(sl_pips) * lots * _pip_value_usd(row.get('Pair') or '')
+        source = 'fallback'
+    if not risk:
+        return None, 'none'
+    return round(pnl / risk, 2), source
 
 
 def _count_today_trades() -> int:
@@ -569,27 +653,262 @@ async def api_equity():
 
 @app.get("/api/trades")
 async def api_trades(limit: int = 20):
-    """Last N CLOSED trades from trades_log.csv, newest first."""
+    """Last N CLOSED trades from trades_log.csv, newest first, each with an
+    R-multiple (see _trade_r for the risk-source rules)."""
     _log_call('api_trades', limit=limit)
+    risk_map = _risk_usd_map()
     trades = []
-    if TRADES_CSV.exists():
-        with open(TRADES_CSV, newline='', encoding='utf-8') as f:
-            for row in csv.DictReader(f):
-                if row.get('Status') != 'CLOSED':
-                    continue
-                trades.append({
-                    'date'     : (row.get('ExitTime') or '')[:10],
-                    'pair'     : row.get('Pair'),
-                    'direction': row.get('Direction'),
-                    'session'  : row.get('Session'),
-                    'lots'     : _to_float(row.get('Lots')),
-                    'entry'    : _to_float(row.get('EntryPrice')),
-                    'exit'     : _to_float(row.get('ExitPrice')),
-                    'pnl'      : _to_float(row.get('PnL')),
-                    'reason'   : row.get('ExitReason'),
-                })
+    for row in _closed_trades():
+        r, _src = _trade_r(row, risk_map)
+        trades.append({
+            'date'     : (row.get('ExitTime') or '')[:10],
+            'pair'     : row.get('Pair'),
+            'direction': row.get('Direction'),
+            'session'  : row.get('Session'),
+            'lots'     : _to_float(row.get('Lots')),
+            'entry'    : _to_float(row.get('EntryPrice')),
+            'exit'     : _to_float(row.get('ExitPrice')),
+            'pnl'      : _to_float(row.get('PnL')),
+            'r'        : r,
+            'reason'   : row.get('ExitReason'),
+        })
     trades = trades[-max(limit, 1):][::-1]
     return {'success': True, 'count': len(trades), 'trades': trades}
+
+
+@app.get("/api/stats")
+async def api_stats(days: int = 30, start: str = '', end: str = ''):
+    """Closed-trade statistics over a period. `days=N` = rolling window ending
+    today (0 = all history); explicit `start`/`end` (YYYY-MM-DD, inclusive)
+    override `days` -- the weekly-report generator passes an exact Mon-Fri.
+
+    Definitions (these numbers get quoted publicly -- keep them defensible):
+      - win            : PnL > 0 (zero-PnL scratches count as losses)
+      - profit_factor  : gross_wins / |gross_losses|; null when no losses
+                         (client may render as infinity)
+      - expectancy_r   : mean R over trades with a computable R; r_coverage
+                         reports how many Rs came from the journal's exact
+                         risk_usd_intended vs the pip-value fallback vs none
+      - avg_planned_rr : mean(|TPPips| / |SLPips|) -- PLANNED ratio at entry,
+                         not realized
+      - avg_win_r / avg_loss_r : realized mean R of winners / losers
+      - max_drawdown_pct: max peak-to-trough % decline of equity_curve.csv's
+                         EOD Balance series (no intraday series exists, so
+                         intraday drawdown is not represented)
+      - pnl.week/month : sum of DailyPnL rows in the current ISO week /
+                         calendar month, plus today's live realized delta
+                         (balance - last EOD close) when MT5 is up
+    """
+    _log_call('api_stats', days=days, start=start, end=end)
+    today = datetime.now(timezone.utc).date()
+    if start and end:
+        lo, hi = start, end
+    elif days and days > 0:
+        lo = (today - timedelta(days=days - 1)).isoformat()
+        hi = today.isoformat()
+    else:
+        lo, hi = '0000-01-01', '9999-12-31'
+
+    risk_map = _risk_usd_map()
+    hold_map = _hold_hours_map()
+
+    rows = [r for r in _closed_trades()
+            if lo <= (r.get('ExitTime') or '')[:10] <= hi]
+
+    wins, losses = [], []
+    rs, planned_rrs = [], []
+    r_cov = {'journal': 0, 'fallback': 0, 'none': 0}
+    best = worst = None
+    for row in rows:
+        pnl = _to_float(row.get('PnL'))
+        if pnl is None:
+            continue
+        (wins if pnl > 0 else losses).append(pnl)
+        r, src = _trade_r(row, risk_map)
+        r_cov[src] += 1
+        if r is not None:
+            rs.append(r)
+        sl = _to_float(row.get('SLPips'))
+        tp = _to_float(row.get('TPPips'))
+        if sl and tp:
+            planned_rrs.append(abs(tp) / abs(sl))
+        item = {'date': (row.get('ExitTime') or '')[:10],
+                'pair': row.get('Pair'), 'direction': row.get('Direction'),
+                'pnl': pnl, 'r': r, 'reason': row.get('ExitReason'),
+                'hold_hours': hold_map.get(str(row.get('Ticket') or ''))}
+        if best is None or pnl > best['pnl']:
+            best = item
+        if worst is None or pnl < worst['pnl']:
+            worst = item
+
+    gross_win  = round(sum(wins), 2)
+    gross_loss = round(sum(losses), 2)
+    win_rs  = [r for r in rs if r > 0]
+    loss_rs = [r for r in rs if r <= 0]
+    count = len(wins) + len(losses)
+
+    # equity-derived numbers
+    eq = _equity_rows()
+    balances = [r['balance'] for r in eq if r['balance'] is not None]
+    max_dd = 0.0
+    peak = balances[0] if balances else 0.0
+    for b in balances:
+        peak = max(peak, b)
+        if peak:
+            max_dd = max(max_dd, (peak - b) / peak * 100)
+
+    iso_year, iso_week, _ = today.isocalendar()
+    week_pnl = sum((r['daily_pnl'] or 0) for r in eq
+                   if r['date'] and
+                   datetime.strptime(r['date'], '%Y-%m-%d').date()
+                   .isocalendar()[:2] == (iso_year, iso_week))
+    month_pnl = sum((r['daily_pnl'] or 0) for r in eq
+                    if (r['date'] or '').startswith(today.strftime('%Y-%m')))
+    # today's live realized delta (same derivation as /api/summary)
+    s = _status_payload()
+    if s['balance'] is not None and eq:
+        live_delta = s['balance'] - (eq[-1]['balance'] or s['balance'])
+        week_pnl  += live_delta
+        month_pnl += live_delta
+
+    return {
+        'success': True, 'days': days,
+        'period': {'start': lo if lo != '0000-01-01' else (eq[0]['date'] if eq else None),
+                   'end': hi if hi != '9999-12-31' else today.isoformat()},
+        'trades': {
+            'count': count, 'wins': len(wins), 'losses': len(losses),
+            'win_rate_pct': round(len(wins) / count * 100, 1) if count else None,
+            'gross_win_usd': gross_win, 'gross_loss_usd': gross_loss,
+            'profit_factor': (round(gross_win / abs(gross_loss), 2)
+                              if gross_loss else None),
+            'avg_win_usd' : round(gross_win / len(wins), 2) if wins else None,
+            'avg_loss_usd': round(gross_loss / len(losses), 2) if losses else None,
+            'expectancy_r': round(sum(rs) / len(rs), 2) if rs else None,
+            'avg_planned_rr': (round(sum(planned_rrs) / len(planned_rrs), 2)
+                               if planned_rrs else None),
+            'avg_win_r' : round(sum(win_rs) / len(win_rs), 2) if win_rs else None,
+            'avg_loss_r': round(sum(loss_rs) / len(loss_rs), 2) if loss_rs else None,
+            'r_coverage': r_cov,
+        },
+        'best_trade': best, 'worst_trade': worst,
+        'pnl': {'period_usd': round(gross_win + gross_loss, 2),
+                'week_usd': round(week_pnl, 2), 'month_usd': round(month_pnl, 2)},
+        'max_drawdown_pct': round(max_dd, 2),
+        'sparklines': {'week' : balances[-7:], 'month': balances[-30:]},
+    }
+
+
+@app.get("/api/journal")
+async def api_journal(limit: int = 5):
+    """Latest journal cards: entry events (newest first) joined to their exit
+    events by ticket. All text comes verbatim from the bot's own journal --
+    nothing is fabricated."""
+    _log_call('api_journal', limit=limit)
+    entries = _journal_events({'entry'})[::-1][:max(limit, 1)]
+    exits   = {str(ev.get('ticket')): ev for ev in _journal_events({'exit'})
+               if ev.get('ticket') is not None}
+    risk_map = _risk_usd_map()
+    cards = []
+    for ev in entries:
+        ticket = str(ev.get('ticket'))
+        ex = exits.get(ticket)
+        exit_obj = None
+        if ex:
+            pnl  = _to_float(ex.get('pnl'))
+            risk = risk_map.get(ticket)
+            if not risk:
+                sl, lots = _to_float(ev.get('sl_pips')), _to_float(ev.get('lots'))
+                if sl and lots:
+                    risk = abs(sl) * lots * _pip_value_usd(ev.get('symbol') or '')
+            exit_obj = {
+                'ts_utc': ex.get('ts_utc'), 'exit_price': ex.get('exit_price'),
+                'exit_reason': ex.get('exit_reason'), 'pnl': pnl,
+                'r': (round(pnl / risk, 2) if pnl is not None and risk else None),
+                'hold_hours': ex.get('hold_hours'),
+            }
+        cards.append({
+            'ticket': ev.get('ticket'), 'symbol': ev.get('symbol'),
+            'direction': ev.get('direction'), 'ts_utc': ev.get('ts_utc'),
+            'lots': ev.get('lots'), 'fill_price': ev.get('fill_price'),
+            'slippage_pips': ev.get('slippage_pips'),
+            'sl_pips': ev.get('sl_pips'), 'tp_pips': ev.get('tp_pips'),
+            'reason': ev.get('strategy_reason'),
+            'context': {
+                'spread_pips': ev.get('spread_pips'),
+                'atr14_h1_pips': ev.get('atr14_h1_pips'),
+                'minutes_to_next_high_news': ev.get('minutes_to_next_high_news'),
+            },
+            'exit': exit_obj,
+        })
+    return {'success': True, 'count': len(cards), 'cards': cards}
+
+
+@app.get("/api/news")
+async def api_news(limit: int = 5):
+    """Upcoming high-impact news from the bot's own calendar cache
+    (data/news_calendar.json, ForexFactory feed, high-impact only)."""
+    _log_call('api_news', limit=limit)
+    try:
+        with open(NEWS_JSON, encoding='utf-8') as f:
+            cache = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {'success': True, 'fetched_at': None, 'stale': True, 'events': []}
+
+    now = datetime.now(timezone.utc)
+    fetched_at = cache.get('fetched_at')
+    stale = True
+    if fetched_at:
+        try:
+            age_h = (now - datetime.fromisoformat(fetched_at)).total_seconds() / 3600
+            stale = age_h > 72
+        except ValueError:
+            pass
+
+    upcoming = []
+    for ev in cache.get('events', []):
+        try:
+            t = datetime.fromisoformat(ev['time_utc'])
+        except (KeyError, ValueError):
+            continue
+        if t >= now:
+            upcoming.append({'currency': ev.get('currency'),
+                             'title': ev.get('title'),
+                             'time_utc': ev['time_utc'],
+                             'minutes_until': int((t - now).total_seconds() // 60)})
+    upcoming.sort(key=lambda e: e['minutes_until'])
+    return {'success': True, 'fetched_at': fetched_at, 'stale': stale,
+            'events': upcoming[:max(limit, 1)]}
+
+
+@app.get("/api/state")
+async def api_state():
+    """Read-only subset of the orchestrator's daily_state.json (session prep
+    flags, trade-allowed verdict, paused pairs). exists=false when the file
+    is absent (fresh day) or unreadable (orchestrator mid-write)."""
+    _log_call('api_state')
+    empty = {'success': True, 'exists': False, 'date': None,
+             'trade_allowed': None, 'avoid_reason': None,
+             'london_prep_done': None, 'ny_prep_done': None,
+             'london_news_flag': None, 'ny_news_flag': None,
+             'pair_paused': {}, 'consec_losses': {}, 'daily_pnl': None}
+    try:
+        with open(STATE_JSON, encoding='utf-8') as f:
+            st = json.load(f)
+    except FileNotFoundError:
+        return empty
+    except (json.JSONDecodeError, OSError):
+        return {**empty, 'note': 'state file unreadable (possibly mid-write)'}
+    return {'success': True, 'exists': True,
+            'date': st.get('date'),
+            'trade_allowed': st.get('trade_allowed'),
+            'avoid_reason': st.get('avoid_reason'),
+            'london_prep_done': st.get('london_prep_done'),
+            'ny_prep_done': st.get('ny_prep_done'),
+            'london_news_flag': st.get('london_news_flag'),
+            'ny_news_flag': st.get('ny_news_flag'),
+            'pair_paused': st.get('pair_paused') or {},
+            'consec_losses': st.get('consec_losses') or {},
+            'daily_pnl': st.get('daily_pnl')}
 
 
 @app.get("/dash")
