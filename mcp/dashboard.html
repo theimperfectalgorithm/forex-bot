@@ -44,7 +44,8 @@ header {
   padding: 8px 14px 0;
 }
 .hdr-row { display: flex; align-items: center; justify-content: space-between;
-           max-width: 1100px; margin: 0 auto; min-width: 0; }
+           max-width: 1100px; margin: 0 auto; min-width: 0; padding-bottom: 6px; }
+.hdr-tabs { max-width: 1100px; margin: 0 auto; border-top: 1px solid var(--grid); }
 .brand-mini { display: flex; align-items: baseline; gap: 7px; padding-right: 10px;
               flex: none; }
 .brand-mini b { font-size: 17px; letter-spacing: .28em; color: var(--ink); }
@@ -277,8 +278,10 @@ svg.equity { display: block; width: 100%; height: 210px; touch-action: pan-y; }
 <header>
   <div class="hdr-row">
     <div class="brand-mini"><b>T I A</b><span>Control Center</span></div>
-    <nav class="tabs" id="tabs"></nav>
     <span id="updated" class="num"></span>
+  </div>
+  <div class="hdr-tabs">
+    <nav class="tabs" id="tabs"></nav>
   </div>
 </header>
 
