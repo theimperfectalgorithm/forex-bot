@@ -248,6 +248,7 @@ svg.equity { display: block; width: 100%; height: 210px; touch-action: pan-y; }
 
 /* content view */
 .gen-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.week-nav { display: flex; align-items: center; gap: 8px; }
 .gen-btn { border: 0; border-radius: 10px; background: var(--brand); color: #06130c;
            font: inherit; font-size: 14px; font-weight: 700; padding: 11px 20px;
            cursor: pointer; }
@@ -448,7 +449,11 @@ svg.equity { display: block; width: 100%; height: 210px; touch-action: pan-y; }
         <h2>Weekly report generator</h2>
         <div class="gen-head">
           <button class="gen-btn" data-f="gen_btn">Generate Weekly Report</button>
-          <span class="gen-week num" data-f="gen_week"></span>
+          <div class="week-nav">
+            <button class="range-btn" data-f="wk_prev" aria-label="Previous week">◀</button>
+            <span class="gen-week num" data-f="gen_week"></span>
+            <button class="range-btn" data-f="wk_next" aria-label="Next week">▶</button>
+          </div>
         </div>
         <div class="gallery" data-f="gallery"></div>
         <div class="gen-note">Renders in your browser from this account's live data —
@@ -476,7 +481,7 @@ const state = HOSTS.map((h, i) => ({
   host: h, label: `Account ${i + 1}`, up: false, mt5: false,
   summary: null, trades: null, equity: null, stats: null,
   journal: null, news: null, botState: null,
-  range: 'all', subview: 'overview',
+  range: 'all', subview: 'overview', weekOffset: 0,
 }));
 let activeIdx = 0, lastUpdate = null;
 
@@ -528,8 +533,14 @@ function buildView(acc) {
     drawEquity(acc);
     fetchStats(acc).then(() => renderSlow(acc));
   }));
-  // report button
+  // report button + week navigation
   acc.el('gen_btn').addEventListener('click', () => generateReport(acc));
+  acc.el('wk_prev').addEventListener('click', () => {
+    acc.weekOffset += 1; updateWeekLabel(acc);
+  });
+  acc.el('wk_next').addEventListener('click', () => {
+    acc.weekOffset = Math.max(0, acc.weekOffset - 1); updateWeekLabel(acc);
+  });
 }
 
 function setActive(i) {
@@ -959,10 +970,16 @@ const iso = d => d.toISOString().slice(0, 10);
 const shortDate = d => d.toLocaleDateString('en-US',
   { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
+function reportDate(acc) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 7 * acc.weekOffset);
+  return d;
+}
+
 function updateWeekLabel(acc) {
-  const now = new Date();
-  const { year, week } = isoWeek(now);
-  const { mon, fri } = weekRange(now);
+  const d = reportDate(acc);
+  const { year, week } = isoWeek(d);
+  const { mon, fri } = weekRange(d);
   acc.el('gen_week').textContent =
     `Week ${week} · ${shortDate(mon)} – ${shortDate(fri)} ${year}`;
 }
@@ -971,7 +988,7 @@ async function generateReport(acc) {
   const btn = acc.el('gen_btn');
   btn.disabled = true; btn.textContent = 'Generating…';
   try {
-    const now = new Date();
+    const now = reportDate(acc);
     const { year, week } = isoWeek(now);
     const { mon, fri } = weekRange(now);
     const stats = await j(acc.host,
