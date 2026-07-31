@@ -22,6 +22,14 @@ Checks (in order):
   6. Currency concentration -- max 2 open positions sharing one currency
      (e.g. GBPJPY + EURJPY = 2 JPY exposures; a third JPY trade is
      rejected as one adverse JPY move would hit all three at once).
+  7. Spread gate -- live spread must not exceed SPREAD_MAX_FRAC_OF_SL
+     (default 30%) of the trade's SL distance. July 2026 journal data
+     showed the live broker widening spreads to 12-31 pips at the
+     server-midnight rollover while AMR stops were 8-17 pips: the broker
+     rejected most of those orders anyway (retcode 10016 Invalid stops),
+     but marginal ones got through with the spread eating nearly the
+     whole stop. This gate makes that protection deliberate, on both
+     accounts, and journals the rejection properly.
 
 If all checks pass, calculates dynamic lot size:
   Risk per trade  = 1% of current balance (= 20% of 5% daily limit)
@@ -91,6 +99,11 @@ RISK_PER_TRADE_PCT = 0.01        # 1% of balance per trade (GBPJPY, EURJPY)
 EURUSD_RISK_PCT    = 0.0025      # 0.25% of balance per trade (EURUSD both strategies)
 MIN_LOT            = 0.01
 MAX_CONSEC_LOSSES  = 2
+# Spread gate: reject entries when live spread > this fraction of the SL
+# distance (config key spread_max_frac_of_sl; see the spread-gate bullet
+# in the module docstring for the July 2026 rollover-spread incident
+# this encodes).
+SPREAD_MAX_FRAC_OF_SL = float(GLOBAL_CFG.get('spread_max_frac_of_sl', 0.30))
 
 
 # ---------------------------------------------------------------------------
@@ -165,6 +178,21 @@ def _open_risk_usd(log: logging.Logger) -> tuple:
                 * info.trade_tick_value * p.volume)
         total += risk
     return total, no_sl
+
+
+def _spread_pips(symbol: str, log: logging.Logger) -> float | None:
+    """Live spread in pips, using the same pip convention as the trade
+    journal (core.trade_journal._pip_size) so gate decisions line up with
+    the journaled spread_pips numbers. None when no usable tick."""
+    from core.trade_journal import _pip_size
+    try:
+        tick = mt5.symbol_info_tick(symbol)
+        if tick is None or not tick.ask or not tick.bid:
+            return None
+        return round((tick.ask - tick.bid) / _pip_size(symbol), 2)
+    except Exception as e:
+        log.warning(f"spread read failed for {symbol} ({e})")
+        return None
 
 
 def _same_currency_count(symbol: str) -> int:
@@ -322,6 +350,21 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
             return reject(f"News blackout: {news_reason}")
     except Exception as e:
         log.warning(f"news blackout check failed ({e}) -- proceeding")
+
+    # -- 10. Spread gate: a spread that is a large fraction of the SL
+    # makes the trade near-unwinnable (entry starts most of the way to
+    # the stop). Fails OPEN on a missing tick (like the news gate): a
+    # transient tick-read hiccup must not silently halt trading, and the
+    # broker's own Invalid-stops rejection remains as the backstop.
+    spread = _spread_pips(symbol, log)
+    if spread is None:
+        log.warning(f"spread gate: no tick for {symbol} -- proceeding")
+    elif spread > sl_pips * SPREAD_MAX_FRAC_OF_SL:
+        return reject(
+            f"Spread gate: live spread {spread:.1f}p > "
+            f"{SPREAD_MAX_FRAC_OF_SL*100:.0f}% of SL {sl_pips:.1f}p "
+            f"(max {sl_pips*SPREAD_MAX_FRAC_OF_SL:.1f}p) -- "
+            f"rollover/news spread widening")
 
     # -- All checks passed -- calculate lot size
     lots = _calc_lots(balance, sl_pips, symbol, log, risk_pct)

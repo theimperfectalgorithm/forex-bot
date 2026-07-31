@@ -52,3 +52,9 @@ global:
   # blackout half-window in minutes around high-impact events. The 5ers
   # official rule is +/-2 min (server time); 5 keeps a clock-skew margin.
   news_window_min: 5
+  # spread gate (agent_risk.run, added 2026-07-31): reject an entry
+  # when the live spread exceeds this fraction of the trade's SL distance.
+  # July 2026: the live broker widened spreads to 12-31p at the server-
+  # midnight rollover vs 8-17p AMR stops -- entering there pays most of
+  # the stop up front. Fails open on a missing tick.
+  spread_max_frac_of_sl: 0.30
