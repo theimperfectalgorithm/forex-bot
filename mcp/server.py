@@ -44,6 +44,7 @@ import secrets
 import subprocess
 import sys
 import time
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
@@ -532,6 +533,37 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Forex Bot MCP Server", lifespan=lifespan)
 
 
+# ── Per-IP rate limiting on FAILED auth only ────────────────────────────
+#
+# 2026-08-03: the open port draws constant internet-scanner traffic (bots
+# probing /, /_next, /api, etc. with random/no keys). None of it has ever
+# gotten past auth, but a large burst piling up unauthenticated
+# connections was part of what starved the demo server during that day's
+# hang. A valid key ALWAYS bypasses this entirely -- only repeated
+# *failures* from one IP get throttled, so a shared/NAT'd IP with a
+# legitimate key is never affected.
+_AUTH_FAIL_WINDOW_S = 60
+_AUTH_FAIL_MAX      = 15
+_auth_fail_log: dict[str, deque] = defaultdict(deque)
+
+
+def _rate_limited(ip: str) -> bool:
+    dq = _auth_fail_log.get(ip)
+    if not dq:
+        return False
+    now = time.time()
+    while dq and now - dq[0] > _AUTH_FAIL_WINDOW_S:
+        dq.popleft()
+    if not dq:
+        del _auth_fail_log[ip]
+        return False
+    return len(dq) >= _AUTH_FAIL_MAX
+
+
+def _record_auth_fail(ip: str) -> None:
+    _auth_fail_log[ip].append(time.time())
+
+
 def _dash_authorized(request: Request) -> bool:
     """/dash and /api/* accept the dashboard token either as an
     X-Dash-Key header (what the page's own fetch() calls send) or a
@@ -550,8 +582,16 @@ async def api_key_auth(request: Request, call_next):
     path = request.url.path
     if (path == '/dash' or path.startswith('/api/')) and _dash_authorized(request):
         return await call_next(request)
-    log.warning(f"AUTH FAILED  {request.method} {path}  "
-               f"from {request.client.host if request.client else '?'}")
+
+    ip = request.client.host if request.client else '?'
+    if _rate_limited(ip):
+        # No warning log here -- an IP already over the threshold has
+        # been logged plenty; this just cheaply short-circuits the flood
+        # without doing any more work per request.
+        return JSONResponse({"detail": "Too many failed attempts -- try again later"},
+                           status_code=429)
+    _record_auth_fail(ip)
+    log.warning(f"AUTH FAILED  {request.method} {path}  from {ip}")
     return JSONResponse({"detail": "Unauthorized -- missing or invalid X-API-Key"},
                        status_code=401)
 
@@ -935,4 +975,8 @@ if __name__ == '__main__':
     import uvicorn
     log.info(f"Starting Forex Bot MCP server on 0.0.0.0:{PORT} "
              f"(MCP endpoint: /mcp, dashboard: /dash)")
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    # limit_concurrency: caps simultaneous in-flight requests (excess get
+    # a fast 503 instead of queuing unbounded) -- a second layer behind
+    # the per-IP rate limiter above, protecting against a burst that
+    # isn't just one IP repeatedly failing auth (2026-08-03 incident).
+    uvicorn.run(app, host="0.0.0.0", port=PORT, limit_concurrency=100)
