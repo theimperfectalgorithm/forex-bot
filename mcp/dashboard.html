@@ -555,10 +555,18 @@ setActive(Math.min(
   state.length - 1));
 
 /* ═══════════════════════ FETCH TIERS ═══════════════════════ */
+const FETCH_TIMEOUT_MS = 10_000;   // a hung server must show "unreachable",
+                                    // not spin forever (2026-08-03 incident)
 async function j(base, path) {
-  const r = await fetch(base + path, { headers: HDRS });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(base + path, { headers: HDRS, signal: ctrl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function statsDaysFor(acc) {

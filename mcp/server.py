@@ -585,9 +585,20 @@ async def health():
 # One server process per VPS clone (MT5's python API is a per-process
 # singleton pinned by core.mt5_connect) -- the page fetches BOTH clones'
 # APIs (ports 8000 + 8001) client-side and renders a tab per account.
+#
+# INCIDENT 2026-08-03: these routes do blocking file I/O (open/csv/json)
+# and were declared `async def` -- a blocking call inside an async route
+# runs directly on uvicorn's single event loop and stalls EVERY other
+# request for its duration, including MCP protocol traffic. That's the
+# likely cause of the demo dashboard hanging until its process was
+# restarted (compounded by a pile-up of scanner connections on the open
+# port). Fix: every route below is a plain `def`, not `async def` --
+# FastAPI/Starlette automatically runs plain-def routes in a thread
+# pool, so a slow read can never block other requests. Do not add
+# `async` back to these without also removing their blocking I/O.
 
 @app.get("/api/summary")
-async def api_summary():
+def api_summary():
     """Everything the dashboard needs above the chart, in one call:
     live status + this clone's account constants + today's derived
     numbers (realized/unrealized P&L, daily-loss usage, target progress).
@@ -637,7 +648,7 @@ async def api_summary():
 
 
 @app.get("/api/equity")
-async def api_equity():
+def api_equity():
     """EOD equity curve plus one live point (today + current equity),
     computed server-side because only the server has live MT5 access."""
     _log_call('api_equity')
@@ -652,7 +663,7 @@ async def api_equity():
 
 
 @app.get("/api/trades")
-async def api_trades(limit: int = 20):
+def api_trades(limit: int = 20):
     """Last N CLOSED trades from trades_log.csv, newest first, each with an
     R-multiple (see _trade_r for the risk-source rules)."""
     _log_call('api_trades', limit=limit)
@@ -677,7 +688,7 @@ async def api_trades(limit: int = 20):
 
 
 @app.get("/api/stats")
-async def api_stats(days: int = 30, start: str = '', end: str = ''):
+def api_stats(days: int = 30, start: str = '', end: str = ''):
     """Closed-trade statistics over a period. `days=N` = rolling window ending
     today (0 = all history); explicit `start`/`end` (YYYY-MM-DD, inclusive)
     override `days` -- the weekly-report generator passes an exact Mon-Fri.
@@ -799,7 +810,7 @@ async def api_stats(days: int = 30, start: str = '', end: str = ''):
 
 
 @app.get("/api/journal")
-async def api_journal(limit: int = 5):
+def api_journal(limit: int = 5):
     """Latest journal cards: entry events (newest first) joined to their exit
     events by ticket. All text comes verbatim from the bot's own journal --
     nothing is fabricated."""
@@ -844,7 +855,7 @@ async def api_journal(limit: int = 5):
 
 
 @app.get("/api/news")
-async def api_news(limit: int = 5):
+def api_news(limit: int = 5):
     """Upcoming high-impact news from the bot's own calendar cache
     (data/news_calendar.json, ForexFactory feed, high-impact only)."""
     _log_call('api_news', limit=limit)
@@ -881,7 +892,7 @@ async def api_news(limit: int = 5):
 
 
 @app.get("/api/state")
-async def api_state():
+def api_state():
     """Read-only subset of the orchestrator's daily_state.json (session prep
     flags, trade-allowed verdict, paused pairs). exists=false when the file
     is absent (fresh day) or unreadable (orchestrator mid-write)."""
@@ -912,7 +923,7 @@ async def api_state():
 
 
 @app.get("/dash")
-async def dash_page():
+def dash_page():
     """The read-only mobile dashboard (single self-contained HTML file)."""
     return FileResponse(MCP_DIR / 'dashboard.html', media_type='text/html')
 
