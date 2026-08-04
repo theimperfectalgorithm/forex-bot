@@ -55,7 +55,8 @@ from agent_strategy  import (prepare_session, check_breakout,
                              server_utc_offset_hours)
 from agent_risk      import (run as run_risk, GLOBAL_CFG,
                              STARTING_BALANCE, MAX_DAILY_LOSS_PCT)
-from agent_execution import place_trade, monitor_positions, close_trade
+from agent_execution import (place_trade, monitor_positions, close_trade,
+                             find_untracked_positions)
 from agent_reporting import run as run_reporting
 from core.pair_manager import get_active_pairs
 from core.session_filter import is_friday_close_time
@@ -209,6 +210,15 @@ def _fresh_state(today: str) -> dict:
         # live position tracking
         'open_trades'      : [],
         'closed_today'     : [],
+        # reconciliation (2026-08-03): set to an ISO timestamp the cycle an
+        # untracked bot position (magic-matched, not in open_trades) is
+        # found; agent_risk.run() blocks new entries while set. Cleared on
+        # the next daily_state reset -- NOT auto-cleared same-day, so a
+        # desync forces at least one human look at the log before the book
+        # resumes fully autonomous entries. The position itself is adopted
+        # into open_trades immediately (see step_monitor_positions), so it
+        # IS being monitored/managed normally regardless of this flag.
+        'untracked_positions_flagged_at': None,
         # running daily P&L and risk state
         'daily_pnl'        : 0.0,
         # first equity seen today -- set lazily by agent_risk.run() on the
@@ -780,8 +790,63 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             log.error(f"EURUSD {strategy}: order FAILED -- {result['error']}")
 
 
+def _check_untracked_positions(state: dict, log: logging.Logger):
+    """
+    Reconciliation (2026-08-03): find MT5 positions this bot placed that
+    aren't in state['open_trades'] -- runs EVERY cycle, independent of
+    whether open_trades is currently empty (the bot believing it holds
+    zero positions while MT5 holds one is exactly the dangerous case).
+
+    On a find: log loudly, journal it, ADOPT the position into
+    open_trades so it gets normal monitoring/breakeven/exit-logging from
+    now on (better than leaving it silently unmanaged), and set a state
+    flag that agent_risk.run() checks to block new entries until the
+    next daily reset -- a desync is anomalous enough to warrant a human
+    look before the book resumes fully autonomous entries, even though
+    the position itself is safely tracked again immediately.
+    """
+    untracked = find_untracked_positions(state['open_trades'], log)
+    if not untracked:
+        return
+
+    for pos in untracked:
+        log.error(
+            f"UNTRACKED POSITION FOUND  {pos['symbol']} {pos['direction']}  "
+            f"{pos['lots']}L  ticket={pos['ticket']}  entry={pos['entry_price']}  "
+            f"opened={pos['open_time']}  -- this bot placed it (magic match) "
+            f"but it was not in open_trades. Adopting into tracking; new "
+            f"entries are blocked until the next daily reset."
+        )
+        try:
+            from core.trade_journal import log_event
+            log_event('untracked_position', {**pos})
+        except Exception as e:
+            log.warning(f"journal write failed for untracked position: {e}")
+
+        state['open_trades'].append({
+            'ticket'        : pos['ticket'],
+            'symbol'        : pos['symbol'],
+            'direction'     : pos['direction'],
+            'lots'          : pos['lots'],
+            'entry_price'   : pos['entry_price'],
+            'sl'            : pos['sl'],
+            'tp'            : pos['tp'],
+            'session'       : 'UNKNOWN',
+            'strategy_key'  : 'UNTRACKED',
+            'breakeven_moved': False,
+        })
+
+    state['untracked_positions_flagged_at'] = datetime.now(timezone.utc).isoformat()
+
+
 def step_monitor_positions(state: dict, log: logging.Logger):
-    """Check all open positions: move to breakeven, detect closures."""
+    """Check all open positions: move to breakeven, detect closures, and
+    reconcile against MT5's own view (see _check_untracked_positions)."""
+    try:
+        _check_untracked_positions(state, log)
+    except Exception as e:
+        log.error(f"Untracked-position reconciliation failed: {e}", exc_info=True)
+
     if not state['open_trades']:
         return
     try:

@@ -594,3 +594,45 @@ def monitor_positions(open_trades: list, log: logging.Logger,
         still_open.append(trade)
 
     return still_open, newly_closed
+
+
+def find_untracked_positions(open_trades: list, log: logging.Logger) -> list:
+    """
+    Reconciliation check (2026-08-03): monitor_positions() above is
+    one-directional -- it only detects "bot thinks a ticket is open, MT5
+    shows it closed." It never detects the reverse: an MT5 position this
+    bot placed (magic == MAGIC_NUMBER) that ISN'T in open_trades, e.g.
+    after a crash/restart where state wasn't carried forward, or some
+    other desync. That gap is exactly the class of bug a Reddit reviewer
+    flagged and the July cross-terminal incident made concrete.
+
+    Filters on magic number specifically so a manually-placed trade in
+    the same MT5 account (different/zero magic) is not treated as a bot
+    desync -- this function is read-only and never closes anything;
+    callers decide what to do with the result.
+
+    Returns a list of plain dicts (ticket, symbol, direction, lots,
+    entry_price, sl, tp, open_time) for every untracked bot position.
+    """
+    if not _connect(log):
+        return []
+    known_tickets = {t['ticket'] for t in open_trades}
+    positions = mt5.positions_get()
+    if not positions:
+        return []
+
+    untracked = []
+    for pos in positions:
+        if pos.magic != MAGIC_NUMBER or pos.ticket in known_tickets:
+            continue
+        untracked.append({
+            'ticket'      : pos.ticket,
+            'symbol'      : pos.symbol,
+            'direction'   : 'BUY' if pos.type == mt5.ORDER_TYPE_BUY else 'SELL',
+            'lots'        : pos.volume,
+            'entry_price' : pos.price_open,
+            'sl'          : pos.sl,
+            'tp'          : pos.tp,
+            'open_time'   : datetime.fromtimestamp(pos.time, tz=timezone.utc).isoformat(),
+        })
+    return untracked

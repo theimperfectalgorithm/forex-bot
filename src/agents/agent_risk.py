@@ -22,7 +22,13 @@ Checks (in order):
   6. Currency concentration -- max 2 open positions sharing one currency
      (e.g. GBPJPY + EURJPY = 2 JPY exposures; a third JPY trade is
      rejected as one adverse JPY move would hit all three at once).
-  7. Spread gate -- live spread must not exceed SPREAD_MAX_FRAC_OF_SL
+  7. Untracked-position reconciliation -- new entries pause for the rest
+     of the UTC day if main_agent found an MT5 position this bot placed
+     that wasn't in its own open_trades tracking (state desync after a
+     crash/restart). The position itself is adopted and monitored
+     normally the moment it's found; this only blocks NEW entries so a
+     human reviews the log before the book resumes unattended.
+  8. Spread gate -- live spread must not exceed SPREAD_MAX_FRAC_OF_SL
      (default 30%) of the trade's SL distance. July 2026 journal data
      showed the live broker widening spreads to 12-31 pips at the
      server-midnight rollover while AMR stops were 8-17 pips: the broker
@@ -281,6 +287,20 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
     if equity <= HARD_FLOOR:
         return reject(f"Hard floor breached on EQUITY: ${equity:,.2f} <= "
                       f"${HARD_FLOOR:,.0f} (floating losses)")
+
+    # -- 2b. Untracked-position reconciliation (2026-08-03): main_agent's
+    # step_monitor_positions sets this flag the cycle it finds an MT5
+    # position this bot placed that wasn't in open_trades (state desync --
+    # e.g. after a crash/restart). The position is adopted and monitored
+    # normally regardless; this just pauses NEW entries until the next
+    # daily reset so a human looks at the log at least once. Cheap dict
+    # read -- no MT5 call, the detection itself already happened this cycle.
+    if daily_state.get('untracked_positions_flagged_at'):
+        return reject(
+            f"Untracked position reconciliation: an unmanaged bot position "
+            f"was found this UTC day at {daily_state['untracked_positions_flagged_at']} "
+            f"-- new entries paused until the next daily reset (see trading.log "
+            f"'UNTRACKED POSITION FOUND')")
 
     # -- 3a. Daily loss limit (closed trades -- original check)
     daily_limit = balance * MAX_DAILY_LOSS_PCT
