@@ -894,6 +894,70 @@ def api_journal(limit: int = 5):
     return {'success': True, 'count': len(cards), 'cards': cards}
 
 
+# UTC session windows -- same convention already used client-side in
+# dashboard.html's session card: London 07:00-16:00, NY 12:00-21:00,
+# everything else counted as Asian.
+def _session_from_event(ev: dict) -> str:
+    hour_server = ev.get('hour_server')
+    offset      = ev.get('server_offset_h')
+    if hour_server is None or offset is None:
+        return 'Unknown'
+    utc_hour = (hour_server - offset) % 24
+    if 7 <= utc_hour < 16:
+        return 'London'
+    if 12 <= utc_hour < 21:
+        return 'NY'
+    return 'Asian'
+
+
+@app.get("/api/slippage")
+def api_slippage():
+    """Slippage aggregation (avg / worst, overall + by pair + by session).
+
+    Sign convention (set by core.trade_journal.log_entry): slippage_pips
+    = (fill_price - signal_price)/pip, sign-adjusted so POSITIVE always
+    means the fill cost you pips vs. the strategy's signal price,
+    regardless of BUY/SELL direction; negative means a better-than-
+    expected fill. "Worst" is therefore simply the maximum value.
+    Session is derived from each entry's own hour_server/server_offset_h
+    (not joined to trades_log.csv), so open (not yet closed) trades are
+    included too.
+    """
+    _log_call('api_slippage')
+    entries = [ev for ev in _journal_events({'entry'})
+              if _to_float(ev.get('slippage_pips')) is not None]
+
+    def _agg(rows: list) -> dict:
+        vals = [_to_float(r['slippage_pips']) for r in rows]
+        return {
+            'avg_pips'    : round(sum(vals) / len(vals), 2),
+            'avg_abs_pips': round(sum(abs(v) for v in vals) / len(vals), 2),
+            'worst_pips'  : round(max(vals), 2),
+            'count'       : len(vals),
+        }
+
+    if not entries:
+        return {'success': True, 'count': 0,
+                'overall': None, 'by_pair': [], 'by_session': []}
+
+    by_pair_map, by_session_map = {}, {}
+    for ev in entries:
+        by_pair_map.setdefault(ev.get('symbol') or '?', []).append(ev)
+        by_session_map.setdefault(_session_from_event(ev), []).append(ev)
+
+    by_pair = sorted(
+        [{'pair': k, **_agg(v)} for k, v in by_pair_map.items()],
+        key=lambda r: r['worst_pips'], reverse=True)
+    session_order = {'Asian': 0, 'London': 1, 'NY': 2, 'Unknown': 3}
+    by_session = sorted(
+        [{'session': k, **_agg(v)} for k, v in by_session_map.items()],
+        key=lambda r: session_order.get(r['session'], 9))
+
+    return {'success': True, 'count': len(entries),
+            'overall': _agg(entries), 'by_pair': by_pair,
+            'by_session': by_session}
+
+
 @app.get("/api/news")
 def api_news(limit: int = 5):
     """Upcoming high-impact news from the bot's own calendar cache

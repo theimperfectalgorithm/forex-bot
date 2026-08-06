@@ -130,7 +130,8 @@ main { max-width: 640px; margin: 0 auto; padding: 14px; }
       "risk    session"
       "trades  journal"
       "positions journal"
-      "news    goal";
+      "news    goal"
+      "slippage slippage";
   }
   .card.equity    { grid-area: equity; }
   .card.perf      { grid-area: perf; }
@@ -141,7 +142,16 @@ main { max-width: 640px; margin: 0 auto; padding: 14px; }
   .card.positions { grid-area: positions; }
   .card.news      { grid-area: news; }
   .card.goal      { grid-area: goal; }
+  .card.slippage  { grid-area: slippage; }
 }
+
+/* slippage card */
+.slip-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+              margin-bottom: 14px; }
+.slip-tiles .stat { text-align: center; }
+.slip-sessions { display: flex; justify-content: space-around; gap: 10px;
+                 margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--grid); }
+.slip-sessions .stat { flex: 1; text-align: center; background: none; padding: 0; }
 
 /* perf list */
 .perf-row { display: flex; justify-content: space-between; padding: 7px 0;
@@ -427,6 +437,21 @@ svg.equity { display: block; width: 100%; height: 210px; touch-action: pan-y; }
           </div>
         </div>
 
+        <div class="card slippage">
+          <h2>Slippage <span class="sub num" data-f="slip_count"></span></h2>
+          <div class="slip-tiles">
+            <div class="stat"><div class="lbl">Avg</div>
+              <div class="val num" data-f="slip_avg">—</div></div>
+            <div class="stat"><div class="lbl">Avg (abs)</div>
+              <div class="val num" data-f="slip_avg_abs">—</div></div>
+            <div class="stat"><div class="lbl">Worst</div>
+              <div class="val num" data-f="slip_worst">—</div></div>
+          </div>
+          <div class="scroll-x"><table data-f="slip_pairs"></table></div>
+          <div class="empty" data-f="slip_empty" hidden>No slippage data yet</div>
+          <div class="slip-sessions" data-f="slip_sessions"></div>
+        </div>
+
       </div><!-- /grid-main -->
 
       <div class="card foot">
@@ -480,7 +505,7 @@ const C = { bg: '#0d0d0d', card: '#1a1a19', card2: '#222220', ink: '#ffffff',
 const state = HOSTS.map((h, i) => ({
   host: h, label: `Account ${i + 1}`, up: false, mt5: false,
   summary: null, trades: null, equity: null, stats: null,
-  journal: null, news: null, botState: null,
+  journal: null, news: null, botState: null, slippage: null,
   range: 'all', subview: 'overview', weekOffset: 0,
 }));
 let activeIdx = 0, lastUpdate = null;
@@ -495,6 +520,10 @@ function pnlCell(el, v) {
   if (v != null) el.classList.add(v >= 0 ? 'pos' : 'neg');
 }
 const fmtR = r => r == null ? '—' : (r >= 0 ? '+' : '−') + Math.abs(r).toFixed(2) + 'R';
+// slippage sign convention (set server-side by core.trade_journal.log_entry):
+// positive = cost you pips vs. the signal price, regardless of BUY/SELL --
+// so unlike P&L, positive slippage is BAD (colored red), negative is GOOD.
+const fmtPips = v => v == null ? '—' : (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + 'p';
 
 /* ═══════════════════════ DOM BUILD ═══════════════════════ */
 const tabsEl  = document.getElementById('tabs');
@@ -602,6 +631,7 @@ async function refreshSlow() {          // 5min tier
       grab('/api/journal?limit=5', 'journal'),
       grab('/api/news', 'news'),
       grab('/api/state', 'botState'),
+      grab('/api/slippage', 'slippage'),
     ]);
   }));
   state.forEach(acc => { if (acc.up) { renderSlow(acc); drawEquity(acc); } });
@@ -795,6 +825,42 @@ function renderSlow(acc) {
 
   // news
   renderNews(acc);
+  renderSlippage(acc);
+}
+
+function renderSlippage(acc) {
+  if (!acc.el || !acc.el('slip_count')) return;
+  const s = acc.slippage;
+  const has = s && s.overall;
+  acc.el('slip_count').textContent = has ? `· ${s.count} entries` : '';
+  acc.el('slip_empty').hidden = !!has;
+
+  const pipsCell = v => v == null ? '—' : fmtPips(v);
+  const pipsClass = v => v == null ? '' : v > 0 ? 'neg' : v < 0 ? 'pos' : '';
+
+  acc.el('slip_avg').textContent = has ? fmtPips(s.overall.avg_pips) : '—';
+  acc.el('slip_avg').className = 'val num ' + (has ? pipsClass(s.overall.avg_pips) : '');
+  acc.el('slip_avg_abs').textContent = has ? s.overall.avg_abs_pips.toFixed(1) + 'p' : '—';
+  acc.el('slip_worst').textContent = has ? fmtPips(s.overall.worst_pips) : '—';
+  acc.el('slip_worst').className = 'val num ' + (has ? pipsClass(s.overall.worst_pips) : '');
+
+  const pairT = acc.el('slip_pairs');
+  const pairs = (s && s.by_pair) || [];
+  pairT.innerHTML = pairs.length === 0 ? '' :
+    '<tr><th>Pair</th><th class="r">Avg</th><th class="r">Worst</th><th class="r">N</th></tr>' +
+    pairs.map(p => `<tr>
+      <td><b>${p.pair}</b></td>
+      <td class="r num ${pipsClass(p.avg_pips)}">${pipsCell(p.avg_pips)}</td>
+      <td class="r num ${pipsClass(p.worst_pips)}">${pipsCell(p.worst_pips)}</td>
+      <td class="r num sub">${p.count}</td>
+    </tr>`).join('');
+
+  const sessEl = acc.el('slip_sessions');
+  const sessions = (s && s.by_session) || [];
+  sessEl.innerHTML = sessions.map(sx => `<div class="stat">
+    <div class="lbl">${sx.session}</div>
+    <div class="val num ${pipsClass(sx.avg_pips)}" style="font-size:15px">${pipsCell(sx.avg_pips)}</div>
+  </div>`).join('');
 }
 
 function renderNews(acc) {
