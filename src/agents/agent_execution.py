@@ -150,6 +150,34 @@ def _get_filling_mode(symbol: str) -> int:
     return mt5.ORDER_FILLING_RETURN
 
 
+def _confirm_fill_price(ticket: int, fallback_price: float, log: logging.Logger) -> float:
+    """
+    order_send()'s immediate result.price is unreliable on market-execution
+    brokers (confirmed 2026-08: intermittently 0.0 on the 5ers/Five Percent
+    Online account for genuinely successful, correctly-executed orders --
+    real SL/TP/PnL were always correct since those never depended on this
+    value, but the logged EntryPrice/fill_price corrupted slippage and
+    R-multiple analysis for the affected trades). The just-opened
+    position's price_open always reflects the broker's own confirmed
+    fill; a few short retries cover the rare case where it isn't visible
+    in the microseconds right after order_send() returns. fallback_price
+    (result.price if it was non-zero, else the pre-order live-price
+    snapshot) is used only if positions_get() never confirms -- strictly
+    better than silently recording 0.0.
+    """
+    for _ in range(3):
+        positions = mt5.positions_get(ticket=ticket)
+        if positions and positions[0].price_open:
+            return positions[0].price_open
+        time.sleep(0.3)
+    if fallback_price:
+        log.warning(f"ticket {ticket}: could not confirm fill via positions_get() -- "
+                   f"using fallback price {fallback_price}")
+        return fallback_price
+    log.warning(f"ticket {ticket}: could not confirm fill price at all -- logging 0.0")
+    return 0.0
+
+
 # ---------------------------------------------------------------------------
 # Place trade
 # ---------------------------------------------------------------------------
@@ -253,7 +281,7 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         return failed(err)
 
     ticket       = result.order
-    actual_entry = result.price
+    actual_entry = _confirm_fill_price(ticket, result.price or entry_price, log)
 
     log.info(f"ORDER PLACED  {symbol} {signal}  {lot_size}L  "
              f"entry={actual_entry:.5f}  SL={sl_price}  TP={tp_price}  "
