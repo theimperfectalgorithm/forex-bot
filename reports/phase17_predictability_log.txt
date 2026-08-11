@@ -1,0 +1,99 @@
+==========================================================================================
+PHASE 17 -- DOWN-MOVE VOLATILITY PREDICTABILITY (information-timing)
+T0 = close of the M15 bar confirming the >=1.0xATR down-move (frozen, unchanged).
+TIER 0 = strictly before bar i. TIER 1 = at T0 (uses bar i itself). TIER 2 = first
+post-event candle (bar i+1). TIER 3 = multiple future candles. Only Tier 0/1 can
+support a trading hypothesis that enters AT T0. No strategy, no optimization.
+Data limitation: core/data_loader.py supports M15/H1/H4 only -- no M1/M5 feed, so
+the "first 5-minute interval" requested in Part 2 cannot be tested and is skipped
+rather than approximated. Finest available granularity is M15.
+==========================================================================================
+EURUSD: 4178 events
+GBPUSD: 4319 events
+USDJPY: 4179 events
+AUDUSD: 4244 events
+USDCAD: 4537 events
+NZDUSD: 4233 events
+GBPJPY: 3958 events
+EURJPY: 4012 events
+CADJPY: 4016 events
+
+Total events pooled: 37676
+
+==========================================================================================
+PART 2 -- EARLY VOLATILITY RESPONSE: when does separation first appear?
+==========================================================================================
+  [TIER3 (uses bar i+1..i+1)] vol_first_15m: n_rev=20234 n_cont=17442 rev_mean=5.8507 cont_mean=6.2341 d=-0.0448 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER3 (uses bar i+1..i+2)] vol_first_30m: n_rev=20234 n_cont=17442 rev_mean=3.9732 cont_mean=4.4424 d=-0.0840 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER3 (uses bar i+1..i+3)] vol_first_45m: n_rev=20234 n_cont=17442 rev_mean=4.9329 cont_mean=5.6332 d=-0.1213 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER3 (uses bar i+1..i+4)] vol_first_60m: n_rev=20234 n_cont=17442 rev_mean=5.3938 cont_mean=6.2042 d=-0.1407 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+
+==========================================================================================
+PART 3 -- PRE-EVENT INFORMATION (TIER 0: strictly before the event bar)
+==========================================================================================
+  [TIER 0] atr_pctile_pre_T0: n_rev=20234 n_cont=17442 rev_mean=0.4607 cont_mean=0.4747 d=-0.0468 | pairs 7/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 0] realized_vol_8_T0: n_rev=20234 n_cont=17442 rev_mean=5.5758 cont_mean=5.6756 d=-0.0203 | pairs 8/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 0] realized_vol_4_T0: n_rev=20234 n_cont=17442 rev_mean=5.6013 cont_mean=5.7839 d=-0.0311 | pairs 8/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 0] realized_vol_2_T0: n_rev=20234 n_cont=17442 rev_mean=4.9853 cont_mean=5.1673 d=-0.0255 | pairs 8/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 0] vol_slope_T0: n_rev=20234 n_cont=17442 rev_mean=0.2492 cont_mean=0.2629 d=-0.0167 | pairs 7/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 0] prev_candle_range_atr_T0: n_rev=20234 n_cont=17442 rev_mean=1.1752 cont_mean=1.2025 d=-0.0431 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+
+==========================================================================================
+PART 4 -- EVENT-CANDLE STRUCTURE (TIER 1: uses the event bar itself, still <= T0)
+==========================================================================================
+  [TIER 1] event_range_atr_T1: n_rev=20234 n_cont=17442 rev_mean=2.0588 cont_mean=2.0600 d=-0.0009 | pairs 6/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(1.0)}
+  [TIER 1] body_pct_T1: n_rev=20234 n_cont=17442 rev_mean=0.7683 cont_mean=0.7847 d=-0.1066 | pairs 8/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 1] upper_wick_pct_T1: n_rev=20234 n_cont=17442 rev_mean=0.0981 cont_mean=0.0894 d=+0.0821 | pairs 9/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(1.0)}
+  [TIER 1] lower_wick_pct_T1: n_rev=20234 n_cont=17442 rev_mean=0.1335 cont_mean=0.1259 d=+0.0606 | pairs 8/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(1.0)}
+  [TIER 1] close_location_T1: n_rev=20234 n_cont=17442 rev_mean=0.1423 cont_mean=0.1282 d=+0.1013 | pairs 8/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(1.0)}
+  [TIER 1] move_atr_T1: n_rev=20234 n_cont=17442 rev_mean=-1.4385 cont_mean=-1.4384 d=-0.0002 | pairs 5/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(-1.0)}
+  [TIER 1] dist_from_sess_high_T1: n_rev=20234 n_cont=17442 rev_mean=3.0009 cont_mean=3.1294 d=-0.0742 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 1] dist_from_vwap_T1: n_rev=20234 n_cont=17442 rev_mean=-1.2596 cont_mean=-1.3502 d=+0.0692 | pairs 9/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(1.0)}
+  [TIER 1] atr_pctile_at_T0_T1: n_rev=20234 n_cont=17442 rev_mean=0.5299 cont_mean=0.5414 d=-0.0402 | pairs 7/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+
+==========================================================================================
+PART 5 -- FIRST POST-EVENT CANDLE (TIER 2: known only after bar i+1)
+==========================================================================================
+  [TIER 2] b1_range_T2: n_rev=20234 n_cont=17442 rev_mean=1.4047 cont_mean=1.4844 d=-0.0773 | pairs 8/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 2] b1_body_T2: n_rev=20234 n_cont=17442 rev_mean=0.7055 cont_mean=0.7447 d=-0.0480 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 2] b1_direction_T2: n_rev=20234 n_cont=17442 rev_mean=0.3954 cont_mean=-0.2941 d=+0.6944 | pairs 9/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(1.0)}
+  [TIER 2] b1_close_loc_T2: n_rev=20234 n_cont=17442 rev_mean=0.6238 cont_mean=0.4195 d=+0.6676 | pairs 9/9 agree | years: {2023: np.float64(1.0), 2024: np.float64(1.0), 2025: np.float64(1.0), 2026: np.float64(1.0)}
+  [TIER 2] b1_vol_vs_event_T2: n_rev=20234 n_cont=17442 rev_mean=221747.2950 cont_mean=0.7733 d=+0.0123 | pairs 7/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(1.0), 2026: np.float64(-1.0)}
+  [TIER 2] b1_vol_vs_pre_T2: n_rev=20234 n_cont=17442 rev_mean=2.4803 cont_mean=2.5480 d=-0.0309 | pairs 5/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+
+==========================================================================================
+TIER 3 (for reference / continuity with phase 16 -- NOT usable for T0 entry)
+==========================================================================================
+  [TIER 3] realized_vol_post_T3: n_rev=20234 n_cont=17442 rev_mean=5.3938 cont_mean=6.2042 d=-0.1407 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 3] vol_expansion_ratio_T3: n_rev=20234 n_cont=17442 rev_mean=1.1875 cont_mean=1.3097 d=-0.1091 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 3] vol_pctile_change_T3: n_rev=20234 n_cont=17442 rev_mean=0.0339 cont_mean=0.0534 d=-0.1998 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+
+==========================================================================================
+PART 9 -- ASIAN ROLLOVER ARTIFACT SENSITIVITY (exclude hours 0-2)
+==========================================================================================
+Excluding EARLY_ASIAN (hours 0-2): 3965 events removed, 33711 remain.
+Re-running the Tier 3 volatility-transition finding on the reduced sample:
+  [TIER 3 (ex-EARLY_ASIAN)] realized_vol_post_T3: n_rev=17566 n_cont=16145 rev_mean=5.3900 cont_mean=6.1371 d=-0.1294 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 3 (ex-EARLY_ASIAN)] vol_expansion_ratio_T3: n_rev=17566 n_cont=16145 rev_mean=1.1461 cont_mean=1.2884 d=-0.1288 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+  [TIER 3 (ex-EARLY_ASIAN)] vol_pctile_change_T3: n_rev=17566 n_cont=16145 rev_mean=0.0346 cont_mean=0.0527 d=-0.1844 | pairs 9/9 agree | years: {2023: np.float64(-1.0), 2024: np.float64(-1.0), 2025: np.float64(-1.0), 2026: np.float64(-1.0)}
+
+==========================================================================================
+PART 10 -- NULL / RANDOMIZATION TEST on the earliest Tier-3 separation point
+==========================================================================================
+Methodology: bootstrap (2000 draws) a random sample of non-event bars matched on
+pre-event volatility tercile (atr_pctile_pre_T0), same size as the event group, and
+compute the mean of vol_first_15m for each draw -- builds a null distribution of what
+a volatility-matched random bar produces at the earliest horizon tested. Report the
+percentile of the REAL reversal-vs-continuation gap within that null.
+  pair  observed_gap  null_mean  null_std  percentile
+AUDUSD     -0.138185   0.005324  0.123259      0.1245
+CADJPY     -0.544424  -0.129906  0.250461      0.0530
+EURJPY     -1.108359  -0.326673  0.358195      0.0155
+EURUSD     -0.058183  -0.033012  0.161450      0.4370
+GBPJPY     -0.904362  -0.234913  0.438904      0.0610
+GBPUSD     -0.193558  -0.058776  0.165972      0.2090
+NZDUSD     -0.042979   0.020482  0.100260      0.2575
+USDCAD     -0.289230  -0.012473  0.143547      0.0250
+USDJPY     -0.864421  -0.245430  0.306647      0.0250
+
+Mean percentile: 0.1342
