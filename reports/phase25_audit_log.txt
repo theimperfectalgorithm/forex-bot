@@ -1,0 +1,97 @@
+==========================================================================================
+PHASE 25 -- PORTFOLIO DRAWDOWN DISTRIBUTION AUDIT (diagnostic only, no strategy change)
+==========================================================================================
+PART 1 -- PORTFOLIO RECONSTRUCTION
+Data source: data/phase20_trades.csv (EXP-066..075), frozen live parameters, unchanged.
+CORRECTION: XAUUSD ARB dollar P&L rescaled x0.5 (reconstructed at 0.50% risk, frozen live
+  weight is 0.25%) -- R-multiples require no correction (already risk-normalized per trade).
+Combined portfolio equity curve built on a shared $100,000 reference capital,
+  summing 8 independently-simulated strategies' dollar P&L in chronological trade order --
+  a known simplification (no cross-strategy compounding interaction modeled), stated here.
+
+Risk weights used (frozen, unchanged): {'GBPJPY_ARB': 0.005, 'CADJPY_ARB': 0.005, 'XAUUSD_ARB': 0.0025, 'GBPJPY_AMR': 0.0025, 'EURJPY_AMR': 0.0025, 'AUDJPY_AMR': 0.0025, 'CADJPY_AMR': 0.0025, 'GBPUSD_MONDAY': 0.0025}
+Total trades loaded: 3160, 2023-07-31 02:45:00+00:00 to 2026-08-11 03:30:00+00:00
+
+==========================================================================================
+PART 2 -- PORTFOLIO-LEVEL METRICS
+==========================================================================================
+Total portfolio trades: 3160
+Total R: +265.15
+Portfolio expectancy: +0.0839R  ($+27.24 per trade on $100,000 reference capital)
+Portfolio profit factor: 1.248
+Portfolio win rate: 64.5%
+Maximum drawdown in R: -38.08
+Maximum drawdown as % of starting capital: -10.51%
+Maximum consecutive losing trades: 14
+Maximum consecutive losing days: 7
+Maximum consecutive losing trading sessions (date+session bucket): 9
+Number of distinct drawdown episodes (>0.01%): 101
+Average drawdown depth: 0.88%
+Median drawdown depth: 0.51%
+  Drawdowns >= 1%: 22
+  Drawdowns >= 2%: 10
+  Drawdowns >= 3%: 6
+  Drawdowns >= 4%: 3
+  Drawdowns >= 5%: 2
+
+==========================================================================================
+PART 3 -- MONTE CARLO (10,000 trade-order-shuffle simulations)
+==========================================================================================
+Methodology: shuffle the ORDER of the actual historical trade set (same trades, same P&L
+values, same eventual total -- order-invariant by construction), recompute the equity curve
+and max drawdown / max losing streak for each shuffled order. This produces a distribution
+of PATH-DEPENDENT outcomes (drawdown, streaks) consistent with the historical trade
+population -- it does NOT prove future profitability, only characterizes the range of
+drawdown/streak outcomes this specific set of historical trades could plausibly have produced
+under a different arrival order.
+
+Max-drawdown distribution (% of starting capital, depth):
+  50th percentile: 5.05%
+  75th percentile: 5.99%
+  90th percentile: 7.14%
+  95th percentile: 7.93%
+  99th percentile: 9.96%
+
+Max-losing-streak distribution:
+  50th percentile: 7.0 trades
+  75th percentile: 8.0 trades
+  90th percentile: 9.0 trades
+  95th percentile: 10.0 trades
+  99th percentile: 11.0 trades
+
+Historical (actual chronological order) max drawdown: 10.51% -- sits at the 99.4th percentile of the MC distribution
+Historical (actual chronological order) max losing streak: 14 trades -- sits at the 100.0th percentile of the MC distribution
+
+==========================================================================================
+PART 4 -- CURRENT PROP ACCOUNT COMPARISON
+==========================================================================================
+Prop DD (low estimate, -3.4%): percentile of MC drawdown distribution = 2.7th
+Prop DD (high estimate, -3.8%): percentile of MC drawdown distribution = 9.3th
+Prop losing streak (9 trades): percentile of MC losing-streak distribution = 93.9th
+
+==========================================================================================
+PART 6 -- JPY FACTOR
+==========================================================================================
+% of portfolio trades involving JPY strategies: 87.0%
+% of portfolio RISK-WEIGHT involving JPY strategies (sum of per-trade risk weights): 88.4%
+
+Daily P&L correlation matrix, JPY strategies:
+strategy    AUDJPY_AMR  CADJPY_AMR  CADJPY_ARB  EURJPY_AMR  GBPJPY_AMR  GBPJPY_ARB
+strategy                                                                          
+AUDJPY_AMR       1.000       0.221       0.030       0.216       0.233       0.073
+CADJPY_AMR       0.221       1.000       0.047       0.293       0.307       0.100
+CADJPY_ARB       0.030       0.047       1.000      -0.012       0.020       0.360
+EURJPY_AMR       0.216       0.293      -0.012       1.000       0.287       0.033
+GBPJPY_AMR       0.233       0.307       0.020       0.287       1.000       0.037
+GBPJPY_ARB       0.073       0.100       0.360       0.033       0.037       1.000
+
+Frequency of 2+ JPY strategies losing same day: 33.38% of days with any JPY activity
+Frequency of 3+ JPY strategies losing same day: 16.17% of days with any JPY activity
+Worst historical clustered JPY-loss day: 2024-10-29, total $-2,305.84 across 6 losing JPY strategies that day
+strategy
+AUDJPY_AMR   -323.68
+CADJPY_AMR   -306.84
+CADJPY_ARB   -549.80
+EURJPY_AMR   -308.50
+GBPJPY_AMR   -276.10
+GBPJPY_ARB   -540.92
