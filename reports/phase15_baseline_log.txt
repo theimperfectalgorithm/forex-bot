@@ -1,0 +1,270 @@
+==========================================================================================
+PHASE 15 -- DOWN-MOVE REVERSION: CONTROLLED BASELINE RESEARCH (descriptive/diagnostic)
+Pairs: ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'NZDUSD', 'GBPJPY', 'EURJPY', 'CADJPY']   Months: 36   Run: 2026-08-11T08:01:14.288873+00:00
+==========================================================================================
+
+Loaded 9/9 pairs.
+
+==========================================================================================
+PART 1 -- REPRODUCE ORIGINAL FINDING
+==========================================================================================
+Definitions (unchanged from phase14):
+  Timeframe: M15.  ATR: Wilder(14), 66-bar rolling window (windowed_atr).
+  Event: 1-bar move (close[i]-close[i-1])/pip >= 1.0xATR[i] (up) or <= -1.0xATR[i] (down).
+  Forward horizon for this reproduction: 4 bars (60 minutes).
+  Continuation (down event): fwd_atr = (close[i+4]-close[i])/pip/atr[i] < 0.
+  Reversal (down event): fwd_atr > 0. Continuation (up event): fwd_atr > 0; reversal: fwd_atr < 0.
+  pair  n_down  n_up  down_continuation_rate  up_continuation_rate
+EURUSD    4178  4142                0.473432              0.490101
+GBPUSD    4319  4292                0.470942              0.490680
+USDJPY    4179  4004                0.461594              0.511738
+AUDUSD    4244  4101                0.466070              0.488661
+USDCAD    4537  4556                0.473220              0.484416
+NZDUSD    4233  4116                0.463029              0.487609
+GBPJPY    3958  3669                0.450480              0.518397
+EURJPY    4012  3799                0.447657              0.516978
+CADJPY    4016  3745                0.457420              0.511883
+
+Pooled: down_continuation=0.4626  up_continuation=0.5001  (phase14 reported ~0.45-0.47 down, ~0.49-0.52 up -- REPRODUCED)
+
+==========================================================================================
+PART 2 -- DRIFT-CONFOUND TEST
+==========================================================================================
+Methodology: we do NOT subtract a constant. For each pair we compute the forward-
+return (ATR-normalized, 4-bar horizon) under FOUR conditioning sets, each a
+genuine baseline computed from the DATA (not assumed), then compare the event-
+conditional mean against each baseline. "Excess effect" = event mean - baseline mean.
+  A. Raw forward return (pips) -- unnormalized, for reference only.
+  B. ATR-normalized forward return -- already what phase14 measured.
+  C. vs pair's UNCONDITIONAL mean forward return (all bars, same horizon).
+  D. vs the SAME SESSION's mean forward return (all bars in that session).
+  E. vs the SAME VOLATILITY-REGIME TERCILE's mean forward return (all bars in that tercile).
+Question answered: does the down-move event carry information beyond what a
+random bar in the same session/regime already displays?
+  pair  n_down  A_raw_mean_fwd_pips  B_event_mean_fwd_atr  C_unconditional_baseline_atr  C_excess  D_session_matched_baseline_atr  D_excess  E_volregime_matched_baseline_atr  E_excess
+EURUSD    4178             0.454141              0.062253                      0.001008  0.061245                        0.006115  0.056138                          0.001728  0.060525
+GBPUSD    4319             0.274462              0.036339                      0.002865  0.033474                        0.017505  0.018834                          0.003160  0.033180
+USDJPY    4179             0.029050             -0.001974                      0.011992 -0.013966                        0.030305 -0.032279                          0.011364 -0.013338
+AUDUSD    4244             0.270452              0.062601                      0.002417  0.060185                        0.023680  0.038921                          0.002574  0.060027
+USDCAD    4537             0.356028              0.062155                      0.013948  0.048207                        0.017929  0.044226                          0.012603  0.049552
+NZDUSD    4233             0.433499              0.085808                     -0.008369  0.094177                        0.015251  0.070557                         -0.006316  0.092124
+GBPJPY    3958             0.825872              0.056324                      0.010468  0.045855                        0.050206  0.006117                          0.010555  0.045769
+EURJPY    4012             0.389806              0.035458                      0.011894  0.023564                        0.042890 -0.007432                          0.011270  0.024189
+CADJPY    4016             0.365388              0.035744                      0.000090  0.035654                        0.032431  0.003313                          0.000848  0.034896
+
+Pooled excess vs unconditional (C): +0.0432 ATR
+Pooled excess vs session-matched (D): +0.0220 ATR
+Pooled excess vs vol-regime-matched (E): +0.0430 ATR
+Interpretation: a negative "excess" here means the event group reverts MORE than a
+typical bar in the same session/regime -- i.e. the down-move itself carries information
+beyond generic session/volatility conditions. A near-zero excess means the raw 45-47%
+number was mostly explained by session/regime composition, not the move itself.
+
+==========================================================================================
+PART 3 -- UP vs DOWN SYMMETRY (mirrored definitions, incl. MFE/MAE)
+==========================================================================================
+  pair direction    n  p_continuation  p_reversal  mean_fwd_pips  median_fwd_pips  mean_fwd_atr  median_fwd_atr  mean_mfe_atr  mean_mae_atr
+EURUSD      DOWN 4178        0.473432    0.526568       0.454141             0.35      0.062253        0.068940      1.307589      1.339246
+EURUSD        UP 4142        0.490101    0.509899      -0.142226            -0.20     -0.033126       -0.028910      1.289675      1.326326
+GBPUSD      DOWN 4319        0.470942    0.529058       0.274462             0.70      0.036339        0.097936      1.289963      1.306303
+GBPUSD        UP 4292        0.490680    0.509320      -0.245200            -0.10     -0.038555       -0.019894      1.247035      1.298786
+USDJPY      DOWN 4179        0.461594    0.538406       0.029050             1.30     -0.001974        0.136783      1.453802      1.322777
+USDJPY        UP 4004        0.511738    0.488262      -0.229371             0.45     -0.039770        0.044354      1.188886      1.329912
+AUDUSD      DOWN 4244        0.466070    0.533930       0.270452             0.60      0.062601        0.114731      1.256935      1.281751
+AUDUSD        UP 4101        0.488661    0.511339      -0.113289            -0.10     -0.017566       -0.023438      1.180780      1.226717
+USDCAD      DOWN 4537        0.473220    0.526780       0.356028             0.50      0.062155        0.088565      1.279782      1.347801
+USDCAD        UP 4556        0.484416    0.515584      -0.007836            -0.30      0.001193       -0.047429      1.268085      1.278264
+NZDUSD      DOWN 4233        0.463029    0.536971       0.433499             0.60      0.085808        0.117880      1.188759      1.255302
+NZDUSD        UP 4116        0.487609    0.512391      -0.076239            -0.10     -0.014168       -0.026940      1.166932      1.200272
+GBPJPY      DOWN 3958        0.450480    0.549520       0.825872             2.40      0.056324        0.167444      1.326508      1.282468
+GBPJPY        UP 3669        0.518397    0.481603       0.410820             0.80      0.014251        0.056512      1.130807      1.192985
+EURJPY      DOWN 4012        0.447657    0.552343       0.389806             1.90      0.035458        0.171158      1.357127      1.287617
+EURJPY        UP 3799        0.516978    0.483022       0.442143             0.60      0.027641        0.059862      1.175291      1.227347
+CADJPY      DOWN 4016        0.457420    0.542580       0.365388             1.10      0.035744        0.136776      1.353404      1.283975
+CADJPY        UP 3745        0.511883    0.488117      -0.175113             0.30     -0.043467        0.037451      1.116716      1.268473
+
+Pooled by direction:
+           p_continuation  mean_fwd_atr  mean_mfe_atr  mean_mae_atr
+direction                                                          
+DOWN             0.462649      0.048301      1.312652      1.300804
+UP               0.500052     -0.015952      1.196023      1.261009
+
+Symmetry verdict: ONLY DOWN reverses
+
+==========================================================================================
+PART 4 -- THRESHOLD SENSITIVITY (pre-specified grid, not optimized)
+==========================================================================================
+direction  threshold  mean_continuation  total_n
+     DOWN       0.50           0.471258   127510
+     DOWN       0.75           0.466624    70268
+     DOWN       1.00           0.462649    37676
+     DOWN       1.25           0.458816    19972
+     DOWN       1.50           0.457022    10756
+     DOWN       2.00           0.456531     3633
+       UP       0.50           0.498663   130475
+       UP       0.75           0.500833    70514
+       UP       1.00           0.500052    36424
+       UP       1.25           0.497582    18788
+       UP       1.50           0.492170     9678
+       UP       2.00           0.497663     2977
+
+Max step-to-step change in DOWN continuation rate across neighboring thresholds: 0.0046
+(A large, isolated jump at one threshold with flat neighbors would indicate overfitting;
+ a smooth monotonic-ish trend supports a genuine, threshold-robust effect.)
+
+==========================================================================================
+PART 5 -- FORWARD HORIZON (pre-specified grid, not optimized)
+==========================================================================================
+direction  horizon_bars  mean_continuation  mean_fwd_atr
+     DOWN             1           0.456292      0.036028
+     DOWN             2           0.454269      0.045514
+     DOWN             4           0.462649      0.048301
+     DOWN             8           0.456375      0.083824
+     DOWN            12           0.459206      0.100825
+     DOWN            16           0.461410      0.096325
+       UP             1           0.479697     -0.021927
+       UP             2           0.491146     -0.022436
+       UP             4           0.500052     -0.015952
+       UP             8           0.499898     -0.026399
+       UP            12           0.503160     -0.014811
+       UP            16           0.509371      0.009009
+
+DOWN reversal strongest (lowest continuation) at horizon=2 bars.
+Does the effect persist to 16 bars (4h)? continuation@16=0.4614 vs @1=0.4563 -- persists/strengthens.
+
+==========================================================================================
+PART 6 -- SESSION BREAKDOWN (mutually exclusive: ASIAN/LONDON/OVERLAP/NY)
+==========================================================================================
+         mean_continuation  total_n  n_pairs
+session                                     
+ASIAN             0.421582     9798        9
+LONDON            0.479229    10629        9
+OVERLAP           0.494521     7076        9
+NY                0.467492     7971        9
+
+Spread across sessions: 0.0729. Effect appears SESSION-DEPENDENT (material spread).
+
+==========================================================================================
+PART 7 -- VOLATILITY REGIME (ATR-level percentile tercile; NOT the same axis as the
+          event definition, which uses move/ATR RATIO -- avoids circularity)
+==========================================================================================
+            mean_continuation  total_n
+vol_regime                            
+LOW                  0.447037    10950
+MID                  0.462407    12339
+HIGH                 0.474163    14387
+
+==========================================================================================
+PART 8 -- MARKET REGIME (efficiency-ratio(20) median split -- pre-specified, not tuned)
+==========================================================================================
+          mean_continuation  total_n
+regime                              
+TRENDING           0.463615    20446
+RANGING            0.461365    17230
+
+==========================================================================================
+PART 9 -- PAIR CONSISTENCY (unpooled, then pooled)
+==========================================================================================
+  pair    n  p_continuation  p_reversal  mean_fwd_pips  median_fwd_pips  effect_size_pp
+EURUSD 4178        0.473432    0.526568       0.454141             0.35        2.656774
+GBPUSD 4319        0.470942    0.529058       0.274462             0.70        2.905765
+USDJPY 4179        0.461594    0.538406       0.029050             1.30        3.840632
+AUDUSD 4244        0.466070    0.533930       0.270452             0.60        3.393025
+USDCAD 4537        0.473220    0.526780       0.356028             0.50        2.677981
+NZDUSD 4233        0.463029    0.536971       0.433499             0.60        3.697142
+GBPJPY 3958        0.450480    0.549520       0.825872             2.40        4.951996
+EURJPY 4012        0.447657    0.552343       0.389806             1.90        5.234297
+CADJPY 4016        0.457420    0.542580       0.365388             1.10        4.257968
+
+POOLED (simple mean across pairs): continuation=0.4626  effect_size=+3.74pp  n_pairs_reversing=9/9
+
+==========================================================================================
+PART 10 -- YEAR CONSISTENCY
+==========================================================================================
+      mean_continuation  total_n  n_pairs
+year                                     
+2023           0.464611     5387        9
+2024           0.460701    12859        9
+2025           0.470207    12519        9
+2026           0.449955     6911        9
+
+==========================================================================================
+PART 11 -- DAY OF WEEK
+==========================================================================================
+           mean_continuation  total_n
+day                                  
+Monday              0.446784     6959
+Tuesday             0.467813     7953
+Wednesday           0.458587     7556
+Thursday            0.471317     7739
+Friday              0.466793     7469
+
+==========================================================================================
+PART 12 -- NULL / RANDOMIZATION TEST
+==========================================================================================
+Methodology: for each pair, we do NOT randomize trade outcomes (there is no trade yet).
+Instead, we bootstrap-resample a random sample of the SAME SIZE as the event group,
+drawn from all OTHER bars in the SAME VOLATILITY-REGIME TERCILE (matching the event
+group's volatility composition), 2000 times, and compute the mean forward-ATR
+return each time -- this builds a null distribution of what "a typical bar in the same
+vol regime" produces by chance, controlling for the fact that events cluster in certain
+vol regimes. We then report the percentile rank of the REAL event-group mean within that
+null distribution: a low percentile means the event mean is unusually negative (reverts
+more than chance), which is evidence the down-move itself carries information.
+  pair  n_events  observed_mean_fwd_atr  null_mean  null_std  percentile_of_observed
+EURUSD      4178               0.062253  -0.002662  0.022470                  0.9990
+GBPUSD      4319               0.036339   0.000822  0.022732                  0.9465
+USDJPY      4179              -0.001974   0.011972  0.024977                  0.2845
+AUDUSD      4244               0.062601  -0.000137  0.022128                  0.9950
+USDCAD      4537               0.062155   0.009503  0.021705                  0.9925
+NZDUSD      4233               0.085808  -0.011459  0.022456                  1.0000
+GBPJPY      3958               0.056324   0.008132  0.022576                  0.9860
+EURJPY      4012               0.035458   0.010459  0.022795                  0.8685
+CADJPY      4016               0.035744  -0.000752  0.022632                  0.9495
+
+Mean percentile across pairs: 0.8913 (0.05 or lower / 0.95 or higher on a two-sided read would be conventionally 'unusual';
+values are one-sided here -- lower percentile = event group reverts MORE than the
+vol-regime-matched null, which is what the phenomenon predicts if real.)
+
+==========================================================================================
+PART 14 -- SIMPLEST POSSIBLE BASELINE (gated: descriptive evidence justified proceeding)
+==========================================================================================
+Trigger: same >=1.0 ATR M15 down-move used throughout this script (not re-tuned).
+Entry: next candle open, BUY (fade). Stop: 1.0xATR (signal-bar ATR). Target: 1.0R.
+Exit: SL / TP / 4-bar (60min) time expiry, whichever first, SL-priority on same-bar touch.
+No parameter search was run to pick sl_atr/tp_r/horizon -- these are the same values
+used in the descriptive parts above (1.0 ATR threshold, 4-bar horizon) plus the simplest
+possible fixed 1:1 stop/target, per the instruction to test whether the DESCRIPTIVE
+phenomenon survives contact with a trivial implementation, not to find a good strategy.
+     variant   pair     n  win_rate       pf  mean_pips    total_pips
+ALL_SESSIONS EURUSD  3199  0.417943 0.741583  -0.860616  -2753.109748
+ALL_SESSIONS GBPUSD  3247  0.435479 0.776581  -0.899520  -2920.742370
+ALL_SESSIONS USDJPY  3120  0.453526 0.809196  -1.092528  -3408.686083
+ALL_SESSIONS AUDUSD  3267  0.404346 0.669467  -0.983110  -3211.819643
+ALL_SESSIONS USDCAD  3379  0.392424 0.648882  -1.213498  -4100.408844
+ALL_SESSIONS NZDUSD  3301  0.367767 0.573650  -1.219222  -4024.653125
+ALL_SESSIONS GBPJPY  3000  0.454667 0.822882  -1.363214  -4089.642057
+ALL_SESSIONS EURJPY  3055  0.452700 0.817390  -1.083438  -3309.903475
+ALL_SESSIONS CADJPY  3076  0.379389 0.624787  -1.839917  -5659.584674
+ALL_SESSIONS POOLED 28644  0.416876 0.739923  -1.168781 -33478.550019
+  ASIAN_ONLY EURUSD   681  0.417034 0.772024  -0.585174   -398.503193
+  ASIAN_ONLY GBPUSD   680  0.502941 1.088689   0.229982    156.387943
+  ASIAN_ONLY USDJPY  1040  0.477885 0.851517  -0.768501   -799.241403
+  ASIAN_ONLY AUDUSD  1019  0.424926 0.716844  -0.724801   -738.572008
+  ASIAN_ONLY USDCAD   615  0.465041 0.880108  -0.298804   -183.764711
+  ASIAN_ONLY NZDUSD   996  0.404618 0.675471  -0.804201   -800.983762
+  ASIAN_ONLY GBPJPY   977  0.490276 0.963055  -0.239714   -234.200919
+  ASIAN_ONLY EURJPY  1017  0.492625 0.994917  -0.025539    -25.973609
+  ASIAN_ONLY CADJPY   859  0.399302 0.654710  -1.607305  -1380.675002
+  ASIAN_ONLY POOLED  7884  0.452562 0.857662  -0.558793  -4405.526665
+
+==========================================================================================
+PART 15 -- TRANSACTION COST STRESS (ASIAN-session variant, where the effect concentrates)
+==========================================================================================
+Stress scenarios: normal spread, 1.5x spread, 2x spread, +1-bar (15min) execution delay.
+No re-optimization at any stress level -- same fixed rule as Part 14.
+   scenario    n  win_rate       pf  mean_pips    total_pips
+     normal 7884  0.452562 0.857662  -0.558793  -4405.526665
+1.5x_spread 7884  0.391933 0.689843  -1.342706 -10585.895856
+  2x_spread 7884  0.337519 0.569641  -2.018450 -15913.460739
+ 1bar_delay 7644  0.431580 0.777656  -0.878260  -6713.420118
