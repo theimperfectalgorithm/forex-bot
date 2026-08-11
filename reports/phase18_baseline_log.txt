@@ -1,0 +1,156 @@
+==========================================================================================
+PHASE 18 -- T0 CANDLE-SHAPE BASELINE (controlled trading experiment, NOT optimization)
+==========================================================================================
+PART 1 -- FROZEN SHAPE DEFINITIONS
+  body_ratio        = |close-open| / (high-low)
+  close_location    = (close-low) / (high-low)
+  lower_wick_ratio  = (min(open,close)-low) / (high-low)
+  upper_wick_ratio  = (high-max(open,close)) / (high-low)
+  shape_score = close_location - body_ratio  (composite, frozen BEFORE this backtest --
+    body_ratio+upper_wick_ratio+lower_wick_ratio=1 identically, so these 4 quantities are
+    not independent; phase17 found close_location (d=+0.101) and body_ratio (d=-0.107) to
+    be the two cleanest, least-redundant Tier-1 effects, so the composite uses only those two.
+  Threshold = the POOLED HISTORICAL MEDIAN of shape_score across the full research sample,
+    computed ONCE before any trade simulation -- not searched for backtest performance.
+  Mechanics (identical across A/B/C, unchanged from phase15): entry = next candle open,
+  stop = 1.0xATR, target = 1.0R, max hold = 4 bars (60min), SL priority on same-bar touch.
+
+Pooled events: 37676. Frozen shape_score median threshold = -0.6980.
+
+Information-timing check (Part 4): shape_score uses ONLY the event bar (bar i) OHLC --
+open/high/low/close of bar i are all known at the close of bar i (=T0) by construction.
+No future candle, volatility, session, or range information is used in the shape rule.
+
+Baseline A (unfiltered): 37676 events, direction=BUY (fade)
+Baseline B (reversal-shape >= median): 18838 events, direction=BUY (fade)
+Baseline C (continuation-shape < median): 18838 events, direction=SELL (continuation)
+
+==========================================================================================
+BASELINES A / B / C -- NORMAL SPREAD, NO DELAY
+==========================================================================================
+  A_UNFILTERED: {'n': 28644, 'win_rate': 0.4168761346180701, 'pf': 0.7399234130507906, 'expectancy_pips': -1.1687805480786415, 'mean_r': -0.17067132727148582, 'median_r': -0.9999999999998092, 'mean_mfe': 6.720119396732494, 'mean_mae': -9.099113252338855}
+  B_REVERSAL_SHAPE: {'n': 15891, 'win_rate': 0.42678245547794347, 'pf': 0.7581402557806722, 'expectancy_pips': -1.1278711783863073, 'mean_r': -0.15145843602840256, 'median_r': -0.9999999999998367, 'mean_mfe': 7.116978163740693, 'mean_mae': -9.557221068529133}
+  C_CONTINUATION_SHAPE: {'n': 16465, 'win_rate': 0.36926814454904344, 'pf': 0.6176108138488808, 'expectancy_pips': -1.842531400123132, 'mean_r': -0.24757264718600136, 'median_r': -0.9999999999998714, 'mean_mfe': 6.504670513210024, 'mean_mae': -8.947014880048394}
+
+==========================================================================================
+PART 3 -- POPULATION-LEVEL COMPARISON (reversal/continuation probability by shape group)
+==========================================================================================
+is_reversal_shape  outcome     
+False              REVERSAL        0.531426
+                   CONTINUATION    0.468574
+True               REVERSAL        0.542680
+                   CONTINUATION    0.457320
+
+==========================================================================================
+PART 5 -- PAIR-LEVEL RESULTS
+==========================================================================================
+-- Baseline A --
+  pair    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+EURUSD 3199  0.417943 0.741583        -0.860616 -0.163613 -1.000000  4.958612  -6.504814
+GBPUSD 3247  0.435479 0.776581        -0.899520 -0.127264 -0.604961  6.316107  -7.979735
+USDJPY 3120  0.453526 0.809196        -1.092528 -0.099460 -0.480903  9.552532 -11.820481
+AUDUSD 3267  0.404346 0.669467        -0.983110 -0.191854 -1.000000  4.031466  -5.834650
+USDCAD 3379  0.392424 0.648882        -1.213498 -0.220015 -1.000000  4.519680  -6.750843
+NZDUSD 3301  0.367767 0.573650        -1.219222 -0.269337 -1.000000  3.373432  -5.581157
+GBPJPY 3000  0.454667 0.822882        -1.363214 -0.097488 -0.433467 12.476700 -16.018600
+EURJPY 3055  0.452700 0.817390        -1.083438 -0.104022 -0.426450  9.733453 -12.454304
+CADJPY 3076  0.379389 0.624787        -1.839917 -0.251046 -1.000000  6.362776  -9.959688
+-- Baseline B --
+  pair    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+EURUSD 1770  0.420904 0.753042        -0.840359 -0.151989 -1.000000  5.333503  -6.729548
+GBPUSD 1790  0.445251 0.805138        -0.794393 -0.109188 -0.746340  6.372179  -8.197542
+USDJPY 1822  0.456092 0.793025        -1.213431 -0.094028 -0.620189  9.680351 -12.184029
+AUDUSD 1742  0.406429 0.679593        -0.971421 -0.185200 -1.000000  4.133525  -5.970551
+USDCAD 1680  0.414286 0.715173        -0.977195 -0.184559 -1.000000  5.028036  -6.919167
+NZDUSD 1701  0.373310 0.589689        -1.194141 -0.259454 -1.000000  3.578013  -5.617872
+GBPJPY 1813  0.455047 0.800083        -1.595529 -0.099330 -0.613356 12.643464 -16.485604
+EURJPY 1832  0.472162 0.855778        -0.862648 -0.066446 -0.259109 10.057969 -12.948144
+CADJPY 1741  0.390580 0.658454        -1.702773 -0.227006 -1.000000  6.622114 -10.281045
+-- Baseline C --
+  pair    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+EURUSD 1831  0.388859 0.671309        -1.132511 -0.199985 -1.000000  4.812561  -6.429984
+GBPUSD 1911  0.399267 0.669879        -1.433464 -0.196335 -1.000000  6.044689  -8.282627
+USDJPY 1736  0.415323 0.720213        -1.724038 -0.159131 -0.952585 10.031567 -11.587212
+AUDUSD 1937  0.354672 0.563024        -1.400708 -0.272344 -1.000000  3.814094  -5.853175
+USDCAD 2158  0.345690 0.552825        -1.670920 -0.299574 -1.000000  4.261631  -6.840778
+NZDUSD 1992  0.320783 0.450746        -1.726118 -0.351266 -1.000000  3.125251  -5.707129
+GBPJPY 1575  0.389206 0.664428        -2.862788 -0.202431 -1.000000 12.435937 -16.011302
+EURJPY 1624  0.384852 0.654433        -2.319943 -0.205212 -1.000000 10.068227 -12.456158
+CADJPY 1701  0.337449 0.509032        -2.644004 -0.313250 -1.000000  6.216343  -9.806349
+
+==========================================================================================
+PART 6 -- YEAR-LEVEL RESULTS
+==========================================================================================
+-- Baseline A --
+ year    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe  mean_mae
+ 2023 4050  0.408148 0.685088        -1.409252 -0.189169      -1.0  6.069975 -8.998025
+ 2024 9629  0.412712 0.728498        -1.235109 -0.182884      -1.0  6.790477 -9.259882
+ 2025 9611  0.419103 0.744328        -1.208464 -0.164670      -1.0  7.207908 -9.411372
+ 2026 5354  0.426970 0.800486        -0.796351 -0.145488      -1.0  6.209750 -8.325906
+-- Baseline B --
+ year    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+ 2023 2178  0.430211 0.750707        -1.120950 -0.146664 -1.000000  6.734665  -9.318090
+ 2024 5360  0.416418 0.723639        -1.346768 -0.173232 -1.000000  7.154981 -10.075784
+ 2025 5286  0.428490 0.762332        -1.155076 -0.147327 -1.000000  7.543795  -9.690711
+ 2026 3067  0.439517 0.827439        -0.703348 -0.123931 -0.910711  6.586436  -8.590708
+-- Baseline C --
+ year    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe  mean_mae
+ 2023 2387  0.387097 0.651666        -1.592012 -0.203208      -1.0  6.355886 -8.270674
+ 2024 5592  0.361409 0.622629        -1.800797 -0.260637      -1.0  6.505973 -9.078505
+ 2025 5557  0.376642 0.620341        -1.931535 -0.237207      -1.0  6.784668 -9.365287
+ 2026 2929  0.355753 0.574358        -1.957512 -0.278450      -1.0  6.092216 -8.453602
+
+==========================================================================================
+PART 7 -- SESSION-LEVEL RESULTS
+==========================================================================================
+-- Baseline A --
+session    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+  ASIAN 7734  0.448280 0.843719        -0.617003 -0.113254 -0.416561  6.521890  -8.149147
+ LONDON 7722  0.392644 0.686085        -1.387590 -0.213968 -1.000000  5.926211  -8.756864
+OVERLAP 5526  0.396308 0.695828        -1.395841 -0.207665 -1.000000  6.923760  -9.295168
+     NY 5795  0.430026 0.754468        -1.302759 -0.148778 -0.622513  7.868387 -10.573443
+-- Baseline B --
+session    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+  ASIAN 4693  0.476667 0.939395        -0.238234 -0.058969 -0.230839  7.030791  -8.316386
+ LONDON 4426  0.395391 0.677323        -1.484335 -0.205444 -1.000000  6.150542  -9.172752
+OVERLAP 2932  0.396317 0.702527        -1.433522 -0.206895 -1.000000  7.246044  -9.954877
+     NY 3063  0.428991 0.730999        -1.529931 -0.151320 -1.000000  8.428828 -11.276853
+-- Baseline C --
+session    n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+  ASIAN 3921  0.345830 0.580298        -1.926476 -0.285588 -1.000000  5.824050  -8.511910
+ LONDON 4463  0.372843 0.636165        -1.664464 -0.247190 -1.000000  6.367242  -8.405983
+OVERLAP 3233  0.381689 0.632890        -1.717220 -0.230909 -1.000000  6.416826  -9.013115
+     NY 3618  0.393311 0.649485        -1.937385 -0.200098 -0.860385  7.531233 -10.046075
+
+==========================================================================================
+PART 8 -- COST STRESS (pooled)
+==========================================================================================
+-- Baseline A --
+   scenario     n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+     normal 28644  0.416876 0.739923        -1.168781 -0.170671      -1.0  6.720119  -9.099113
+1.5x_spread 28644  0.364439 0.610808        -1.894257 -0.274215      -1.0  6.120016  -9.656698
+  2x_spread 28644  0.314411 0.508968        -2.569452 -0.372910      -1.0  5.529064 -10.192969
+ 1bar_delay 27313  0.409878 0.720757        -1.242036 -0.183316      -1.0  6.393384  -8.893955
+-- Baseline B --
+   scenario     n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe   mean_mae
+     normal 15891  0.426782 0.758140        -1.127871 -0.151458      -1.0  7.116978  -9.557221
+1.5x_spread 15891  0.376062 0.630366        -1.861298 -0.251830      -1.0  6.499040 -10.129580
+  2x_spread 15891  0.325971 0.528080        -2.550294 -0.352073      -1.0  5.900346 -10.677107
+ 1bar_delay 15453  0.415906 0.752799        -1.128142 -0.170060      -1.0  6.819123  -9.248308
+-- Baseline C --
+   scenario     n  win_rate       pf  expectancy_pips    mean_r  median_r  mean_mfe  mean_mae
+     normal 16465  0.369268 0.617611        -1.842531 -0.247573      -1.0  6.504671 -8.947015
+1.5x_spread 16465  0.325114 0.519256        -2.490347 -0.340836      -1.0  5.945132 -9.469669
+  2x_spread 16465  0.278044 0.431927        -3.153609 -0.434773      -1.0  5.369037 -9.985673
+ 1bar_delay 16004  0.377093 0.657642        -1.584814 -0.233104      -1.0  6.390021 -8.627368
+
+==========================================================================================
+PART 9 -- STATISTICAL COMPARISON: B vs A (bootstrap CI on expectancy and mean-R difference)
+==========================================================================================
+Expectancy (pips) B-A: mean_diff=+0.0381  95% CI=[-0.1433, +0.2233]  P(B>A)=0.650
+Mean R B-A: mean_diff=+0.0191  95% CI=[+0.0017, +0.0367]  P(B>A)=0.982
+Reversal probability: A=0.5371  B=0.5427  diff=+0.0056
+Multiple-testing note: this is a single pre-registered filter-selection test (one composite
+score, one frozen median threshold, one comparison A-vs-B-vs-C) -- not a search across many
+candidate filters, so no additional multiple-testing correction beyond what phases 15-17
+already applied when selecting body_ratio/close_location as the composite's inputs.
