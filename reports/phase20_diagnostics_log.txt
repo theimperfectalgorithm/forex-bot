@@ -1,0 +1,302 @@
+==========================================================================================
+PHASE 20 -- VOLATILITY REGIME x EXISTING-STRATEGY DIAGNOSTICS (observational, no strategy change)
+==========================================================================================
+Primary volatility variable (frozen): ATR percentile = rank_pct(windowed_atr(14,66)) at the
+trade's own entry bar -- reused unchanged from phase14/16/17/19, not re-derived here.
+Fixed regimes (frozen before any results examined): ['LOW', 'NORMAL-LOW', 'NORMAL-HIGH', 'HIGH'] = [0, 0.25, 0.5, 0.75, 1.0001]
+Minimum sample size for a judged cell: 20 trades; below that, flagged insufficient.
+
+==========================================================================================
+RECONSTRUCTING STRATEGIES
+==========================================================================================
+GBPJPY_ARB: 193 trades reconstructed
+CADJPY_ARB: 192 trades reconstructed
+XAUUSD_ARB: 256 trades reconstructed
+GBPJPY_AMR: 403 trades reconstructed
+EURJPY_AMR: 712 trades reconstructed
+AUDJPY_AMR: 652 trades reconstructed
+CADJPY_AMR: 598 trades reconstructed
+GBPUSD_MONDAY: 154 trades reconstructed
+
+==========================================================================================
+STRATEGY: GBPJPY_ARB
+==========================================================================================
+
+-- GBPJPY_ARB: by fixed regime --
+     regime  n  insufficient  win_rate     avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 59         False  0.423729  0.059549 -1.029586   33.036780 1.101301 -5719.45 3.228590 2.319937                  9    1949.17
+ NORMAL-LOW 44         False  0.568182  0.399333  0.545244  209.121818 1.930868 -2608.56 3.319515 2.396621                  5    9201.36
+NORMAL-HIGH 45         False  0.600000  0.443830  0.610992  244.532222 2.248949 -1490.33 3.457343 2.345400                  3   11003.95
+       HIGH 44         False  0.386364 -0.065530 -0.546202  -38.201364 0.867623 -5042.68 3.093945 2.904978                  7   -1680.86
+
+-- GBPJPY_ARB: continuous relationship (quintile bins of ATR percentile) --
+     n  expectancy  win_rate
+q                           
+Q1  39  -53.879231  0.358974
+Q2  38  179.883947  0.552632
+Q3  38  122.894737  0.500000
+Q4  38  325.267632  0.657895
+Q5  39  -33.098718  0.384615
+  Monotonic expectancy across quintiles: False
+
+-- GBPJPY_ARB: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note    exp_hi     exp_lo
+ 2023     0    22 insufficient       NaN        NaN
+ 2024    25    24          NaN -131.7436 247.039583
+ 2025    14    27 insufficient       NaN        NaN
+ 2026     5    30 insufficient       NaN        NaN
+
+-- GBPJPY_ARB: by actual trading session --
+  Session distribution: {'LONDON': 193}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+19,959.17 (20.9% of total)
+
+==========================================================================================
+STRATEGY: CADJPY_ARB
+==========================================================================================
+
+-- CADJPY_ARB: by fixed regime --
+     regime  n  insufficient  win_rate     avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 48         False  0.437500  0.052485 -1.045145   30.368958 1.097458 -4106.64 3.456693 2.642626                  7    1457.71
+ NORMAL-LOW 48         False  0.541667  0.237292  0.068493  121.168542 1.499772 -2456.87 3.280581 2.545910                  5    5816.09
+NORMAL-HIGH 58         False  0.586207  0.322597  0.491563  166.844828 1.794123 -2731.19 3.595564 2.248862                  5    9677.00
+       HIGH 38         False  0.342105 -0.188335 -1.013714  -99.289474 0.668382 -6234.29 2.650160 2.968777                  8   -3773.00
+
+-- CADJPY_ARB: continuous relationship (quintile bins of ATR percentile) --
+     n  expectancy  win_rate
+q                           
+Q1  39    1.201282  0.410256
+Q2  38  114.617895  0.526316
+Q3  38   77.302895  0.500000
+Q4  38  233.001842  0.657895
+Q5  39  -77.336154  0.358974
+  Monotonic expectancy across quintiles: False
+
+-- CADJPY_ARB: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note     exp_hi    exp_lo
+ 2023     0    19 insufficient        NaN       NaN
+ 2024    23    21          NaN -176.28913 19.540476
+ 2025    12    33 insufficient        NaN       NaN
+ 2026     3    23 insufficient        NaN       NaN
+
+-- CADJPY_ARB: by actual trading session --
+  Session distribution: {'LONDON': 192}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+13,177.80 (13.8% of total)
+
+==========================================================================================
+STRATEGY: XAUUSD_ARB
+==========================================================================================
+
+-- XAUUSD_ARB: by fixed regime --
+     regime  n  insufficient  win_rate     avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 72         False  0.527778  0.219541  1.021172  113.536250 1.463390 -2531.72 2.492688 2.023904                  4    8174.61
+ NORMAL-LOW 70         False  0.400000 -0.068587 -1.001021  -40.336000 0.863275 -5523.72 1.947619 2.169451                  4   -2823.52
+NORMAL-HIGH 57         False  0.526316  0.209081  0.527062  114.608246 1.498554 -2913.44 3.063875 2.256399                  5    6532.67
+       HIGH 56         False  0.571429  0.204432  0.329921  116.761786 1.521180 -4907.03 2.657564 2.262957                  8    6538.66
+
+-- XAUUSD_ARB: continuous relationship (quintile bins of ATR percentile) --
+     n  expectancy  win_rate
+q                           
+Q1  51   86.971961  0.509804
+Q2  51   88.059804  0.509804
+Q3  51  -35.439608  0.372549
+Q4  51   74.945294  0.529412
+Q5  51  146.686471  0.588235
+  Monotonic expectancy across quintiles: False
+
+-- XAUUSD_ARB: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note
+ 2023     0    26 insufficient
+ 2024     0    87 insufficient
+ 2025    17    29 insufficient
+ 2026    39     0 insufficient
+
+-- XAUUSD_ARB: by actual trading session --
+  Session distribution: {'LONDON': 256}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+19,165.67 (20.0% of total)
+
+==========================================================================================
+STRATEGY: GBPJPY_AMR
+==========================================================================================
+
+-- GBPJPY_AMR: by fixed regime --
+     regime   n  insufficient  win_rate    avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 111         False  0.747748 0.247089  0.694981   66.821171 1.924463 -1444.31 2.348402 1.503280                  3    7417.15
+ NORMAL-LOW 122         False  0.672131 0.136282  0.713008   36.372951 1.397484 -1317.77 2.175547 1.633821                  3    4437.50
+NORMAL-HIGH 105         False  0.628571 0.086970  0.733668   22.531333 1.224461 -1505.28 2.633907 1.819803                  5    2365.79
+       HIGH  65         False  0.615385 0.074139  0.756379   19.889538 1.192245 -1988.23 2.672716 2.047903                  6    1292.82
+
+-- GBPJPY_AMR: continuous relationship (quintile bins of ATR percentile) --
+     n  expectancy  win_rate
+q                           
+Q1  81   84.993086  0.790123
+Q2  80   49.963250  0.700000
+Q3  81   15.811111  0.629630
+Q4  80   21.954000  0.625000
+Q5  81   19.688148  0.617284
+  Monotonic expectancy across quintiles: False
+
+-- GBPJPY_AMR: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note     exp_hi    exp_lo
+ 2023     4    32 insufficient        NaN       NaN
+ 2024    29    84          NaN -27.458621 28.934167
+ 2025    24    68          NaN  80.970000 73.271471
+ 2026     8    49 insufficient        NaN       NaN
+
+-- GBPJPY_AMR: by actual trading session --
+  Session distribution: {'ASIAN': 403}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+15,513.26 (16.2% of total)
+
+==========================================================================================
+STRATEGY: EURJPY_AMR
+==========================================================================================
+
+-- EURJPY_AMR: by fixed regime --
+     regime   n  insufficient  win_rate    avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 235         False  0.689362 0.013016  0.507031    3.674723 1.039683 -4291.97 1.925004 1.649199                  4     863.56
+ NORMAL-LOW 224         False  0.718750 0.108191  0.562533   27.751652 1.347811 -1271.31 2.048713 1.581679                  4    6216.37
+NORMAL-HIGH 156         False  0.685897 0.072150  0.578755   18.698462 1.216915 -2690.80 2.089514 1.707468                  4    2916.96
+       HIGH  97         False  0.628866 0.005221  0.610113    1.360825 1.013590 -2879.58 2.533318 2.162875                  4     132.00
+
+-- EURJPY_AMR: continuous relationship (quintile bins of ATR percentile) --
+      n  expectancy  win_rate
+q                            
+Q1  143    2.292657  0.692308
+Q2  142   15.385070  0.704225
+Q3  142   22.840493  0.704225
+Q4  142   19.509577  0.690141
+Q5  143   11.207343  0.657343
+  Monotonic expectancy across quintiles: False
+
+-- EURJPY_AMR: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note    exp_hi    exp_lo
+ 2023     7    72 insufficient       NaN       NaN
+ 2024    36   143          NaN -55.71250 -0.977622
+ 2025    43   135          NaN  31.15186 23.930222
+ 2026    11   109 insufficient       NaN       NaN
+
+-- EURJPY_AMR: by actual trading session --
+  Session distribution: {'ASIAN': 712}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+10,128.89 (10.6% of total)
+
+==========================================================================================
+STRATEGY: AUDJPY_AMR
+==========================================================================================
+
+-- AUDJPY_AMR: by fixed regime --
+     regime   n  insufficient  win_rate     avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 229         False  0.751092  0.103893  0.510145   26.920218 1.354972 -1791.55 2.080453 1.587027                  4    6164.73
+ NORMAL-LOW 159         False  0.729560  0.100497  0.540712   25.841195 1.325734 -1657.95 2.017922 1.674117                  3    4108.75
+NORMAL-HIGH 150         False  0.653333 -0.000612  0.561823   -0.311467 0.996872 -4273.30 2.094349 1.924946                  6     -46.72
+       HIGH 114         False  0.596491 -0.065475  0.586520  -17.310088 0.846120 -3064.89 2.344374 2.356649                  5   -1973.35
+
+-- AUDJPY_AMR: continuous relationship (quintile bins of ATR percentile) --
+      n  expectancy  win_rate
+q                            
+Q1  131   11.947405  0.725191
+Q2  130   42.858846  0.776923
+Q3  130   20.829615  0.715385
+Q4  130   12.945615  0.684615
+Q5  131  -24.993359  0.580153
+  Monotonic expectancy across quintiles: False
+
+-- AUDJPY_AMR: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note     exp_hi    exp_lo
+ 2023     4    71 insufficient        NaN       NaN
+ 2024    34   134          NaN -47.431471 24.705597
+ 2025    43   112          NaN   5.562791 28.292411
+ 2026    33    71          NaN -11.591212  4.595915
+
+-- AUDJPY_AMR: by actual trading session --
+  Session distribution: {'ASIAN': 652}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+8,253.41 (8.6% of total)
+
+==========================================================================================
+STRATEGY: CADJPY_AMR
+==========================================================================================
+
+-- CADJPY_AMR: by fixed regime --
+     regime   n  insufficient  win_rate     avg_r  median_r  expectancy       pf   max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 133         False  0.812030  0.185224  0.482366   47.304436 1.848296  -939.08 1.999065 1.307026                  3    6291.49
+ NORMAL-LOW 177         False  0.677966  0.008671  0.521739    1.945198 1.021350 -3581.51 2.038879 1.707010                  4     344.30
+NORMAL-HIGH 165         False  0.672727  0.024443  0.554631    5.938424 1.065436 -1999.56 2.042662 1.623713                  3     979.84
+       HIGH 123         False  0.569106 -0.105125  0.573477  -26.941789 0.764682 -3585.38 2.239161 2.423827                  4   -3313.84
+
+-- CADJPY_AMR: continuous relationship (quintile bins of ATR percentile) --
+      n  expectancy  win_rate
+q                            
+Q1  120   52.464333  0.825000
+Q2  119    4.682605  0.689076
+Q3  120   20.623500  0.716667
+Q4  119  -10.678235  0.630252
+Q5  120  -31.293917  0.558333
+  Monotonic expectancy across quintiles: False
+
+-- CADJPY_AMR: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note     exp_hi    exp_lo
+ 2023     9    54 insufficient        NaN       NaN
+ 2024    44   104          NaN -20.489773  2.642212
+ 2025    55    80          NaN -18.105091 14.475250
+ 2026    15    72 insufficient        NaN       NaN
+
+-- CADJPY_AMR: by actual trading session --
+  Session distribution: {'ASIAN': 598}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+4,301.79 (4.5% of total)
+
+==========================================================================================
+STRATEGY: GBPUSD_MONDAY
+==========================================================================================
+
+-- GBPUSD_MONDAY: by fixed regime --
+     regime  n  insufficient  win_rate    avg_r  median_r  expectancy       pf  max_dd  avg_mfe  avg_mae  max_losing_streak  total_pnl
+        LOW 19          True       NaN      NaN       NaN         NaN      NaN     NaN      NaN      NaN                NaN        NaN
+ NORMAL-LOW 39         False  0.615385 0.158404  0.110812   40.358205 2.458284 -248.50 3.136066 1.827506                4.0    1573.97
+NORMAL-HIGH 42         False  0.714286 0.197293  0.244167   50.382381 3.003883 -350.39 3.098998 1.715295                2.0    2116.06
+       HIGH 54         False  0.537037 0.056952  0.051308   14.847963 1.343868 -836.99 2.361208 1.925670                3.0     801.79
+  ** LOW: insufficient sample (n=19, need >=20) -- not judged **
+
+-- GBPUSD_MONDAY: continuous relationship (quintile bins of ATR percentile) --
+     n  expectancy  win_rate
+q                           
+Q1  31   30.565161  0.612903
+Q2  31   54.788710  0.709677
+Q3  30   43.035667  0.733333
+Q4  31   18.339032  0.580645
+Q5  31   20.878710  0.516129
+  Monotonic expectancy across quintiles: False
+
+-- GBPUSD_MONDAY: by year (HIGH vs LOW+NORMAL-LOW regime) --
+ year  n_hi  n_lo         note
+ 2023     9     2 insufficient
+ 2024    13    28 insufficient
+ 2025    18    15 insufficient
+ 2026    14    13 insufficient
+
+-- GBPUSD_MONDAY: by actual trading session --
+  Session distribution: {'ASIAN': 154}
+  Strategy trades in a single session window -- session-consistency check not applicable (this is expected, not a filter being imposed).
+  Contribution to combined P&L: $+5,152.79 (5.4% of total)
+
+==========================================================================================
+PART 11 -- PORTFOLIO VIEW (combined across all 8 strategies)
+==========================================================================================
+     regime  n_days  mean_daily_pnl  std_daily_pnl  worst_day    max_dd
+        LOW     200      117.770450     751.239796   -2773.31  -6561.34
+ NORMAL-LOW     270      219.265556     856.342976   -2305.84  -6084.59
+NORMAL-HIGH     210       16.212571     889.096648   -2715.06 -18639.99
+       HIGH      99       95.882323     801.984092   -2944.33  -6730.68
+
+==========================================================================================
+PART 12 -- CLUSTERED-LOSS ANALYSIS
+==========================================================================================
+     regime  n_days_with_any_loss  mean_simultaneous_losers  pct_days_2plus_losers
+        LOW                   126                  1.793651               0.468254
+ NORMAL-LOW                   194                  1.917526               0.530928
+NORMAL-HIGH                   155                  2.380645               0.638710
+       HIGH                    73                  2.109589               0.561644
