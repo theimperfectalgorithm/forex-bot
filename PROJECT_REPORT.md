@@ -1,7 +1,7 @@
 # Forex Bot — Complete Project Report
 
-**Date:** 2026-07-15 (rev 2, includes trade journal + health monitor) ·
-**Supersedes:** PROJECT_STATUS_2026-07-05.md
+**Date:** 2026-08-11 (rev 3, 5ers live + dashboard + reliability hardening) ·
+**Supersedes:** rev 2 (2026-07-15)
 **Purpose:** a single self-contained document from which any person or AI
 can understand what this project is, what has been built, what was tried
 and rejected (with evidence), what is running live right now, and what
@@ -38,9 +38,50 @@ found by exhaustive falsification, not intuition. ~95% of everything
 tested failed. What survived is small, session-structural, and mostly
 JPY-cross — and every failure is documented below so it is never re-run.
 
+**Since rev 2 (2026-07-15 → 2026-08-11), in order:**
+- The 5ers $5K Classic account went live (~2026-07-19, login 26520700).
+  A cross-terminal MT5 contamination bug was found and fixed (bare
+  `mt5.initialize()` calls could silently attach to the WRONG account's
+  terminal when two run on one VPS) — see §2.5.
+- A read-only mobile dashboard (`mcp/server.py` + `mcp/dashboard.html`,
+  ports 8000/8001) was built, then hardened twice after a real outage —
+  see §2.8.
+- Two new live safety nets were added directly in response to real
+  incidents: a pre-trade spread gate (rejects entries when live spread
+  eats too much of the stop, after a rollover-spread incident cost real
+  trades) and reverse-direction position reconciliation (catches an MT5
+  position the bot doesn't know about — the class of bug a Reddit
+  reviewer flagged and the cross-terminal incident made concrete). Both
+  in §2.4.
+- A VPS watchdog now self-heals any of the 4 scheduled processes within
+  15 minutes if they're down for any reason, including an operator
+  manually stopping one mid-deploy and forgetting to restart it (this
+  cost a full trading day twice before the watchdog existed). §2.9.
+- **A real, live-money-adjacent bug was found via the new dashboard's
+  slippage analytics**, not by inspection: `agent_execution.py` trusted
+  `order_send()`'s immediate `result.price` as the fill price, which is
+  unreliable on market-execution/ECN brokers (5ers) — intermittently
+  `0.0` for genuinely correctly-executed trades. Actual trading was
+  never affected (SL/TP/PnL never depended on this value), but the
+  *recorded* entry price — and everything derived from it (slippage,
+  R-multiples) — was wrong for the affected trades. Fixed by confirming
+  the real fill via `positions_get()` instead. §5.
+- **The live book diverged between clones for the first time
+  (2026-07-31):** `GBPJPY@arb` and `XAUUSD@arb` were demoted to
+  demo-only on the 5ers account (0/3 record + stop-loss overshoot for
+  the former; broker data-availability + lot-size floor for the
+  latter), and `risk_scale` was cut to 0.5 while the reduced book
+  rebuilds a track record. Demo continues running the full original
+  8-slot book unchanged. §3.
+- AMR (mean-reversion) is mid-way through a live investigation: a
+  trending-JPY stretch in early August produced a real losing cluster.
+  Root-caused to AMR having zero higher-timeframe trend filter (by
+  design) — not a bug. A 2-week observation window is running before
+  deciding whether to research and backtest a trend filter. §6, §8.
+
 ---
 
-## 2. SYSTEM ARCHITECTURE (as of commit a92cdc3)
+## 2. SYSTEM ARCHITECTURE
 
 ### 2.1 The five agents (src/agents/)
 | Agent | File | Role |
@@ -75,21 +116,39 @@ truncated window.** Real-UTC equivalents in summer: AMR entries
 ~21:00–03:00, AMR exit 04:00, ARB prep 04:45 / checks 05:00–09:30,
 monday_drift entries SUNDAY 21:00–23:00, monday exit Monday 18:00.
 
-### 2.4 Risk gates (agent_risk.run, all 9 in order)
+### 2.4 Risk gates (agent_risk.run, all 11 in order)
 1. MT5 connection + account read
 2. Hard floor on BALANCE (starting_balance × (1 − hard_floor_pct))
 3. Hard floor on EQUITY (floating losses count)
-4. Daily loss limit — closed P&L (daily_loss_pct × starting_balance)
-5. Daily EQUITY soft stop at −4% vs day's first-seen equity anchor
+4. **Untracked-position reconciliation** (added 2026-08-03): rejects new
+   entries if main_agent's `_check_untracked_positions()` found an MT5
+   position this bot placed (magic-matched) that wasn't in its own
+   `open_trades` tracking, this UTC day. The position itself is adopted
+   into normal monitoring the moment it's found (see §2.9); this gate
+   only pauses NEW entries so a human reviews the log before the book
+   resumes fully unattended. Pure state-flag read, no MT5 call.
+5. Daily loss limit — closed P&L (daily_loss_pct × starting_balance)
+6. Daily EQUITY soft stop at −4% vs day's first-seen equity anchor
    (buffer inside the firm's −5%)
-6. Per-pair 2-consecutive-loss daily pause
-7. Aggregate open risk: Σ(entry→SL risk) + new trade ≤ 3% of balance;
+7. Per-pair 2-consecutive-loss daily pause
+8. Aggregate open risk: Σ(entry→SL risk) + new trade ≤ 3% of balance;
    any open position missing an SL blocks all new trades
-8. Currency concentration: max 2 open positions sharing a currency
-9. News blackout: no entries within ±5 min of high-impact news
-   (core/news_calendar.py, Forex Factory weekly JSON, 6h cache).
-   **Fails OPEN in demo; MUST be flipped to fail-closed before a funded
-   challenge.** Time exits (@amr/@mon) also defer inside a blackout.
+9. Currency concentration: max 2 open positions sharing a currency
+10. News blackout: no entries within ±5 min of high-impact news
+    (core/news_calendar.py, Forex Factory weekly JSON, 6h cache).
+    Fails OPEN on demo; **fails CLOSED on the 5ers instance**
+    (`news_fail_closed: true`). Time exits (@amr/@mon) also defer
+    inside a blackout.
+11. **Spread gate** (added 2026-07-31, after a real incident): rejects
+    an entry when live spread exceeds `spread_max_frac_of_sl` (config,
+    default 30%) of the trade's SL distance. July 2026 journal data
+    showed the live broker widening spreads to 12–31 pips at the
+    server-midnight session rollover while AMR stops were 8–17 pips —
+    the broker was rejecting most of those orders anyway
+    (`retcode=10016 Invalid stops`), but marginal ones got through
+    paying most of the stop away in spread alone. This makes that
+    protection deliberate and journaled, on both accounts, and also
+    catches the marginal cases the broker itself let through.
 
 Sizing: lots = balance × risk_percent(YAML) × risk_scale(config) /
 (sl_pips × pip_value). Pip value from MT5 tick data except gold
@@ -98,16 +157,32 @@ metals when market closed). MAX_LOT clamp from config.
 
 ### 2.5 Multi-account / multi-instance
 Two MT5 terminals on the VPS: `C:\Program Files\MetaTrader 5\` (demo
-5052472770) and `C:\MT5-5ers\` (awaiting 5ers login). One bot process
-per terminal, from separate git clones of this repo. Per-instance
-settings live in **gitignored `config/local_config.yaml`** (same schema
-as global_config's `global:` block) — never edit the tracked config on
-a VPS. Required keys per instance: `mt5_terminal_path` (pins the
-process to its terminal at startup — mandatory with 2 terminals),
-plus for the prop clone: `starting_balance`, `max_lot` (scale down!),
-`risk_scale` (0.5 recommended initially). Password only via terminal's
-saved login or MT5_PASSWORD env var. Never run one process switching
-accounts (MT5 python API is a per-process singleton).
+5052472770) and `C:\MT5-5ers\` (5ers, login 26520700, live since
+2026-07-19). One bot process per terminal, from separate git clones of
+this repo. Per-instance settings live in **gitignored
+`config/local_config.yaml`** (same schema as global_config's `global:`
+block) — never edit the tracked config on a VPS. Required keys per
+instance: `mt5_terminal_path` (pins the process to its terminal at
+startup — mandatory with 2 terminals), plus for the prop clone:
+`starting_balance`, `max_lot` (scale down!), `risk_scale` (0.5 as of
+2026-07-31, see §3). Password only via terminal's saved login or
+MT5_PASSWORD env var. Never run one process switching accounts (MT5
+python API is a per-process singleton).
+
+**Cross-terminal contamination incident (2026-07-21, fixed same day):**
+`_bind_mt5_terminal()` correctly binds each process to its own terminal
+at startup, but a bare `mt5.initialize()` call **later in the same
+process** (any of ~20 call sites across the codebase) was found to
+silently re-attach to the *other* terminal when two MT5 terminals run
+concurrently on one VPS — the demo process briefly read the 5ers
+account's balance. Fixed centrally: `core/mt5_connect.py` monkey-patches
+`MetaTrader5.initialize` process-wide at import time (imported first
+thing in `main_agent.py` and `mcp/server.py`) to force every call,
+bare or not, onto that instance's configured terminal/login — fixes
+every call site including any not yet written, without touching 20
+files individually. The incident's data fingerprint (two poisoned
+`equity_curve.csv` rows showing the wrong account's balance) was found
+and cleaned up manually after the fact.
 
 **Pair/strategy isolation (added 2026-07-21):** `pairs/*.yaml` is fully
 git-tracked, so both clones see identical files after `git pull` —
@@ -167,9 +242,95 @@ restart — a deliberate, on-machine action, never a side effect of a
   5/6 book strategies; observed live turning a +25p ARB trade into a
   $0 scratch. Legacy-style trades keep it.
 
+### 2.8 Mobile dashboard (mcp/server.py + mcp/dashboard.html, added 2026-08)
+Read-only "control center" web dashboard, one server process per VPS
+clone (MT5's python API is a per-process singleton, so one process
+can't serve both accounts) — demo on port 8000, 5ers on 8001, identical
+code, per-clone `mcp/.env`. Bookmarked as
+`http://<vps-ip>:<port>/dash?key=<DASH_TOKEN>`; the page fetches both
+ports client-side and renders a tab per account, degrading gracefully
+if one is down. `DASH_TOKEN` is a separate secret from `MCP_API_KEY`
+(the MCP-protocol key never touches a browser).
+
+Endpoints (all under `/api/*`, all plain `def` not `async def` — see
+the reliability note below): `/summary` (live balance/equity/positions
++ challenge progress from that clone's `core.account_config`),
+`/equity` (EOD curve + one live point), `/trades` (recent closed
+trades, each with an R-multiple), `/stats` (win rate / profit factor /
+expectancy over a period, with documented definitions since these
+numbers get quoted publicly), `/journal` (entry+exit cards joined by
+ticket, honest text straight from the bot's own journal), `/news`
+(upcoming high-impact events), `/state` (session prep flags,
+trade-allowed verdict, paused pairs), `/slippage` (added 2026-08-07 —
+avg/worst slippage by pair and session; **this is what surfaced the
+fill-price bug in §5**, nobody had ever looked at the already-collected
+`slippage_pips` field before). A client-side canvas renderer generates
+a 5-slide Instagram carousel + 1920×1080 YouTube thumbnail from the
+stats data on demand, entirely in-browser (zero added VPS load).
+
+**Reliability incident (2026-08-03) and fix:** the demo dashboard
+server hung and had to be manually restarted. Root cause: several
+`/api/*` routes did blocking file I/O (`open()`/`csv`/`json`) inside
+`async def` handlers — a blocking call in an async route stalls
+uvicorn's *entire* single event loop, not just that request, and a
+pile-up of routine internet-scanner connections on the open port made
+it worse. Fixed by declaring every data route as plain `def` (FastAPI
+runs those in a thread pool automatically) plus a 10s client-side fetch
+timeout. Separately hardened against the scanner noise itself: an IP
+racking up 15+ failed-auth attempts in 60s gets an instant 429 with
+near-zero server work, and `uvicorn`'s `limit_concurrency=100` caps any
+other kind of burst. (A firewall IP-allowlist was considered and
+rejected — mobile data has no stable IP to lock to via carrier-grade
+NAT; a Cloudflare Tunnel was also considered but deferred, no domain
+currently owned.)
+
+### 2.9 VPS process reliability (scripts/watchdog.ps1, added 2026-08-06)
+All 4 scheduled tasks (`ForexBot`, `ForexBot-5ers`, `ForexBotMCP`,
+`ForexBotMCP-5ers`) already auto-start on VPS boot and auto-restart on
+crash (`RestartCount`/`RestartInterval`, `ExecutionTimeLimit: PT0S` —
+the default 72h kill switch was found and removed from all 4). That
+setting only catches the scheduler's *own* launched process exiting on
+its own, though — it does not catch an operator manually stopping a
+process (mid-deploy, debugging) and forgetting the follow-up
+`schtasks /run`, which is the actual pattern that has cost full trading
+days on this VPS (e.g. a Tuesday deploy left the demo bot down through
+all of the following Wednesday). `scripts/watchdog.ps1`, registered as
+its own task running every 15 minutes, checks real process/port state
+— bots by `main_agent.py`'s full path in `CommandLine`, dashboards by
+listening port (8000/8001) since `mcp\server.py` is launched with a
+relative path that can't tell the two clones apart — and restarts
+(`schtasks /run`) whichever of the 4 isn't actually running, regardless
+of *why*. Read-only except for that one call; verified end-to-end by
+deliberately killing a process and confirming the watchdog brought it
+back within one manual trigger.
+
 ---
 
-## 3. THE LIVE BOOK — 8 validated slots (all active)
+## 3. THE LIVE BOOK — 8 slots on demo; 6 active on 5ers since 2026-07-31
+
+**The book diverged between clones for the first time on 2026-07-31**
+(see §2.5's `locked_pairs` mechanism). Demo keeps running the original,
+full 8-slot table below, unchanged. On the 5ers clone, `locked_pairs`
+now excludes:
+- **`GBPJPY_asianrange.yaml` (row 1, ARB)** — 0 wins / 3 losses on the
+  funded account, including its two biggest single losses, with
+  realized R consistently overshooting plan (up to −1.65R against a 1R
+  design — min-lot granularity + live spread on a $5K account inflates
+  loss magnitude vs. backtest assumptions).
+- **`XAUUSD_asianrange.yaml` (row 3, ARB)** — not performance-related:
+  the 5ers broker has no H1 gold data available at the bot's 04:45 UTC
+  London-prep check **every single day** (confirmed via a week of
+  `WARNING: no H1 data for today` log lines), so it structurally misses
+  the session; separately, gold's 400–600 point SL at 0.25% risk on $5K
+  needs ~0.002–0.004 lots, below the 0.01 broker minimum, so it could
+  never size correctly even when armed.
+
+5ers also runs at **`risk_scale: 0.5`** (was 1.0) since the same date,
+while the reduced 6-slot book (row 2 + rows 4–8 below) rebuilds a track
+record. Both changes were one manual, on-machine `local_config.yaml`
+edit on the 5ers clone — no code change, no effect on demo. See §5 for
+how the reduced book has performed since, and §6/§8 for the live AMR
+investigation running in parallel.
 
 | # | Config file | Strategy | Session (server) | Risk | Validation (IS = Jul23–Jun25, OOS = Jul25–Jun26) |
 |---|---|---|---|---|---|
@@ -247,7 +408,7 @@ the owner's own live strategies.
 
 ---
 
-## 5. LIVE FORWARD-TEST RECORD (account 5052472770)
+## 5. LIVE FORWARD-TEST RECORD (both accounts)
 
 **June (laptop era, old code):** 23 trades, +$849, PF 1.33 — a hot
 month for what audits later proved are losing strategies. MAX_LOT cap
@@ -283,22 +444,80 @@ missing (bit twice). MAX_LOT 2.0 caps tight-SL JPY AMR trades to
 risk ran +10.7% over intended once (pip-value estimation drift —
 monitoring). Zero AMR signals on some quiet days is normal.
 
+**5ers account (login 26520700, live since 2026-07-19, $5,000):**
+- **Weeks 1–2 (Jul 19–31):** rough opening — 0/4 on day one, GBPJPY@arb
+  compounding to its two worst-ever losses (−$34.19, −$40.78). Cross-
+  terminal contamination (§2.5) briefly poisoned the equity history
+  with the wrong account's balance during this window (cleaned up
+  manually). Ended the period at roughly −2.7%.
+- **2026-07-31: book demotion + risk cut** — see §3. Applied on-machine,
+  verified live in the very next startup banner (`Strategy keys:
+  CADJPY@arb, AUDJPY@amr, CADJPY@amr, EURJPY@amr, GBPJPY@amr,
+  GBPUSD@mon`, `risk_scale=0.5`, and a `pair_manager: LOCKED instance
+  -- excluded` WARNING naming the two demoted pairs).
+- **Aug 3–7 (first post-demotion window, 10 trades):** 20% win rate,
+  profit factor 0.22, expectancy −0.30R, net −$36.97. Losses are now
+  uniformly small (−$2.68 to −$8.72) with **no outlier blowups** — the
+  demotion fixed the catastrophic-loss failure mode, but the account
+  had not yet turned the corner as of this check. Sample still too
+  small (n=10) to draw a statistical conclusion.
+- **2026-08-08: fill-price logging bug found and fixed** — see §2.8's
+  slippage-card note. `agent_execution.place_trade()` logged `0.0` as
+  the entry price for some trades (confirmed via raw journal +
+  `trades_log.csv` cross-check on the same ticket) because
+  `order_send()`'s immediate `result.price` is unreliable on this
+  market-execution broker. Real SL/TP/PnL were never affected — only
+  the recorded entry price, which corrupted slippage/R-multiple
+  analysis for the affected trades. Fixed going forward
+  (`_confirm_fill_price()`, confirms via `positions_get()` with short
+  retries); historical corrupted rows left as-is by explicit decision.
+- **Early Aug: AMR trending-JPY losing cluster** — a genuine multi-day
+  CADJPY/AUDJPY uptrend (confirmed on the H1 chart, not a data
+  artifact) ran through several AMR mean-reversion SELL signals in
+  succession. Root-caused to `strategies/asian_hours_reversion.py`
+  having **zero higher-timeframe trend filter by design** (its z-score
+  is computed over only the last 5 hours of M15 bars) — not a bug. The
+  strategy's own 2026-07-05 validation note had already flagged this
+  exact risk ("persistence is unproven... run 2–3 months on demo before
+  ANY challenge use") and was overridden by the later decision to run
+  the identical book on both accounts from day one. See §6/§8 for the
+  live decision in force.
+
 ---
 
 ## 6. DECISION RULES IN FORCE (agreed with owner — do not improvise)
 
-1. **AMR checkpoint:** review at 20 closed AMR trades or Aug 1
-   (whichever first). Standing at 6/20 (2W/4L). If WR still ≤~40–45%,
-   cut all four AMR slots. **No parameter tweaks before the checkpoint.**
+1. **AMR trend-regime watch (in force as of 2026-08-11, ~2 weeks →
+   ~Aug 25):** the early-August trending-JPY losing cluster (§5) is
+   being observed, not reacted to. At the checkpoint, pull
+   `core.health_monitor` output + the dashboard's per-pair stats. If
+   AMR's win rate/expectancy on JPY crosses has recovered toward its
+   backtested expectation → no action, treat as an expected trending-
+   regime dip. If it's still degrading → scope, build, and properly
+   backtest (full IS/OOS discipline, §4's methodology) a higher-
+   timeframe trend filter for AMR **before** touching the live
+   strategy — never patch a live signal blind. (Supersedes the original
+   "review at 20 closed AMR trades or Aug 1" rule from rev 2, which was
+   overtaken by the 5ers book-demotion decision on 2026-07-31 — GBPJPY
+   breakout, not AMR broadly, turned out to be the acute problem; AMR's
+   watch continues on its own track.)
 2. **Challenge gate (advisory):** demo ≥1%/month with max DD <5% over
    2–3 months. The owner is buying the 5ers account EARLY for YouTube
    content reasons (informed decision; a failed challenge is an
-   episode). Mitigation: prop instance starts at risk_scale 0.5; 5ers
-   has no time limit.
+   episode). Mitigation: prop instance runs at risk_scale 0.5 (cut from
+   1.0 on 2026-07-31, see §3); 5ers has no time limit.
 3. **No manual intervention on positions.** The system's edge includes
    hands staying off the terminal.
 4. Every new strategy idea passes the standard harness bar before
    touching a YAML.
+5. **Demoting/promoting a pair-strategy on the funded account is always
+   a deliberate, on-machine `local_config.yaml` edit** — never a side
+   effect of a `git push` made while working on the demo box (§2.5).
+6. **Historical data corrections are opt-in, not automatic.** When a
+   logging bug is found (e.g. §5's fill-price bug), the default is fix
+   going forward only; backfilling/correcting already-written
+   `trades_log.csv`/journal rows requires an explicit decision each
+   time, not a blanket policy.
 
 ---
 
@@ -322,104 +541,158 @@ monitoring). Zero AMR signals on some quiet days is normal.
   WARNINGs; @mon checks always log outcomes. Trade audit from any
   machine logged into the account: reconstruct positions from
   history_deals_get grouped by position_id (entry deal comment carries
-  the strategy tag `5ers_<session>_<side>_<label>`).
-- **Expected cadence:** ~25–40 trades/month across the book; AMR
-  0–3/night, ARB ~5–6/month/pair, MON 1/week (Sunday ~22:00 real).
-- **Next scheduled analysis:** first monthly demo-vs-backtest
-  comparison early August.
+  the strategy tag `5ers_<session>_<side>_<label>`). **Easiest day-to-
+  day check is now the mobile dashboard** (§2.8) — bookmark
+  `http://<vps-ip>:8000/dash?key=<DASH_TOKEN>` (add `&tab=1` for the
+  5ers tab directly). Watch for a `pair_manager: LOCKED instance --
+  excluded` WARNING after any 5ers restart (§2.5), and an `UNTRACKED
+  POSITION FOUND` ERROR (§2.4 gate 4 / §2.9) if reconciliation ever
+  fires — both should be rare.
+- **If a process seems down:** `scripts/watchdog.ps1` (§2.9) self-heals
+  within 15 minutes on its own; no manual restart is normally needed.
+  To force it immediately: `powershell -File
+  C:\forex-bot\scripts\watchdog.ps1` then check
+  `data\logs\watchdog.log`.
+- **Expected cadence:** ~25–40 trades/month across the demo book (5ers
+  runs a reduced 6-slot book, see §3); AMR 0–3/night, ARB ~5–6/month/
+  pair, MON 1/week (Sunday ~22:00 real).
+- **Next scheduled analysis:** AMR trend-regime checkpoint ~2026-08-25
+  (§6, rule 1); end-of-August full month review (win rate/profit
+  factor, whether risk_scale returns to 1.0 for September).
 
 ---
 
 ## 8. ROADMAP
 
-**Immediate (this week):**
-- Pull a92cdc3 on VPS (observability) — pending.
-- Sat Jul 18: first weekend-maintenance run (verify paths edited).
-- Sun Jul 19 ~21:00–23:00 real UTC: monday_drift's real debut — check
-  `Select-String trading.log -Pattern "MON"` Monday morning.
+**5ers challenge instance — status:** live since 2026-07-19, login
+26520700. Official rules (screenshots on file, FAQ dated 2026-06-14):
+step 1 +8%, step 2 +5%, max daily loss 5%, max loss 10% STATIC from
+initial balance (equity stop-out $4,500), unlimited time, min 3
+profitable days/step, $39. News: holding over news allowed; EXECUTING
+orders ±2 min around high-impact news (Forex Factory, SERVER time)
+prohibited — our gate uses the same feed with a ±5 min window
+(stricter, `news_window_min`), and fails CLOSED on this instance
+(`news_fail_closed: true`). Overnight/weekend holds allowed. Metals
+hours 01:05–23:50 EET. Running the reduced 6-slot book at risk_scale
+0.5 since 2026-07-31 (§3) — phase-9's original Monte Carlo recommended
+full risk_scale 1.0 for the 8-slot book, but that study predates the
+GBPJPY@arb demotion and the live min-lot-granularity findings; it has
+not been rerun against the current reduced book (candidate for the
+research backlog below).
 
-**The 5ers challenge instance ($5K 2-step CLASSIC, purchased 2026-07):**
-- Official rules (screenshots on file, FAQ dated 2026-06-14): step 1 +8%,
-  step 2 +5%, max daily loss 5%, max loss 10% STATIC from initial
-  balance (equity stop-out $4,500), unlimited time, min 3 profitable
-  days/step, $39. News: holding over news allowed; EXECUTING orders
-  ±2 min around high-impact news (Forex Factory, SERVER time)
-  prohibited — our gate uses the same feed with a ±5 min window
-  (stricter, config `news_window_min`). Overnight/weekend holds
-  allowed. Multiple logins same location/IP allowed (both bots on one
-  VPS = compliant). Metals hours 01:05–23:50 EET (gold ARB unaffected).
-- Phase-9 Monte Carlo (src/phase9_5k_challenge_sim.py) with 0.01-lot
-  granularity: **risk_scale 1.0 → 2.56%/mo; step 1: 91% pass within a
-  year / 9% bust / median 48 trading days; step 2: 94% / 6% / 28d.**
-  risk_scale 0.5 is STRICTLY WORSE (84% / 12% bust / 81d): min-lot
-  flooring keeps risk up while profit halves. Decision: run FULL risk.
-- Instance config (config/local_config.yaml in its clone):
-  starting_balance 5000, max_lot 0.5, risk_scale 1.0,
-  mt5_terminal_path C:\MT5-5ers\terminal64.exe, **news_fail_closed:
-  true** (a862894: unavailable calendar blocks entries on this
-  instance; demo stays fail-open).
-- Same 8-slot book, zero strategy changes — the demo-vs-prop twin-fill
-  comparison is the experiment.
-
-**When the 5ers account arrives:**
-1. Log into the C:\MT5-5ers terminal (File → Login, search their
-   server, save credentials). 2. Second clone + its local_config.yaml
-   (starting_balance, max_lot scaled, risk_scale 0.5, terminal path).
-   3. Flip news gate to FAIL-CLOSED for that instance (code change,
-   small). 4. Verify 5ers symbol names (suffix mapping layer if their
-   Market Watch shows e.g. GBPJPY.x). 5. Start; audit first fills vs
-   demo (same signals, seconds apart → execution-quality comparison).
+**Immediate — in progress right now:**
+- **AMR trend-regime watch**, checkpoint ~2026-08-25 (§6 rule 1).
+- **New strategy research: JPY crosses in London/NY sessions**
+  (diversification away from the current Asian-session-only
+  correlation risk — AMR and ARB are both fundamentally session-
+  structural bets on the same 00:00–09:00 UTC window). Chosen over
+  three other candidates (commodity-bloc crosses AUD/NZD/CAD vs each
+  other; London/NY gold; JPY-cross relative value) because it extends
+  a *proven* edge (JPY-cross mean reversion, Asian hours) into
+  untested territory (different session, likely trend-following
+  rather than reversion) rather than starting from zero — cheapest to
+  test, most likely to actually work. **Reminder: London/NY on
+  EURUSD/GBPUSD is dead ground already (~470 failures, §4) — do not
+  default back to the obvious majors.**
+  - **Blocked on a data export**, in progress: local Mac CSV cache
+    (`data/historical/`) only has 7 pairs (AUDUSD, EURJPY, EURUSD,
+    GBPJPY, GBPUSD, NZDUSD, USDJPY) at H1/H4 — no M15 (AMR's own
+    timeframe), and missing AUDJPY/CADJPY entirely despite both being
+    live-traded pairs already. `scripts/export_historical_data.py`'s
+    `PAIRS`/`TIMEFRAMES` lists need AUDJPY, CADJPY, M15, plus whichever
+    new JPY crosses get chosen (NZDJPY, CHFJPY candidates), then a
+    one-time run on a Windows/MT5-connected machine (VPS or a laptop),
+    committed to git (these CSVs are ~3MB/pair/timeframe, NOT
+    gitignored, so `git push`/`pull` is the sync mechanism — no scp/
+    cloud-sync tooling needed) and pulled to continue development on
+    Mac, same as every other backtest script.
 
 **Near-term engineering backlog:**
-- AMR checkpoint execution (Aug 1 / 20 trades) — the health monitor
-  now computes the supporting statistics daily.
 - Monitor ARB realized-risk drift; consider computing pip value from
   cross rates instead of tick_value for JPY pairs.
 - MAX_LOT interplay with AMR sizing (intended 0.25% often capped).
 - Restart-resilience for the AMR window's midnight state rollover
   (documented residual: an in-window bot restart could allow one
   re-entry).
+- Re-run phase-9's Monte Carlo against the actual current 6-slot/
+  risk_scale-0.5 5ers book (the original study assumed the full 8-slot
+  book at risk_scale 1.0 — no longer the live configuration).
+- Consider historical-data backfill/correction for the fill-price bug
+  (§5, §6 rule 6) if it turns out to matter for a specific piece of
+  analysis — opt-in only, not automatic.
 
 **Research directions (untested ground, in priority order):**
-1. Tokyo fix (00:55 server) flows on JPY crosses.
-2. Sydney-session structure on AUD/NZD (needs cross-midnight window
+1. **JPY crosses in London/NY sessions** — in progress, see above.
+2. Commodity-bloc crosses (AUDCAD, NZDCAD, AUDNZD) — phase 6 found a
+   genuine CADJPY edge via cross-sectional momentum; these have never
+   been tested at all and are far less efficiently arbed than EUR/GBP/
+   USD majors.
+3. Gold, London/NY session-specific (distinct from the existing
+   Asian-hours, currently-provisional gold ARB) — gold's real
+   directional action tends to cluster around US data/real-yield moves
+   in London/NY hours; would need to account for the same broker
+   data-availability gap that got XAUUSD demoted from 5ers (§3).
+4. Tokyo fix (00:55 server) flows on JPY crosses.
+5. Sydney-session structure on AUD/NZD (needs cross-midnight window
    support in the harness engine).
-3. NZDJPY AMR (OOS 1.35–1.76, IS ~1.0 — same regime profile; candidate
-   if the AMR family survives its checkpoint).
-4. Second data source (free Dukascopy tick data) to cross-validate the
+6. Second data source (free Dukascopy tick data) to cross-validate the
    book and enable USDCAD-oil correlation work.
-5. Exit study round 2 ONLY if live data suggests it (partial-TP was
+7. Exit study round 2 ONLY if live data suggests it (partial-TP was
    never tested).
-6. Meta-labeling (tiny logistic model on journaled signal context to
+8. Meta-labeling (tiny logistic model on journaled signal context to
    size/skip signals) once data/journal/events.jsonl reaches ~1000+
    trades — the journal schema was designed for this.
 
 **Explicitly NOT planned:** any new EURUSD/GBPUSD price-signal search
 at retail data tier; ICT variants; martingale/grid anything; carry
-trades (incompatible with Friday-close + daily-DD rules).
+trades (incompatible with Friday-close + daily-DD rules); an AMR trend
+filter without first completing the §6-rule-1 backtest discipline;
+auto-closing positions on daily-loss breach (conflicts with "pausing is
+a human decision" — reserved for hard-floor breach only); a live/
+automatically-recalculating Monte Carlo kill-switch (the existing
+offline phase-9-style study is sufficient at current trade volume); AI
+trade-reviewer/regime-detector features in the live trading loop
+(content-generation use only, never a live risk decision).
 
 ---
 
 ## 9. REFERENCE INDEX
 
-- **Commit trail (all on origin/main):** a17520f risk gates → edbe008
-  orchestrator/@arb+@amr → 8d4ddf5 strategies → e1f3ec9 Book B+ configs
-  → 6d3ddc9 research harnesses → 708f12c news gate → 43284a6
-  monday_drift → e75d680 **server-time fix** → 84358fd multi-account →
-  9386186 portable flag → 9a62188 local_config overlay → 4691a22
-  breakeven exclusion → bfcf595 weekend maintenance → a92cdc3
-  no-signal observability → 893c832 this report → fc291ed trade
-  journal + health monitor.
+- **Commit trail through rev 2 (all on origin/main):** a17520f risk
+  gates → edbe008 orchestrator/@arb+@amr → 8d4ddf5 strategies →
+  e1f3ec9 Book B+ configs → 6d3ddc9 research harnesses → 708f12c news
+  gate → 43284a6 monday_drift → e75d680 **server-time fix** → 84358fd
+  multi-account → 9386186 portable flag → 9a62188 local_config overlay
+  → 4691a22 breakeven exclusion → bfcf595 weekend maintenance →
+  a92cdc3 no-signal observability → 893c832 this report (rev 1) →
+  fc291ed trade journal + health monitor (rev 2).
+- **Commit trail since rev 2:** a95b597 NEWS logger fix → db4f7db
+  **cross-terminal MT5 contamination fix** (core/mt5_connect.py) →
+  95492ed `locked_pairs` isolation → b9ae7f6 mobile dashboard v1 →
+  c79d09e dashboard v2 control center → e445d7a/cd4f16f dashboard
+  layout/week-nav fixes → 9a54f2a slippage aggregation card →
+  b2f9bcf **spread gate** → c7297ab **position reconciliation** →
+  9fb21de/a1e77bd dashboard reliability (blocking-I/O fix + rate
+  limiting) → 6766d72 **VPS watchdog** → 0b64c02 **fill-price capture
+  fix**.
 - **Key modules:** strategies/{asian_range_breakout, asian_hours_reversion,
   monday_drift, registry}.py · core/{news_calendar, trade_journal,
   health_monitor, data_loader, session_filter, pair_manager,
-  strategy_loader}.py · src/agents/*.py · verify_architecture.py
-  (22 checks).
+  strategy_loader, mt5_connect, account_config}.py · src/agents/*.py
+  (incl. `_confirm_fill_price`, `find_untracked_positions` in
+  agent_execution.py; `_check_untracked_positions` in main_agent.py) ·
+  mcp/{server, dashboard.html, backtest_engine}.py (mobile dashboard +
+  MCP protocol server) · scripts/watchdog.ps1 · verify_architecture.py
+  (24 checks).
 - **Research artifacts:** src/strategy_matrix_backtest.py (core engine)
   + src/phase*.py + src/revalidate_eurusd_live.py; results in data/*.csv
-  and data/phase*_report.txt (regenerable; gitignored).
+  and data/phase*_report.txt (regenerable; gitignored). Historical bar
+  cache for Mac-side backtesting: data/historical/*.csv (NOT
+  gitignored, synced via git — see §8's data-export task).
 - **AI-assistant memory:** persistent notes live outside the repo in the
   Claude project memory (index: MEMORY.md there); this document is the
   repo-side equivalent and should be updated at each milestone.
-- **Accounts:** demo/control 5052472770 (MetaQuotes-Demo, $100k
-  2026-07-01) · 5ers: pending purchase · retired laptop account 106040846.
+- **Accounts:** demo/control 5052472770 (MetaQuotes-Demo, $100k,
+  2026-07-01) · 5ers 26520700 (Five Percent Online, $5,000, live
+  2026-07-19, reduced 6-slot book + risk_scale 0.5 since 2026-07-31) ·
+  retired laptop account 106040846.

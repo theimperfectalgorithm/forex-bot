@@ -30,7 +30,11 @@ import pandas as pd
 REPO_ROOT  = Path(__file__).parent.parent
 OUTPUT_DIR = REPO_ROOT / 'data' / 'historical'
 
-PAIRS       = ["GBPJPY", "EURJPY", "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "NZDUSD"]
+PAIRS       = ["GBPJPY", "EURJPY", "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "NZDUSD",
+              # added 2026-08-11 for the London/NY JPY-cross diversification research
+              # (PROJECT_REPORT.md §8): AUDJPY/CADJPY are already live-traded pairs
+              # that were never in this list; NZDJPY/CHFJPY are new candidates.
+              "AUDJPY", "CADJPY", "NZDJPY", "CHFJPY"]
 TIMEFRAMES  = ['M15', 'H1', 'H4']
 START_DATE  = datetime(2020, 1, 1, tzinfo=timezone.utc)
 
