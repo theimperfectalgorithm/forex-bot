@@ -139,7 +139,18 @@ def signals_squeeze(h1: pd.DataFrame, pip: float, spread: float,
 
 def build_usdjpy_proxy(h1_usdjpy: pd.DataFrame, pip: float):
     """Per-bar: pips moved from that day's LONDON_START-hour open to the
-    current close, and that day's ATR at London start (for thresholding)."""
+    current close, and that day's ATR at London start (for thresholding).
+
+    Returns pandas Series indexed by h1_usdjpy's own DatetimeIndex (NOT
+    plain numpy arrays). BUG FIX (2026-08-11, see phase13b_alignment_fix_
+    recheck.py / EXP-034): this used to return bare numpy arrays that
+    callers indexed by raw bar POSITION, silently assuming the traded
+    pair's bar at position i was the same calendar bar as this proxy's
+    position i. Any holiday/liquidity-driven bar-count divergence between
+    the two symbols (confirmed: 84% of positions mismatched from
+    2023-12-25 onward) corrupted every downstream signal. Callers must
+    now `.reindex()` onto their own index -- signals_xmomentum() below
+    does this internally, so its call signature is unchanged."""
     opens  = h1_usdjpy['Open'].to_numpy()
     closes = h1_usdjpy['Close'].to_numpy()
     highs  = h1_usdjpy['High'].to_numpy()
@@ -161,11 +172,12 @@ def build_usdjpy_proxy(h1_usdjpy: pd.DataFrame, pip: float):
         if open_px is not None and not np.isnan(a0):
             move_pips[i] = (closes[i] - open_px) / pip
             day_atr[i] = a0
-    return move_pips, day_atr
+    idx = h1_usdjpy.index
+    return pd.Series(move_pips, index=idx), pd.Series(day_atr, index=idx)
 
 
 def signals_xmomentum(h1: pd.DataFrame, pip: float, spread: float,
-                      usdjpy_move: np.ndarray, usdjpy_atr: np.ndarray,
+                      usdjpy_move, usdjpy_atr,
                       check_hour: int, thr_atr: float,
                       sl_atr: float, tp_atr: float) -> list:
     closes = h1['Close'].to_numpy()
@@ -175,8 +187,15 @@ def signals_xmomentum(h1: pd.DataFrame, pip: float, spread: float,
     atr = windowed_atr(highs, lows, closes, 14, 66) / pip
     min_tp = max(3.0, 2.0 * spread)
 
+    # BUG FIX (2026-08-11): reindex the proxy onto h1's own DatetimeIndex
+    # by TIMESTAMP instead of trusting positional alignment (see
+    # build_usdjpy_proxy docstring / EXP-034). Bars with no matching
+    # USDJPY timestamp become NaN and are skipped below, same as before.
+    usdjpy_move = usdjpy_move.reindex(h1.index).to_numpy()
+    usdjpy_atr  = usdjpy_atr.reindex(h1.index).to_numpy()
+
     out = []
-    n = min(len(h1), len(usdjpy_move))
+    n = len(h1)
     for i in range(66, n):
         if hours[i] != check_hour:
             continue
