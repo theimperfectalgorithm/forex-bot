@@ -1,7 +1,7 @@
 # Forex Bot — Complete Project Report
 
-**Date:** 2026-08-11 (rev 3, 5ers live + dashboard + reliability hardening) ·
-**Supersedes:** rev 2 (2026-07-15)
+**Date:** 2026-08-11 (rev 4, JPY-crosses London/NY research + AMR root-cause
+evidence) · **Supersedes:** rev 3 (2026-08-11)
 **Purpose:** a single self-contained document from which any person or AI
 can understand what this project is, what has been built, what was tried
 and rejected (with evidence), what is running live right now, and what
@@ -78,6 +78,45 @@ JPY-cross — and every failure is documented below so it is never re-run.
   Root-caused to AMR having zero higher-timeframe trend filter (by
   design) — not a bug. A 2-week observation window is running before
   deciding whether to research and backtest a trend filter. §6, §8.
+
+**Since rev 3 (same day, 2026-08-11), in order:**
+- **Phase 10 research (JPY crosses in London/NY sessions)** — the
+  roadmap item this report's rev 3 flagged as "blocked on a data
+  export" turned out NOT to be blocked: that blocker was specific to a
+  Mac dev environment with no MT5 access, but the project's local
+  Windows dev machine has a live MT5 terminal with full 36-month
+  M15/H1/H4 history for every candidate pair. Ran directly, no export
+  needed (see §8's updated note). Two structurally new mechanics
+  tested (deliberately not re-running the LORB/NY-continuation geometry
+  already dead on JPY crosses per §4): a volatility-squeeze breakout
+  (0/28, dead) and a cross-asset JPY momentum mechanic (USDJPY's own
+  session move as a JPY-strength proxy gating same-direction entries
+  on the other crosses). The latter found a robust candidate on
+  NZDJPY, confirmed via a 3x3 parameter-neighborhood refinement (not
+  just a lucky single cell — see §4). **Research-stage only: no live
+  code, no YAML, no account changes.** Awaiting an explicit decision on
+  whether to build it out. §4, §8.
+- **AMR root-cause deep-dive, with hard evidence.** The demo account's
+  balance has been range-bound ($98,696-$101,798, net +0.89% over the
+  38 days since the Book B+ relaunch) rather than trending — pulled and
+  analyzed all 50 closed trades to understand why. Confirmed
+  numerically: ARB is working as designed (16 trades, PF 2.39,
+  +$2,748); AMR is actively bleeding (31 trades, PF 0.43, -$1,552) and
+  trading roughly twice as often, so it's offsetting almost all of
+  ARB's gain. Traced AMR's loss to ONE pair and ONE event: CADJPY
+  alone is 70% of AMR's total loss (9 trades, 11% win rate, -$1,077),
+  clustered almost entirely around a confirmed real trend -- CADJPY
+  dropped ~3% in a single session on Jul 30 then climbed steadily for
+  10 straight trading days (111.0 -> 114.3) -- exactly the "no
+  higher-timeframe trend filter" failure mode already named in rev 3,
+  now with concrete receipts rather than just a diagnosis. Also
+  computed the conditional forward pace: with AMR excluded, the
+  account's demonstrated ARB+MON pace projects roughly 3 months to the
+  +8% target; with AMR unchanged, the offsetting pattern makes a
+  timeline unanswerable, which is precisely why the Aug 25 checkpoint
+  (§6 rule 1) exists rather than a fixed ETA. No code or config
+  changed by this analysis — it's evidence feeding the already-standing
+  checkpoint, not a new decision. §5.
 
 ---
 
@@ -389,15 +428,24 @@ against the live classes' exact seeding.
 | 7 | phase7_exits_calendar_gold.py | Exit modes (BE/trail), EU/GU calendar screen, XAUUSD | Baseline exits win 5/6; **GBPUSD Monday drift found (OOS t=+4.0)**; gold ARB provisional; Book B+ MC 83%/2% |
 | 8 | phase8_monday_validation.py | Monday drift as bounded strategy (8) | **PASS (strongest of project)**; EURUSD control weak |
 | — | revalidate_eurusd_live.py | Faithful dual-book audit of live EURUSD | SMA book 0 trades/3y (flat-filter bug); EMA PF 0.95 |
+| 9 | phase9_5k_challenge_sim.py | $5K Classic Monte Carlo, min-lot granularity | risk_scale 1.0 recommended (91% pass/9% bust/48d median); 0.5 strictly worse |
+| 10 | phase10_jpy_london_ny.py + phase10b | Volatility-squeeze breakout + cross-asset JPY momentum (USDJPY proxy), London/NY, 6 JPY crosses (106 total) | squeeze 0/28 dead; **xmo/NZDJPY candidate found** — 3x3 neighborhood all IS PF 1.25-1.53, 3/9 full passes, best cell IS PF 1.49/DD 5.86%/84%pm, OOS PF 1.20/+$7,731. Research-stage; not yet built live. Same mechanic showed OOS-only strength (no IS support) on EURJPY/CHFJPY/CADJPY — a regime-effect echo of AMR's own caveat, correctly NOT selected on since selection stays IS-only |
 
-**Settled dead ground (~470 failures — never re-plow):** EURUSD/GBPUSD
+**Settled dead ground (~470+ failures — never re-plow):** EURUSD/GBPUSD
 price-derived signals at M5–H4 (indicator systems, session breakouts
 both directions, fix flows, EURGBP relative value, regime-conditioned
 reversion, mechanical ICT); mean_reversion (H4-range-gated RSI) on all
 majors; London-open range breakout everywhere; NY-overlap continuation;
 H4 Donchian/ATR; weekly cross-sectional momentum; AMR on non-JPY pairs;
 gold AMR and gold NY-momentum; breakeven/trailing exits on the current
-book (except BE@0.75R on AMR-GBPJPY: marginal, backtest-only).
+book (except BE@0.75R on AMR-GBPJPY: marginal, backtest-only);
+**volatility-squeeze breakout on JPY crosses in London/NY (phase 10)**.
+
+**Candidates awaiting a build decision (research-validated, not yet
+live anywhere):** cross-asset JPY momentum on NZDJPY (phase 10/10b,
+above) — the next strategy in the pipeline behind AMR/ARB/Monday, same
+build path when greenlit: strategy class -> demo-only YAML -> forward
+test, never straight to the funded account.
 
 **Principles established:** portfolio = validated edges, not pair
 count (adding losers measurably raised bust risk to 45%). Movement ≠
@@ -482,6 +530,29 @@ monitoring). Zero AMR signals on some quiet days is normal.
   ANY challenge use") and was overridden by the later decision to run
   the identical book on both accounts from day one. See §6/§8 for the
   live decision in force.
+- **2026-08-11: AMR root-cause deep-dive, full accounting.** Pulled all
+  50 closed demo trades since the Book B+ relaunch (Jul 3 -- Aug 11,
+  38 days). Demo balance is range-bound: low $98,696 (Jul 10), high
+  $101,798 (Jul 23, no new high since -- 18 days flat), currently
+  $100,890, net **+$890 (+0.89%) over 38 days**. Per-strategy: ARB 16
+  trades / PF 2.39 / **+$2,748** (working exactly as validated); AMR 31
+  trades / PF 0.43 / **-$1,552** (trading ~2x as often as ARB, so
+  offsetting nearly all of its gain); MON 3 trades / -$307 (too few to
+  judge, consistent with its ~1/week design cadence). Within AMR,
+  **CADJPY alone is 70% of the loss** (9 trades, 11% win rate, -$1,077)
+  vs. AUDJPY/EURJPY/GBPJPY only mildly negative -- this is a
+  concentrated single-pair event, not a uniform leak. CADJPY's own D1
+  bars confirm the mechanism exactly: a ~3% one-session drop on Jul 30
+  (116.45 -> 112.99) followed by **ten straight up days** to 114.30 by
+  Aug 11 -- AMR's SELL signals into that climb kept losing (Aug 4, Aug
+  10) because the pair was genuinely trending, not reverting; only the
+  Aug 11 BUY (finally aligned with the trend) won. Conditional forward
+  pace computed from this data: ARB+MON alone (AMR excluded) projects
+  **~3 months to the +8% target** at the demonstrated rate; with AMR
+  unchanged, the offsetting pattern makes a timeline unanswerable by
+  design -- which is the argument FOR the Aug 25 checkpoint existing,
+  not a case for acting early. No code/config changed; this is
+  evidence, not a decision.
 
 ---
 
@@ -581,31 +652,32 @@ not been rerun against the current reduced book (candidate for the
 research backlog below).
 
 **Immediate — in progress right now:**
-- **AMR trend-regime watch**, checkpoint ~2026-08-25 (§6 rule 1).
-- **New strategy research: JPY crosses in London/NY sessions**
-  (diversification away from the current Asian-session-only
-  correlation risk — AMR and ARB are both fundamentally session-
-  structural bets on the same 00:00–09:00 UTC window). Chosen over
-  three other candidates (commodity-bloc crosses AUD/NZD/CAD vs each
-  other; London/NY gold; JPY-cross relative value) because it extends
-  a *proven* edge (JPY-cross mean reversion, Asian hours) into
-  untested territory (different session, likely trend-following
-  rather than reversion) rather than starting from zero — cheapest to
-  test, most likely to actually work. **Reminder: London/NY on
-  EURUSD/GBPUSD is dead ground already (~470 failures, §4) — do not
-  default back to the obvious majors.**
-  - **Blocked on a data export**, in progress: local Mac CSV cache
-    (`data/historical/`) only has 7 pairs (AUDUSD, EURJPY, EURUSD,
-    GBPJPY, GBPUSD, NZDUSD, USDJPY) at H1/H4 — no M15 (AMR's own
-    timeframe), and missing AUDJPY/CADJPY entirely despite both being
-    live-traded pairs already. `scripts/export_historical_data.py`'s
-    `PAIRS`/`TIMEFRAMES` lists need AUDJPY, CADJPY, M15, plus whichever
-    new JPY crosses get chosen (NZDJPY, CHFJPY candidates), then a
-    one-time run on a Windows/MT5-connected machine (VPS or a laptop),
-    committed to git (these CSVs are ~3MB/pair/timeframe, NOT
-    gitignored, so `git push`/`pull` is the sync mechanism — no scp/
-    cloud-sync tooling needed) and pulled to continue development on
-    Mac, same as every other backtest script.
+- **AMR trend-regime watch**, checkpoint ~2026-08-25 (§6 rule 1). As of
+  2026-08-11 the demo book is range-bound (net +0.89%/38 days) with
+  ARB working as validated and AMR bleeding, root-caused to a single
+  concentrated CADJPY trend event (§5) — supporting evidence for the
+  checkpoint, not a reason to move it earlier.
+- **New strategy research: JPY crosses in London/NY sessions** — DONE
+  for the mechanics tried; a decision is now pending, not a data
+  blocker. **The "blocked on a data export" note from rev 3 turned out
+  to be wrong** — that blocker was specific to a Mac dev environment
+  with no MT5 access; the project's local Windows dev machine has a
+  live MT5 terminal with full 36-month M15/H1/H4 history for every
+  candidate pair (confirmed directly, no export/CSV sync needed). Ran
+  phase 10 + 10b (§4, 106 backtests) there instead. Result: a
+  volatility-squeeze mechanic is now confirmed dead (added to §4's
+  dead-ground list); a cross-asset JPY momentum mechanic (USDJPY's own
+  session move as a JPY-strength proxy) found a candidate on **NZDJPY**
+  that survived a 3x3 parameter-robustness refinement — the same bar
+  ARB/AMR/Monday cleared before being built out. **Pending decision:
+  build it (strategy class + demo-only YAML + forward test), refine it
+  further, or park it** — not yet made as of this revision.
+  **Operational note for future research:** the Mac-blocked data-export
+  path (`scripts/export_historical_data.py` + git-sync CSVs) is still
+  valid for Mac-side work, but any research that can run from a
+  Windows/MT5-connected machine (VPS or local dev box) should just use
+  `core.data_loader.get_bars()` directly — it prefers live MT5 and only
+  falls back to the CSV cache — no export step needed.
 
 **Near-term engineering backlog:**
 - Monitor ARB realized-risk drift; consider computing pip value from
@@ -622,7 +694,13 @@ research backlog below).
   analysis — opt-in only, not automatic.
 
 **Research directions (untested ground, in priority order):**
-1. **JPY crosses in London/NY sessions** — in progress, see above.
+1. ~~JPY crosses in London/NY sessions~~ — **done for the two mechanics
+   tried** (phase 10/10b, see above); NZDJPY candidate awaiting a build
+   decision. Follow-on if pursued further: other proxy constructions
+   for the cross-asset momentum idea (e.g. a basket/DXY-style JPY
+   strength measure instead of USDJPY alone), or the same mechanic on
+   the two demoted-from-5ers pairs (GBPJPY/XAUUSD, currently demo-only)
+   to see if it fares better than their existing ARB slot did.
 2. Commodity-bloc crosses (AUDCAD, NZDCAD, AUDNZD) — phase 6 found a
    genuine CADJPY edge via cross-sectional momentum; these have never
    been tested at all and are far less efficiently arbed than EUR/GBP/
@@ -666,15 +744,23 @@ trade-reviewer/regime-detector features in the live trading loop
   → 4691a22 breakeven exclusion → bfcf595 weekend maintenance →
   a92cdc3 no-signal observability → 893c832 this report (rev 1) →
   fc291ed trade journal + health monitor (rev 2).
-- **Commit trail since rev 2:** a95b597 NEWS logger fix → db4f7db
-  **cross-terminal MT5 contamination fix** (core/mt5_connect.py) →
-  95492ed `locked_pairs` isolation → b9ae7f6 mobile dashboard v1 →
-  c79d09e dashboard v2 control center → e445d7a/cd4f16f dashboard
-  layout/week-nav fixes → 9a54f2a slippage aggregation card →
-  b2f9bcf **spread gate** → c7297ab **position reconciliation** →
-  9fb21de/a1e77bd dashboard reliability (blocking-I/O fix + rate
-  limiting) → 6766d72 **VPS watchdog** → 0b64c02 **fill-price capture
-  fix**.
+- **Commit trail since rev 2:** f8c0578 **single source of truth for
+  account constants** (core/account_config.py — fixed a live bug where
+  agent_market.py's own hardcoded $90k hard floor was permanently
+  blocking the $5K challenge clone from trading at all, plus a matching
+  hardcoded-baseline bug in agent_reporting.py) → a95b597 NEWS logger
+  fix → db4f7db **cross-terminal MT5 contamination fix**
+  (core/mt5_connect.py) → 95492ed `locked_pairs` isolation → b9ae7f6
+  mobile dashboard v1 → c79d09e dashboard v2 control center →
+  e445d7a/cd4f16f dashboard layout/week-nav fixes → 9a54f2a slippage
+  aggregation card → b2f9bcf **spread gate** → c7297ab **position
+  reconciliation** → 9fb21de/a1e77bd dashboard reliability
+  (blocking-I/O fix + rate limiting) → 6766d72 **VPS watchdog** →
+  0b64c02 **fill-price capture fix** → 3abd9a7 this report (rev 3).
+- **Commit trail since rev 3:** 6be5c76 **phase 10 + 10b: JPY crosses
+  London/NY research** (src/phase10_jpy_london_ny.py,
+  src/phase10b_xmo_refine.py — squeeze breakout dead, NZDJPY
+  cross-asset-momentum candidate found) → this report (rev 4).
 - **Key modules:** strategies/{asian_range_breakout, asian_hours_reversion,
   monday_drift, registry}.py · core/{news_calendar, trade_journal,
   health_monitor, data_loader, session_filter, pair_manager,
