@@ -1,0 +1,209 @@
+==========================================================================================
+PHASE 16 -- DOWN-MOVE REVERSION: MECHANISM RESEARCH (why does it reverse?)
+Event (frozen): M15 close-to-close move <= -1.0xATR(14,66). Outcome (frozen, 4-bar/60min):
+  REVERSAL = fwd_atr >= 0.  CONTINUATION = fwd_atr < 0.
+No parameter search. No filter combination. No strategy. AMR untouched.
+==========================================================================================
+EURUSD: 4178 down-move events (2200 reversal / 1978 continuation)
+GBPUSD: 4319 down-move events (2285 reversal / 2034 continuation)
+USDJPY: 4179 down-move events (2250 reversal / 1929 continuation)
+AUDUSD: 4244 down-move events (2266 reversal / 1978 continuation)
+USDCAD: 4537 down-move events (2390 reversal / 2147 continuation)
+NZDUSD: 4233 down-move events (2273 reversal / 1960 continuation)
+GBPJPY: 3958 down-move events (2175 reversal / 1783 continuation)
+EURJPY: 4012 down-move events (2216 reversal / 1796 continuation)
+CADJPY: 4016 down-move events (2179 reversal / 1837 continuation)
+
+Total events pooled: 37676 (20234 reversal / 17442 continuation)
+
+==========================================================================================
+HYPOTHESIS 1 -- BROADER MARKET LOCATION
+==========================================================================================
+  dist_from_sess_high_atr:
+                  variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_sess_high_atr     REVERSAL 20234 2.758288 2.424094 1.402093 1.743994 3.486562             -0.074337
+   dist_from_sess_high_atr CONTINUATION 17442 2.862926 2.507597 1.411922 1.803301 3.569121             -0.074337
+    Cross-pair sign agreement: 9/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  dist_from_sess_low_atr:
+                 variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_sess_low_atr     REVERSAL 20234 0.806504 0.390220 1.022325 0.135133 1.086982              0.016466
+   dist_from_sess_low_atr CONTINUATION 17442 0.789638 0.372056 1.026558 0.133318 1.036979              0.016466
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=1.0, 2026=-1.0).
+  pos_in_day_range:
+           variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   pos_in_day_range     REVERSAL 20234 0.334605 0.288020 0.272589 0.069123 0.572588              0.026357
+   pos_in_day_range CONTINUATION 17442 0.327437 0.270771 0.271220 0.064935 0.566458              0.026357
+    Cross-pair sign agreement: 8/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=1.0, 2026=1.0).
+  pos_in_prevday_range:
+               variable      outcome     n          mean   median          std      p25      p75  effect_size_cohens_d
+   pos_in_prevday_range     REVERSAL 20234 -45142.977325 0.407432 8.424495e+06 0.054597 0.740458             -0.002169
+   pos_in_prevday_range CONTINUATION 17442 -29239.391709 0.401206 5.809837e+06 0.035736 0.745725             -0.002169
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  dist_from_prevday_high_atr:
+                     variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_prevday_high_atr     REVERSAL 20234 6.539076 6.044857 5.619885 2.836797 9.774709              0.000892
+   dist_from_prevday_high_atr CONTINUATION 17442 6.534023 6.127327 5.723859 2.802309 9.860875              0.000892
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=1.0, 2026=1.0).
+  dist_from_prevday_low_atr:
+                    variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_prevday_low_atr     REVERSAL 20234 4.688388 4.189037 6.049579 0.533868 8.371773              0.003587
+   dist_from_prevday_low_atr CONTINUATION 17442 4.666502 4.139506 6.160618 0.349456 8.422027              0.003587
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  dist_from_recent_h1_high_atr:
+                       variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_recent_h1_high_atr     REVERSAL 20234 3.290374 2.988425 1.506781 2.127401 4.132390             -0.021095
+   dist_from_recent_h1_high_atr CONTINUATION 17442 3.322542 3.008135 1.545614 2.126174 4.192913             -0.021095
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=-1.0, 2026=1.0).
+  dist_from_recent_h1_low_atr:
+                      variable      outcome     n     mean   median     std      p25      p75  effect_size_cohens_d
+   dist_from_recent_h1_low_atr     REVERSAL 20234 1.027639 0.585535 1.13775 0.193168 1.519810             -0.000085
+   dist_from_recent_h1_low_atr CONTINUATION 17442 1.027737 0.560163 1.15592 0.194130 1.512008             -0.000085
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=1.0, 2026=-1.0).
+  dist_from_recent_h4_high_atr:
+                       variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_recent_h4_high_atr     REVERSAL 20231 6.533097 5.619921 4.149426 3.404676 8.630609             -0.003243
+   dist_from_recent_h4_high_atr CONTINUATION 17440 6.546574 5.657531 4.163759 3.391250 8.670561             -0.003243
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=1.0, 2026=-1.0).
+  dist_from_recent_h4_low_atr:
+                      variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   dist_from_recent_h4_low_atr     REVERSAL 20231 4.400187 3.345083 4.169147 0.940859 6.667078              0.002071
+   dist_from_recent_h4_low_atr CONTINUATION 17440 4.391474 3.264737 4.252562 0.873502 6.667081              0.002071
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+
+==========================================================================================
+HYPOTHESIS 2 -- PRIOR DIRECTIONAL PRESSURE
+==========================================================================================
+  ret_1h_atr:
+     variable      outcome     n      mean    median      std       p25       p75  effect_size_cohens_d
+   ret_1h_atr     REVERSAL 20234 -1.484072 -1.428053 1.373199 -2.258671 -0.638172              0.012156
+   ret_1h_atr CONTINUATION 17442 -1.501000 -1.429242 1.414854 -2.280287 -0.621584              0.012156
+    Cross-pair sign agreement: 7/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=1.0, 2026=1.0).
+  ret_4h_atr:
+     variable      outcome     n     mean    median      std       p25      p75  effect_size_cohens_d
+   ret_4h_atr     REVERSAL 20234 -1.46014 -1.442712 2.400295 -3.008514 0.111021              0.005078
+   ret_4h_atr CONTINUATION 17442 -1.47248 -1.443802 2.464360 -3.069272 0.162590              0.005078
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=1.0, 2026=-1.0).
+  ret_8h_atr:
+     variable      outcome     n      mean    median      std       p25      p75  effect_size_cohens_d
+   ret_8h_atr     REVERSAL 20234 -1.375126 -1.440960 3.373758 -3.636575 0.883856              0.010047
+   ret_8h_atr CONTINUATION 17442 -1.408921 -1.390529 3.351604 -3.657023 0.830846              0.010047
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=1.0, 2026=-1.0).
+  persistence_1h:
+         variable      outcome     n     mean  median      std  p25  p75  effect_size_cohens_d
+   persistence_1h     REVERSAL 20234 0.489856     0.5 0.250621 0.25 0.75             -0.006387
+   persistence_1h CONTINUATION 17442 0.491443     0.5 0.245892 0.25 0.75             -0.006387
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=1.0, 2026=-1.0).
+  persistence_4h:
+         variable      outcome     n     mean  median      std    p25    p75  effect_size_cohens_d
+   persistence_4h     REVERSAL 20234 0.496747     0.5 0.121721 0.4375 0.5625              0.000009
+   persistence_4h CONTINUATION 17442 0.496746     0.5 0.121698 0.4375 0.5625              0.000009
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  persistence_8h:
+         variable      outcome     n     mean  median     std    p25    p75  effect_size_cohens_d
+   persistence_8h     REVERSAL 20234 0.498896     0.5 0.08494 0.4375 0.5625             -0.001779
+   persistence_8h CONTINUATION 17442 0.499047     0.5 0.08493 0.4375 0.5625             -0.001779
+    Cross-pair sign agreement: 5/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  prev_session_ret_pips:
+                variable      outcome     n     mean  median       std  p25    p75  effect_size_cohens_d
+   prev_session_ret_pips     REVERSAL 20234 0.714189     0.5 25.781080 -9.1 11.600             -0.018879
+   prev_session_ret_pips CONTINUATION 17442 1.207367     0.7 26.512058 -9.3 12.275             -0.018879
+    Cross-pair sign agreement: 8/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=-1.0, 2026=1.0).
+  prev_day_ret_pips:
+            variable      outcome     n     mean  median       std   p25  p75  effect_size_cohens_d
+   prev_day_ret_pips     REVERSAL 16281 5.979405     7.2 65.135948 -26.9 40.9              0.024705
+   prev_day_ret_pips CONTINUATION 14231 4.332802     5.4 68.331984 -27.4 38.0              0.024705
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=1.0, 2026=1.0).
+
+==========================================================================================
+HYPOTHESIS 3 -- VOLATILITY TRANSITION
+==========================================================================================
+  atr_pctile_pre:
+         variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   atr_pctile_pre     REVERSAL 20234 0.529884 0.539463 0.287971 0.285133 0.785290             -0.040171
+   atr_pctile_pre CONTINUATION 17442 0.541416 0.559170 0.285937 0.295743 0.793176             -0.040171
+    Cross-pair sign agreement: 7/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  event_range_atr:
+          variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   event_range_atr     REVERSAL 20234 1.848216 1.667553 0.737219 1.413015 2.045061             -0.000345
+   event_range_atr CONTINUATION 17442 1.848472 1.667696 0.746855 1.413141 2.025473             -0.000345
+    Cross-pair sign agreement: 6/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: DIFFERENT (2025=-1.0, 2026=1.0).
+  realized_vol_pre:
+           variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   realized_vol_pre     REVERSAL 20234 5.575800 4.220867 4.999635 2.720417 6.783972             -0.020329
+   realized_vol_pre CONTINUATION 17442 5.675552 4.366584 4.796809 2.806720 7.008072             -0.020329
+    Cross-pair sign agreement: 8/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  realized_vol_post:
+            variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   realized_vol_post     REVERSAL 20234 6.259906 4.943674 5.101960 3.201478 7.675506             -0.156857
+   realized_vol_post CONTINUATION 17442 7.156359 5.460434 6.318776 3.476631 8.716886             -0.156857
+    Cross-pair sign agreement: 9/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  vol_expansion_ratio:
+              variable      outcome     n     mean   median      std      p25      p75  effect_size_cohens_d
+   vol_expansion_ratio     REVERSAL 20234 1.402169 1.133889 1.065740 0.769073 1.701855             -0.117894
+   vol_expansion_ratio CONTINUATION 17442 1.537430 1.225515 1.231253 0.819328 1.853709             -0.117894
+    Cross-pair sign agreement: 9/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+  vol_pctile_change:
+            variable      outcome     n     mean   median      std       p25      p75  effect_size_cohens_d
+   vol_pctile_change     REVERSAL 20234 0.037110 0.015000 0.142259 -0.045212 0.103188             -0.232551
+   vol_pctile_change CONTINUATION 17442 0.071451 0.041565 0.151641 -0.020311 0.144373             -0.232551
+    Cross-pair sign agreement: 9/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=-1.0, 2026=-1.0).
+
+==========================================================================================
+HYPOTHESIS 4 -- SESSION LOCATION
+==========================================================================================
+Reversal rate by session:
+session
+ASIAN      0.578281
+LONDON     0.520463
+OVERLAP    0.504805
+NY         0.530799
+
+Reversal rate within Asian session, by pre-defined third:
+             reversal_rate     n
+asian_third                     
+EARLY_ASIAN       0.672888  3965
+MID_ASIAN         0.506458  4026
+LATE_ASIAN        0.530714  1807
+
+==========================================================================================
+HYPOTHESIS 5 -- RANGE BREAK VS INTERNAL MOVE
+==========================================================================================
+                reversal_rate      n
+is_range_break                      
+False                0.532808  20955
+True                 0.542372  16721
+(is_range_break = event bar low breached the trailing 20-bar low, established BEFORE the event bar)
+
+==========================================================================================
+HYPOTHESIS 6 -- DISTANCE FROM SESSION VWAP
+==========================================================================================
+  dist_from_vwap_atr:
+             variable      outcome     n      mean    median      std       p25       p75  effect_size_cohens_d
+   dist_from_vwap_atr     REVERSAL 20234 -1.151121 -1.045411 1.079506 -1.783287 -0.440614               0.06304
+   dist_from_vwap_atr CONTINUATION 17442 -1.219714 -1.110734 1.096840 -1.822078 -0.535338               0.06304
+    Cross-pair sign agreement: 9/9 pairs agree on direction.
+    2025 vs 2026 sign agreement: SAME (2025=1.0, 2026=1.0).
