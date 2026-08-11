@@ -1,0 +1,32 @@
+==========================================================================================
+PHASE 19b -- EXISTING-STRATEGY OBSERVATIONAL REGIME CHECK (Part 14, OBSERVATIONAL ONLY)
+==========================================================================================
+TIMING CAVEAT: ARB enters at server hours 7-8 (London START), AMR enters at server
+hours 0-4 (BEFORE London), Monday Drift enters at server hour 0 Monday (BEFORE London).
+None of these entries could use "completed London session range" as an input -- it does
+not exist yet. This is a retrospective/observational correlation only, NOT a usable
+real-time filter, and is not being proposed as one.
+No strategy logic was read for the purpose of modifying it, and nothing here changes
+any live/demo configuration.
+
+-- ARB family --
+  GBPJPY_ARB: n_total=193  n_topqLondon_days=68  n_other_days=125
+    mean pnl | topqLondon=+76.96  other=+117.81  win_rate | topqLondon=0.471  other=0.496
+  CADJPY_ARB: n_total=192  n_topqLondon_days=66  n_other_days=126
+    mean pnl | topqLondon=-15.20  other=+112.55  win_rate | topqLondon=0.439  other=0.516
+  XAUUSD_ARB: n_total=256  n_topqLondon_days=62  n_other_days=194
+    mean pnl | topqLondon=+114.40  other=+62.23  win_rate | topqLondon=0.581  other=0.479
+
+-- AMR family --
+  GBPJPY_AMR: n_total=402  n_topqLondon_days=103  n_other_days=299
+    mean pnl | topqLondon=+12.17  other=+47.03  win_rate | topqLondon=0.612  other=0.692
+  EURJPY_AMR: n_total=709  n_topqLondon_days=181  n_other_days=528
+    mean pnl | topqLondon=-11.67  other=+23.16  win_rate | topqLondon=0.619  other=0.714
+  AUDJPY_AMR: n_total=651  n_topqLondon_days=173  n_other_days=478
+    mean pnl | topqLondon=-22.95  other=+25.24  win_rate | topqLondon=0.607  other=0.728
+  CADJPY_AMR: n_total=596  n_topqLondon_days=164  n_other_days=432
+    mean pnl | topqLondon=-18.75  other=+16.43  win_rate | topqLondon=0.610  other=0.711
+
+-- Monday Drift --
+  GBPUSD_MONDAY: n_total=153  n_topqLondon_days=39  n_other_days=114
+    mean pnl | topqLondon=+53.10  other=+26.78  win_rate | topqLondon=0.615  other=0.632

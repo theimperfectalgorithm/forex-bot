@@ -1,0 +1,169 @@
+==========================================================================================
+PHASE 19 -- LONDON -> NY VOLATILITY PERSISTENCE (regime research, NOT a strategy)
+ASIAN=[0,7)  LONDON(effective, disjoint)=[7,12)  NY=[12,21)  server hours -- see LONDON_DISJOINT_END note above.
+==========================================================================================
+
+==========================================================================================
+PART 10 -- ROLLOVER / SESSION ARTIFACT CHECK (run first, gates everything downstream)
+==========================================================================================
+  EURUSD: OK -- monotonic, no duplicate timestamps, tz=UTC, 18824 bars, 2023-07-28 to 2026-08-11
+  GBPUSD: OK -- monotonic, no duplicate timestamps, tz=UTC, 18823 bars, 2023-07-28 to 2026-08-11
+  USDJPY: OK -- monotonic, no duplicate timestamps, tz=UTC, 18825 bars, 2023-07-28 to 2026-08-11
+  AUDUSD: OK -- monotonic, no duplicate timestamps, tz=UTC, 18825 bars, 2023-07-28 to 2026-08-11
+  USDCAD: OK -- monotonic, no duplicate timestamps, tz=UTC, 18824 bars, 2023-07-28 to 2026-08-11
+  NZDUSD: OK -- monotonic, no duplicate timestamps, tz=UTC, 18831 bars, 2023-07-28 to 2026-08-11
+  GBPJPY: OK -- monotonic, no duplicate timestamps, tz=UTC, 18821 bars, 2023-07-28 to 2026-08-11
+  EURJPY: OK -- monotonic, no duplicate timestamps, tz=UTC, 18824 bars, 2023-07-28 to 2026-08-11
+  CADJPY: OK -- monotonic, no duplicate timestamps, tz=UTC, 18824 bars, 2023-07-28 to 2026-08-11
+Server-time convention matches this project's established fix (see project memory:
+"Server-time fix" -- MT5 timestamps are server time UTC+3; session gates use server hours,
+consistent with every prior phase in this project). No new bug found in this check.
+
+==========================================================================================
+PART 1 -- REPRODUCE ORIGINAL FINDING (unchanged methodology)
+==========================================================================================
+  pair  n_days  n_top_quartile_london  p_ny_tophalf_given_london_topq  p_ny_tophalf_baseline
+EURUSD     785                    197                        0.715736               0.500637
+GBPUSD     785                    197                        0.624365               0.500637
+USDJPY     785                    197                        0.746193               0.500637
+AUDUSD     785                    198                        0.661616               0.500637
+USDCAD     785                    198                        0.666667               0.500637
+NZDUSD     785                    196                        0.632653               0.500637
+GBPJPY     785                    197                        0.730964               0.500637
+EURJPY     785                    197                        0.725888               0.500637
+CADJPY     785                    197                        0.746193               0.499363
+
+Range: 62.4% to 74.6% -- REPRODUCED (matches 62-75% range)
+
+==========================================================================================
+PART 2 -- FULL CONDITIONAL DISTRIBUTION (quintile bins, pooled)
+==========================================================================================
+               n  mean_ny_range  median_ny_range  mean_ny_pctile  p_ny_tophalf  p_ny_topquartile
+london_bin                                                                                      
+0-20%       1400      51.438071             43.2        0.357631      0.300000          0.130000
+20-40%      1419      58.633827             51.3        0.451099      0.420719          0.183932
+40-60%      1413      61.600212             54.2        0.496660      0.491861          0.217976
+60-80%      1413      66.756900             58.0        0.542618      0.573248          0.283086
+80-100%     1420      84.559085             68.0        0.651141      0.714085          0.433099
+
+Monotonic increasing relationship across all 5 bins: True
+
+==========================================================================================
+PART 3 -- INFORMATION TIMING (pre-specified London checkpoints, not searched)
+==========================================================================================
+ checkpoint  hours_elapsed    n  corr_with_ny  p_ny_tophalf_given_topq
+        25%              1 7047      0.323705                 0.672501
+        50%              2 7047      0.316793                 0.665348
+        75%              4 7065      0.336237                 0.695995
+100% (full)              5 7065      0.339722                 0.694476
+
+==========================================================================================
+PART 4 -- PREDICTIVE VALUE VS. SIMPLE PERSISTENCE BASELINES
+==========================================================================================
+  pair  london_p  london_corr  asian_p  asian_corr  prevday_p  prevday_corr  atr_at_nystart_p  atr_at_nystart_corr
+EURUSD  0.715736     0.319905 0.681818    0.235286   0.631313      0.258678          0.810811             0.429485
+GBPUSD  0.624365     0.282253 0.565657    0.165876   0.550505      0.125710          0.700000             0.334244
+USDJPY  0.746193     0.463007 0.732323    0.411009   0.715736      0.422654          0.831579             0.570089
+AUDUSD  0.661616     0.279506 0.621212    0.215692   0.656566      0.219244          0.783951             0.385372
+USDCAD  0.666667     0.263795 0.624365    0.177250   0.619289      0.175487          0.818182             0.379724
+NZDUSD  0.632653     0.240410 0.585859    0.153917   0.611111      0.201679          0.721519             0.345848
+GBPJPY  0.730964     0.410809 0.751269    0.389431   0.720812      0.355765          0.853535             0.534429
+EURJPY  0.725888     0.391130 0.702020    0.374926   0.761421      0.378251          0.840796             0.547545
+CADJPY  0.746193     0.407029 0.722222    0.338657   0.700508      0.386713          0.867816             0.546141
+
+Pooled means: London corr=0.3398  Asian corr=0.2736  PrevDay corr=0.2805  ATR@NYstart corr=0.4525
+Question: does London beat these simpler, already-available persistence baselines?
+
+==========================================================================================
+PART 5 -- NEWS CONFOUND
+==========================================================================================
+LIMITATION: this project's news_calendar.py only caches the CURRENT week's ForexFactory
+feed (data/news_calendar.json) -- there is no reliable historical (2023-2026) economic
+calendar available in this repo. Rather than fabricate historical news data, this uses a
+DETERMINISTIC, well-known PROXY for major scheduled US news: the first Friday of each
+calendar month (US Non-Farm Payrolls, the single largest recurring scheduled USD event).
+This is a proxy for ONE major news type, not a full economic calendar -- treat results as
+indicative, not a complete news-confound test.
+group   NO_NFP_PROXY
+pair                
+AUDUSD      0.652850
+CADJPY      0.740741
+EURJPY      0.715789
+EURUSD      0.711340
+GBPJPY      0.723404
+GBPUSD      0.617801
+NZDUSD      0.625000
+USDCAD      0.658031
+USDJPY      0.747368
+
+==========================================================================================
+PART 6 -- NY INTRASESSION TIMING (fixed quarters, not searched)
+==========================================================================================
+ny_quarter    n  p_quarter_tophalf_given_london_topq
+  Q1_12-14 7065                             0.764938
+  Q2_14-16 7056                             0.692221
+  Q3_16-18 7056                             0.683202
+  Q4_18-21 7056                             0.686584
+
+==========================================================================================
+PART 7 -- DIRECTIONAL INDEPENDENCE (volatility relationship, tested separately from direction)
+==========================================================================================
+  pair   n  p_ny_same_direction_as_london
+EURUSD 781                       0.517286
+GBPUSD 783                       0.503193
+USDJPY 783                       0.492976
+AUDUSD 781                       0.512164
+USDCAD 783                       0.477650
+NZDUSD 778                       0.491003
+GBPJPY 784                       0.514031
+EURJPY 783                       0.530013
+CADJPY 781                       0.504481
+
+Pooled: 0.5048 -- no directional persistence (as expected, consistent with prior findings)
+The volatility relationship (Parts 1-2) is a DISTINCT question from direction and was
+tested with zero shared logic -- no directional filter was combined with the volatility study.
+
+==========================================================================================
+PART 8/9 -- PAIR AND YEAR CONSISTENCY
+==========================================================================================
+year        2023      2024      2025      2026
+pair                                          
+AUDUSD  0.769231  0.600000  0.530303  0.812500
+CADJPY  0.823529  0.765957  0.818182  0.350000
+EURJPY  0.769231  0.807229  0.703125  0.458333
+EURUSD  0.882353  0.583333  0.768421  0.675676
+GBPJPY  0.571429  0.786517  0.766667  0.592593
+GBPUSD  0.615385  0.500000  0.705882  0.611111
+NZDUSD  0.764706  0.560976  0.589744  0.674419
+USDCAD  0.764706  0.680000  0.650602  0.580645
+USDJPY  0.647059  0.808989  0.736111  0.578947
+
+==========================================================================================
+PART 11 -- NULL / RANDOMIZATION TEST
+==========================================================================================
+Methodology: within each (pair, year) group, PERMUTE which NY session is paired with
+which London session, preserving each session's own marginal range/percentile
+distribution and the pair/year grouping -- only the SAME-DAY LINKAGE is shuffled. This
+tests whether the same-day pairing itself carries information beyond each session's own
+independently-realistic volatility distribution (unlike shuffling raw values, which would
+destroy the marginal distributions and invalidate the test).
+  pair  observed_p  null_mean  null_std  percentile
+EURUSD    0.715736   0.523741  0.029989         1.0
+GBPUSD    0.624365   0.510223  0.030014         1.0
+USDJPY    0.746193   0.535345  0.028821         1.0
+AUDUSD    0.661616   0.514086  0.030440         1.0
+USDCAD    0.666667   0.516460  0.028896         1.0
+NZDUSD    0.632653   0.506204  0.030030         1.0
+GBPJPY    0.730964   0.518239  0.030257         1.0
+EURJPY    0.725888   0.524244  0.029505         1.0
+CADJPY    0.746193   0.532660  0.029950         1.0
+
+Mean percentile: 1.0000 (fraction of pairs clearing 95th pctile: 1.00)
+
+==========================================================================================
+PART 12 -- SESSION-BOUNDARY ROBUSTNESS (small pre-specified neighbor set, not searched)
+==========================================================================================
+                      definition    n  p_ny_tophalf_given_topq
+     original (L=7-12, NY=12-21) 7065                 0.694476
+shift_earlier (L=6-11, NY=11-20) 7065                 0.700282
+  shift_later (L=8-13, NY=13-22) 7065                 0.685666
