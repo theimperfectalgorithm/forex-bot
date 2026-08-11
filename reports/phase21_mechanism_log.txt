@@ -1,0 +1,304 @@
+==========================================================================================
+PHASE 21 -- AMR REGIME MECHANISM RESEARCH (volatility cause vs. trend proxy)
+Mechanism research only. AMR is NOT modified. No filter created. No threshold optimized.
+Trend/persistence window: 20 bars. Short-horizon window: 8 bars.
+Minimum sample per judged cell: 20 trades.
+==========================================================================================
+
+Reconstructing GBPJPY AMR ...
+  403 trades, {'BUY': 263, 'SELL': 140}
+
+Reconstructing EURJPY AMR ...
+  712 trades, {'BUY': 423, 'SELL': 289}
+
+Reconstructing AUDJPY AMR ...
+  652 trades, {'BUY': 412, 'SELL': 240}
+
+Reconstructing CADJPY AMR ...
+  598 trades, {'BUY': 352, 'SELL': 246}
+
+==========================================================================================
+PART 2 -- RECONFIRM VOLATILITY RELATIONSHIP (same definition as phase20)
+==========================================================================================
+
+-- GBPJPY AMR: by vol_regime --
+     regime   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+        LOW 111         False  0.747748 0.247089  0.694981   66.821171 1.924463
+ NORMAL-LOW 122         False  0.672131 0.136264  0.713008   36.372951 1.397484
+NORMAL-HIGH 105         False  0.628571 0.086970  0.733668   22.531333 1.224461
+       HIGH  65         False  0.615385 0.074139  0.756379   19.889538 1.192245
+
+-- EURJPY AMR: by vol_regime --
+     regime   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+        LOW 235         False  0.689362 0.012990  0.507031    3.674723 1.039683
+ NORMAL-LOW 224         False  0.718750 0.108207  0.562533   27.751652 1.347811
+NORMAL-HIGH 156         False  0.685897 0.072160  0.578755   18.698462 1.216915
+       HIGH  97         False  0.628866 0.005221  0.610113    1.360825 1.013590
+
+-- AUDJPY AMR: by vol_regime --
+     regime   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+        LOW 229         False  0.751092  0.103919  0.510145   26.920218 1.354972
+ NORMAL-LOW 159         False  0.729560  0.100542  0.540712   25.841195 1.325734
+NORMAL-HIGH 150         False  0.653333 -0.000580  0.561823   -0.311467 0.996872
+       HIGH 114         False  0.596491 -0.065487  0.586520  -17.310088 0.846120
+
+-- CADJPY AMR: by vol_regime --
+     regime   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+        LOW 133         False  0.812030  0.185238  0.482366   47.304436 1.848296
+ NORMAL-LOW 177         False  0.677966  0.008702  0.521739    1.945198 1.021350
+NORMAL-HIGH 165         False  0.672727  0.024369  0.549356    5.938424 1.065436
+       HIGH 123         False  0.569106 -0.105099  0.573477  -26.941789 0.764682
+
+==========================================================================================
+PART 3/4 -- TREND/PERSISTENCE VARIABLES VS VOLATILITY
+==========================================================================================
+
+-- GBPJPY AMR --
+  By trend tercile (efficiency_ratio_20):
+         trend   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+     LOW TREND 134         False  0.708955 0.195939  0.706768   52.347910 1.640302
+  NORMAL TREND 134         False  0.626866 0.056215  0.699061   16.115000 1.156022
+    HIGH TREND 135         False  0.681481 0.179359  0.725959   46.957259 1.543846
+  Volatility effect WITHIN each trend tercile (does vol remain predictive after conditioning on trend?):
+    LOW TREND: vol_LOW exp=+90.94 (n=50)  vol_HIGH exp=+6.97 (n=30)  diff=-83.97
+    NORMAL TREND: vol_LOW exp=+74.56 (n=59)  vol_HIGH exp=-28.87 (n=35)  diff=-103.43
+    HIGH TREND: vol_LOW exp=+34.30 (n=51)  vol_HIGH exp=+54.19 (n=40)  diff=+19.89
+  Trend effect WITHIN each volatility regime (does trend remain predictive after conditioning on vol?):
+    vol_LOW: trend_LOW exp=+90.94 (n=50)  trend_HIGH exp=+34.30 (n=51)  diff=-56.64
+    vol_NORMAL: trend_LOW exp=+41.82 (n=54)  trend_HIGH exp=+55.05 (n=44)  diff=+13.23
+    vol_HIGH: trend_LOW exp=+6.97 (n=30)  trend_HIGH exp=+54.19 (n=40)  diff=+47.22
+
+-- EURJPY AMR --
+  By trend tercile (efficiency_ratio_20):
+         trend   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+     LOW TREND 237         False  0.670886 0.008547  0.531987    1.830042 1.019163
+  NORMAL TREND 237         False  0.717300 0.092325  0.542456   24.069536 1.297485
+    HIGH TREND 238         False  0.680672 0.063646  0.577833   16.767605 1.190157
+  Volatility effect WITHIN each trend tercile (does vol remain predictive after conditioning on trend?):
+    LOW TREND: vol_LOW exp=+3.33 (n=111)  vol_HIGH exp=+35.11 (n=46)  diff=+31.78
+    NORMAL TREND: vol_LOW exp=+14.20 (n=117)  vol_HIGH exp=+19.81 (n=38)  diff=+5.61
+    HIGH TREND: vol_LOW exp=+25.90 (n=90)  vol_HIGH exp=-8.92 (n=71)  diff=-34.82
+  Trend effect WITHIN each volatility regime (does trend remain predictive after conditioning on vol?):
+    vol_LOW: trend_LOW exp=+3.33 (n=111)  trend_HIGH exp=+25.90 (n=90)  diff=+22.57
+    vol_NORMAL: trend_LOW exp=-19.39 (n=80)  trend_HIGH exp=+29.78 (n=77)  diff=+49.17
+    vol_HIGH: trend_LOW exp=+35.11 (n=46)  trend_HIGH exp=-8.92 (n=71)  diff=-44.03
+
+-- AUDJPY AMR --
+  By trend tercile (efficiency_ratio_20):
+         trend   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+     LOW TREND 217         False  0.732719  0.094708  0.523560   24.525115 1.310014
+  NORMAL TREND 218         False  0.669725 -0.004795  0.516818   -1.912064 0.980313
+    HIGH TREND 217         False  0.686636  0.058639  0.559631   15.429908 1.172573
+  Volatility effect WITHIN each trend tercile (does vol remain predictive after conditioning on trend?):
+    LOW TREND: vol_LOW exp=+17.82 (n=95)  vol_HIGH exp=-8.15 (n=51)  diff=-25.97
+    NORMAL TREND: vol_LOW exp=+12.74 (n=104)  vol_HIGH exp=-17.17 (n=41)  diff=-29.91
+    HIGH TREND: vol_LOW exp=+47.60 (n=82)  vol_HIGH exp=-33.94 (n=67)  diff=-81.54
+  Trend effect WITHIN each volatility regime (does trend remain predictive after conditioning on vol?):
+    vol_LOW: trend_LOW exp=+17.82 (n=95)  trend_HIGH exp=+47.60 (n=82)  diff=+29.78
+    vol_NORMAL: trend_LOW exp=+56.96 (n=71)  trend_HIGH exp=+25.28 (n=68)  diff=-31.68
+    vol_HIGH: trend_LOW exp=-8.15 (n=51)  trend_HIGH exp=-33.94 (n=67)  diff=-25.79
+
+-- CADJPY AMR --
+  By trend tercile (efficiency_ratio_20):
+         trend   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+     LOW TREND 199         False  0.723618  0.073548  0.507937   18.562362 1.235235
+  NORMAL TREND 199         False  0.663317 -0.012221  0.512526   -3.257889 0.965460
+    HIGH TREND 200         False  0.665000  0.025332  0.548104    6.281000 1.069303
+  Volatility effect WITHIN each trend tercile (does vol remain predictive after conditioning on trend?):
+    LOW TREND: vol_LOW exp=+20.15 (n=69)  vol_HIGH exp=+21.50 (n=44)  diff=+1.36
+    NORMAL TREND: vol_LOW exp=+43.35 (n=73)  vol_HIGH exp=-50.02 (n=55)  diff=-93.37
+    HIGH TREND: vol_LOW exp=+44.47 (n=55)  vol_HIGH exp=-18.29 (n=74)  diff=-62.75
+  Trend effect WITHIN each volatility regime (does trend remain predictive after conditioning on vol?):
+    vol_LOW: trend_LOW exp=+20.15 (n=69)  trend_HIGH exp=+44.47 (n=55)  diff=+24.32
+    vol_NORMAL: trend_LOW exp=+15.79 (n=86)  trend_HIGH exp=+2.30 (n=71)  diff=-13.48
+    vol_HIGH: trend_LOW exp=+21.50 (n=44)  trend_HIGH exp=-18.29 (n=74)  diff=-39.79
+
+==========================================================================================
+PART 5 -- 2D VOLATILITY x TREND REGIME MATRIX
+==========================================================================================
+
+-- GBPJPY AMR: expectancy matrix (rows=vol tercile, cols=trend tercile) --
+vol_tercile  LOW TREND_n  LOW TREND_exp  LOW TREND_pf  NORMAL TREND_n  NORMAL TREND_exp  NORMAL TREND_pf  HIGH TREND_n  HIGH TREND_exp  HIGH TREND_pf
+        LOW           50      90.942400      2.576453              59         74.564576         2.113003            51       34.304314       1.367553
+     NORMAL           54      41.820926      1.468101              40        -30.740000         0.766336            44       55.046136       1.668873
+       HIGH           30       6.972333      1.064433              35        -28.865714         0.781580            40       54.192000       1.661820
+
+-- EURJPY AMR: expectancy matrix (rows=vol tercile, cols=trend tercile) --
+vol_tercile  LOW TREND_n  LOW TREND_exp  LOW TREND_pf  NORMAL TREND_n  NORMAL TREND_exp  NORMAL TREND_pf  HIGH TREND_n  HIGH TREND_exp  HIGH TREND_pf
+        LOW          111       3.330180      1.036083             117         14.200855         1.166462            90       25.902222       1.319694
+     NORMAL           80     -19.389000      0.824460              82         40.123780         1.558087            77       29.778442       1.370582
+       HIGH           46      35.112826      1.454742              38         19.811316         1.228196            71       -8.921831       0.915617
+
+-- AUDJPY AMR: expectancy matrix (rows=vol tercile, cols=trend tercile) --
+vol_tercile  LOW TREND_n  LOW TREND_exp  LOW TREND_pf  NORMAL TREND_n  NORMAL TREND_exp  NORMAL TREND_pf  HIGH TREND_n  HIGH TREND_exp  HIGH TREND_pf
+        LOW           95      17.824211      1.221117             104         12.738558         1.149578            82       47.601951       1.731251
+     NORMAL           71      56.962394      1.975965              73        -14.215616         0.867723            68       25.281029       1.301268
+       HIGH           51      -8.150588      0.922519              41        -17.168293         0.842533            67      -33.942985       0.727904
+
+-- CADJPY AMR: expectancy matrix (rows=vol tercile, cols=trend tercile) --
+vol_tercile  LOW TREND_n  LOW TREND_exp  LOW TREND_pf  NORMAL TREND_n  NORMAL TREND_exp  NORMAL TREND_pf  HIGH TREND_n  HIGH TREND_exp  HIGH TREND_pf
+        LOW           69      20.147391      1.275886              73         43.349726         1.726862            55       44.468545       1.720527
+     NORMAL           86      15.786395      1.191422              71        -14.957183         0.855065            71        2.303239       1.024507
+       HIGH           44      21.502500      1.264881              55        -50.016182         0.611971            74      -18.285135       0.832104
+
+==========================================================================================
+PART 6 -- VOLATILITY TRANSITION (already-high vol vs. rapidly-expanding-into-entry vol)
+==========================================================================================
+vol_change_ratio = std(bar returns, last 4 bars before entry) / std(bar returns, 4 bars before that)
+-- purely backward-looking, no post-entry data.
+-- GBPJPY AMR --
+                       group   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+        EXPANDING (>=median) 202         False  0.653465 0.116222  0.717673   32.545743 1.344208
+CONTRACTING/STABLE (<median) 201         False  0.691542 0.171767  0.710206   44.472736 1.515150
+  within HIGH-ATR-regime trades only:
+                 group  n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+  HIGH-ATR + EXPANDING 53         False  0.622642  0.103794  0.756075   27.760943 1.282509
+     HIGH-ATR + STABLE 52         False  0.576923 -0.005371  0.743927   -2.015000 0.982357
+-- EURJPY AMR --
+                       group   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+        EXPANDING (>=median) 356         False  0.691011 0.060766  0.549916   16.110674 1.184447
+CONTRACTING/STABLE (<median) 356         False  0.688202 0.048938  0.544591   12.341264 1.138599
+  within HIGH-ATR-regime trades only:
+                 group  n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+  HIGH-ATR + EXPANDING 78         False  0.692308  0.108175  0.608532   28.263590 1.341267
+     HIGH-ATR + STABLE 77         False  0.623377 -0.021465  0.594888   -6.103766 0.940492
+-- AUDJPY AMR --
+                       group   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+        EXPANDING (>=median) 326         False  0.730061  0.111508  0.544776   29.067423 1.370459
+CONTRACTING/STABLE (<median) 326         False  0.662577 -0.012640  0.521497   -3.750215 0.961987
+  within HIGH-ATR-regime trades only:
+                 group  n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+  HIGH-ATR + EXPANDING 80         False  0.650000  0.018387  0.579703    4.746375 1.048878
+     HIGH-ATR + STABLE 79         False  0.531646 -0.181243  0.572426  -47.765443 0.638021
+-- CADJPY AMR --
+                       group   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+        EXPANDING (>=median) 299         False  0.655518 -0.008616  0.523297   -2.072207 0.978107
+CONTRACTING/STABLE (<median) 299         False  0.712375  0.066377  0.519095   16.459465 1.202532
+  within HIGH-ATR-regime trades only:
+                 group  n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+  HIGH-ATR + EXPANDING 87         False  0.586207 -0.074339  0.573875  -18.974138 0.825040
+     HIGH-ATR + STABLE 86         False  0.604651 -0.067905  0.562641  -17.524767 0.837688
+
+==========================================================================================
+PART 7 -- MARKET LOCATION (position within recent range)
+==========================================================================================
+-- GBPJPY AMR --
+ location   n  insufficient  win_rate    avg_r  median_r  expectancy       pf
+ NEAR_LOW 229         False  0.707424 0.204035  0.713645   54.877031 1.673283
+MID_RANGE  25         False  0.720000 0.192909  0.685310   50.486000 1.637121
+NEAR_HIGH 140         False  0.614286 0.043200  0.718728   11.457357 1.107239
+-- EURJPY AMR --
+ location   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+ NEAR_LOW 308         False  0.737013  0.139869  0.566107   36.912338 1.496396
+MID_RANGE 104         False  0.740385  0.107977  0.522588   27.681250 1.365613
+NEAR_HIGH 291         False  0.615120 -0.065024  0.532242  -17.407045 0.840430
+-- AUDJPY AMR --
+ location   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+ NEAR_LOW 318         False  0.754717  0.154465  0.547166   40.391541 1.566492
+MID_RANGE  88         False  0.784091  0.162134  0.511913   42.045795 1.637598
+NEAR_HIGH 240         False  0.587500 -0.129714  0.480848  -34.578292 0.710778
+-- CADJPY AMR --
+ location   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+ NEAR_LOW 308         False  0.733766  0.114989  0.535268   28.993247 1.392095
+MID_RANGE  38         False  0.815789  0.193259  0.473432   49.565526 1.950974
+NEAR_HIGH 246         False  0.601626 -0.103033  0.515274  -26.318455 0.762503
+
+==========================================================================================
+PART 8 -- DIRECTIONAL ASYMMETRY (BUY vs SELL, by vol regime)
+==========================================================================================
+
+-- GBPJPY AMR --
+direction vol_tercile   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+      BUY         LOW 123         False  0.796748  0.342113  0.705167   92.049187 2.597346
+      BUY      NORMAL  82         False  0.646341  0.098448  0.716181   25.362683 1.256059
+      BUY        HIGH  58         False  0.586207  0.031058  0.740089    8.748966 1.080749
+     SELL         LOW  37         False  0.567568 -0.070433  0.643137  -16.921622 0.861142
+     SELL      NORMAL  56         False  0.642857  0.093455  0.724454   24.482500 1.245454
+     SELL        HIGH  47         False  0.617021  0.072776  0.753772   18.278936 1.176664
+
+-- EURJPY AMR --
+direction vol_tercile   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+      BUY         LOW 205         False  0.780488  0.175443  0.530112   46.191707 1.711370
+      BUY      NORMAL 136         False  0.705882  0.093460  0.575232   24.418162 1.295495
+      BUY        HIGH  82         False  0.707317  0.126735  0.611034   32.706951 1.412572
+     SELL         LOW 113         False  0.575221 -0.171144  0.486158  -45.194248 0.640516
+     SELL      NORMAL 103         False  0.660194  0.028472  0.573132    6.903883 1.073455
+     SELL        HIGH  73         False  0.602740 -0.049417  0.593417  -12.978082 0.879423
+
+-- AUDJPY AMR --
+direction vol_tercile   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+      BUY         LOW 200         False  0.795000  0.182632  0.518414   47.634800 1.762102
+      BUY      NORMAL 129         False  0.775194  0.192327  0.560544   50.485969 1.778006
+      BUY        HIGH  83         False  0.662651  0.043855  0.584936   11.324337 1.119359
+     SELL         LOW  81         False  0.617284 -0.118618  0.446623  -32.166543 0.721396
+     SELL      NORMAL  83         False  0.614458 -0.080125  0.542600  -21.530000 0.808353
+     SELL        HIGH  76         False  0.513158 -0.216937  0.249076  -57.022105 0.580001
+
+-- CADJPY AMR --
+direction vol_tercile   n  insufficient  win_rate     avg_r  median_r  expectancy       pf
+      BUY         LOW 129         False  0.790698  0.158703  0.486158   40.615194 1.664433
+      BUY      NORMAL 135         False  0.755556  0.150019  0.550823   37.801259 1.549431
+      BUY        HIGH  88         False  0.647727  0.021493  0.572044    4.927273 1.053103
+     SELL         LOW  68         False  0.750000  0.102092  0.501285   25.898676 1.359294
+     SELL      NORMAL  93         False  0.548387 -0.194512  0.521173  -49.935161 0.606578
+     SELL        HIGH  85         False  0.541176 -0.167044  0.541550  -42.252706 0.659742
+
+==========================================================================================
+PART 9 -- YEAR CONSISTENCY (HIGH vs LOW vol tercile expectancy, by year)
+==========================================================================================
+
+-- GBPJPY AMR --
+ year  n_hi  n_lo         note    exp_hi     exp_lo
+ 2023     9    26 insufficient       NaN        NaN
+ 2024    43    55          NaN -9.775116  30.262909
+ 2025    40    42          NaN 15.104000 101.225000
+ 2026    13    37 insufficient       NaN        NaN
+
+-- EURJPY AMR --
+ year  n_hi  n_lo         note     exp_hi    exp_lo
+ 2023    11    53 insufficient        NaN       NaN
+ 2024    65   107          NaN -13.986000 -7.004019
+ 2025    62    77          NaN  20.619194 12.424156
+ 2026    17    81 insufficient        NaN       NaN
+
+-- AUDJPY AMR --
+ year  n_hi  n_lo         note     exp_hi     exp_lo
+ 2023     8    54 insufficient        NaN        NaN
+ 2024    49    99          NaN -57.887959  26.566061
+ 2025    61    72          NaN -14.840820  40.537639
+ 2026    41    56          NaN  -1.053171 -10.445714
+
+-- CADJPY AMR --
+ year  n_hi  n_lo         note     exp_hi    exp_lo
+ 2023    14    30 insufficient        NaN       NaN
+ 2024    64    68          NaN  -8.283437 17.682500
+ 2025    72    45          NaN -19.897222 29.958667
+ 2026    23    54          NaN -32.317826 73.300185
+
+==========================================================================================
+PART 11 -- MFE/MAE PATH ANALYSIS (post-entry, outcome-only, not used for regime classification)
+==========================================================================================
+
+-- GBPJPY AMR: mean MFE/MAE by vol tercile --
+vol_tercile   n  mean_mfe  mean_mae  mfe_mae_ratio
+        LOW 160  2.316731  1.493462       1.551249
+     NORMAL 138  2.318020  1.711355       1.354494
+       HIGH 105  2.722023  2.050117       1.327741
+
+-- EURJPY AMR: mean MFE/MAE by vol tercile --
+vol_tercile   n  mean_mfe  mean_mae  mfe_mae_ratio
+        LOW 318  1.956035  1.623035       1.205171
+     NORMAL 239  2.054991  1.601612       1.283076
+       HIGH 155  2.385946  2.058782       1.158912
+
+-- AUDJPY AMR: mean MFE/MAE by vol tercile --
+vol_tercile   n  mean_mfe  mean_mae  mfe_mae_ratio
+        LOW 281  2.048321  1.614341       1.268828
+     NORMAL 212  2.123535  1.746743       1.215712
+       HIGH 159  2.219601  2.283487       0.972023
+
+-- CADJPY AMR: mean MFE/MAE by vol tercile --
+vol_tercile   n  mean_mfe  mean_mae  mfe_mae_ratio
+        LOW 197  2.059483  1.424676       1.445580
+     NORMAL 228  1.972250  1.617916       1.219007
+       HIGH 173  2.220331  2.268628       0.978711
