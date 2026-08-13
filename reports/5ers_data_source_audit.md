@@ -54,9 +54,13 @@
 - Requires an explicit `--account` label (no default) so an export can never be silently mislabeled as belonging to a particular account.
 - Populates every field the current data genuinely can't answer with the literal string `NOT_AVAILABLE`, never a guess.
 
-To run this against real 5ers data, execute it on a machine (or VPS session) whose `data/` directory belongs to the 5ers-bound clone, e.g.:
+**Updated 2026-08-13**: the script now takes explicit `--trades` / `--journal` / `--output` paths (no `--data-dir` default), supports `--dry-run` (join + validation summary only, no file written), includes OPEN trades alongside CLOSED (tagged via a `status` column), and refuses to write `--output` anywhere inside either source file's directory tree. To run this against real 5ers data on the VPS, from a separate research directory:
 ```
-python scripts/export_5ers_trades.py --data-dir C:\forex-bot-5ers\data --account 5ERS-<login> --out reports/5ers_trade_export.csv
+python export_5ers_trades.py `
+  --trades "C:\forex-bot-5ers\data\trades_log.csv" `
+  --journal "C:\forex-bot-5ers\data\journal\events.jsonl" `
+  --output "C:\5ers-research\5ers_trade_export.csv" `
+  --account 5ERS-<login>
 ```
 
 ---
