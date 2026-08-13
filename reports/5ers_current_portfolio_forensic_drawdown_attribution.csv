@@ -1,0 +1,8 @@
+strategy,trades,wins,losses,dollar_contribution,R_contribution,pct_of_total_loss_usd,pct_of_total_loss_R
+AUDJPY_AMR,9,2,7,-37.93,-3.12,28.7,32.7
+CADJPY_AMR,6,1,5,-24.75,-2.04,15.2,17.5
+CADJPY_ARB,3,1,2,-3.77,-0.18,24.7,14.1
+EURJPY_AMR,9,5,4,-12.51,-1.0,23.5,26.6
+GBPJPY_AMR,2,2,0,10.53,0.87,-0.0,-0.0
+GBPUSD_MONDAY,3,1,2,-11.77,-0.96,7.9,9.1
+GBPJPY_ARB (pre-demotion),3,0,3,-104.84,-4.23,63.7,35.9

@@ -1,0 +1,8 @@
+trades,wins,losses,win_rate_pct,total_pnl,total_R,avg_R,median_R,expectancy_R,profit_factor,avg_win_usd,avg_loss_usd,payoff_ratio,max_losing_streak,current_losing_streak,max_winning_streak,max_drawdown_R,current_drawdown_R,largest_single_loss_usd,largest_single_win_usd,pct_SL,pct_TP,pct_scheduled_exit,avg_holding_hours,median_holding_hours,strategy,is_current_six
+9,2,7,22.2,-37.93,-3.12,-0.347,-0.43,-0.347,0.195,4.61,-6.73,0.68,6,6,2,-2.84,-2.84,-12.72,7.96,55.6,11.1,33.3,5.93,6.41,AUDJPY_AMR,True
+6,1,5,16.7,-24.75,-2.04,-0.34,-0.32,-0.34,0.011,0.28,-5.01,0.06,5,0,1,-1.88,-1.86,-8.72,0.28,33.3,0.0,66.7,7.72,7.38,CADJPY_AMR,True
+3,1,2,33.3,-3.77,-0.18,-0.06,-0.5,-0.06,0.907,36.83,-20.3,1.81,2,2,1,-1.66,-1.66,-28.59,36.83,66.7,33.3,0.0,17.29,10.96,CADJPY_ARB,True
+9,5,4,55.6,-12.51,-1.0,-0.111,0.08,-0.111,0.677,5.24,-9.67,0.54,2,0,2,-2.24,-1.79,-12.75,8.5,33.3,44.4,22.2,5.36,4.53,EURJPY_AMR,True
+2,2,0,100.0,10.53,0.87,0.435,0.435,0.435,INF,5.26,NOT_AVAILABLE,NOT_AVAILABLE,0,0,2,0.0,0.0,NOT_AVAILABLE,6.27,0.0,50.0,50.0,5.36,5.36,GBPJPY_AMR,True
+3,0,3,0.0,-104.84,-4.23,-1.41,-1.38,-1.41,0.0,NOT_AVAILABLE,-34.95,NOT_AVAILABLE,3,3,0,-3.03,-3.03,-40.78,NOT_AVAILABLE,100.0,0.0,0.0,12.01,12.48,GBPJPY_ARB,False
+3,1,2,33.3,-11.77,-0.96,-0.32,-0.43,-0.32,0.099,1.29,-6.53,0.2,2,0,1,-0.64,-0.53,-7.76,1.29,0.0,0.0,100.0,23.0,23.0,GBPUSD_MONDAY,True
