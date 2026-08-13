@@ -1,0 +1,464 @@
+==========================================================================================
+PHASE 26 -- CURRENT 6-STRATEGY LIVE PORTFOLIO REVALIDATION (frozen params, no tuning)
+==========================================================================================
+STEP 0 -- FROZEN SPECIFICATION (verified directly against pairs/*.yaml, 2026-08-13):
+  CADJPY_ARB: {'family': 'ARB', 'pair': 'CADJPY', 'tf': 'H1', 'spread': 2.0, 'risk': 0.005, 'params': {'tp_mult': 2.0, 'use_h4': False, 'min_range': 10}}
+  GBPJPY_AMR: {'family': 'AMR', 'pair': 'GBPJPY', 'tf': 'M15', 'spread': 2.0, 'risk': 0.0025, 'params': {'z_thr': 2.5, 'sl_mult': 1.25, 'end_hour': 4}}
+  EURJPY_AMR: {'family': 'AMR', 'pair': 'EURJPY', 'tf': 'M15', 'spread': 2.0, 'risk': 0.0025, 'params': {'z_thr': 2.0, 'sl_mult': 1.5, 'end_hour': 6}}
+  AUDJPY_AMR: {'family': 'AMR', 'pair': 'AUDJPY', 'tf': 'M15', 'spread': 2.0, 'risk': 0.0025, 'params': {'z_thr': 2.0, 'sl_mult': 1.5, 'end_hour': 4}}
+  CADJPY_AMR: {'family': 'AMR', 'pair': 'CADJPY', 'tf': 'M15', 'spread': 2.0, 'risk': 0.0025, 'params': {'z_thr': 2.0, 'sl_mult': 1.5, 'end_hour': 4}}
+  GBPUSD_MONDAY: {'family': 'MONDAY', 'pair': 'GBPUSD', 'tf': 'H1', 'spread': 1.2, 'risk': 0.0025, 'params': {'sl_mult': 1.25, 'tp_mult': 1.0}}
+
+Reconstructing CADJPY_ARB ...
+  192 trades, 2023-08-02 08:00:00+00:00 to 2026-07-23 08:00:00+00:00
+
+Reconstructing GBPJPY_AMR ...
+  403 trades, 2023-08-01 02:00:00+00:00 to 2026-08-11 03:30:00+00:00
+
+Reconstructing EURJPY_AMR ...
+  713 trades, 2023-08-01 02:00:00+00:00 to 2026-08-13 00:00:00+00:00
+
+Reconstructing AUDJPY_AMR ...
+  651 trades, 2023-08-01 00:00:00+00:00 to 2026-08-11 02:45:00+00:00
+
+Reconstructing CADJPY_AMR ...
+  599 trades, 2023-08-01 03:45:00+00:00 to 2026-08-12 00:15:00+00:00
+
+Reconstructing GBPUSD_MONDAY ...
+  154 trades, 2023-08-28 00:00:00+00:00 to 2026-08-10 00:00:00+00:00
+
+==========================================================================================
+STEP 3 -- HISTORICAL BASELINE (full reconstruction)
+==========================================================================================
+
+-- CADJPY_ARB --
+{'n': 192, 'win_rate': 0.4895833333333333, 'loss_rate': 0.5104166666666666, 'pf': 1.262725629375795, 'expectancy_r': 0.13262094399779834, 'avg_r': 0.13262094399779834, 'median_r': -0.14954034510936623, 'total_r': 25.46322124757728, 'avg_winner': 673.7854255319149, 'avg_loser': -511.8166326530612, 'payoff_ratio': 1.316458634881148, 'max_dd_r': -14.867726728299361, 'max_losing_streak': 10, 'max_winning_streak': 6, 'avg_hold_hours': 26.307291666666668, 'median_hold_hours': 13.0, 'total_pnl': 13177.799999999997}
+  Year-by-year:
+    2023: n=25 win_rate=0.560 pf=1.622 expectancy_r=+0.2969 total_r=+7.42
+    2024: n=64 win_rate=0.406 pf=0.931 expectancy_r=-0.0358 total_r=-2.29
+    2025: n=75 win_rate=0.520 pf=1.408 expectancy_r=+0.1875 total_r=+14.06
+    2026: n=28 win_rate=0.536 pf=1.449 expectancy_r=+0.2239 total_r=+6.27
+
+-- GBPJPY_AMR --
+{'n': 403, 'win_rate': 0.6724565756823822, 'loss_rate': 0.32754342431761785, 'pf': 1.4255820071782328, 'expectancy_r': 0.143933545383942, 'avg_r': 0.143933545383942, 'median_r': 0.712828770799829, 'total_r': 58.00521878972863, 'avg_winner': 191.75324723247235, 'avg_loser': -276.1505303030303, 'payoff_ratio': 0.6943794278506522, 'max_dd_r': -7.276392916884738, 'max_losing_streak': 5, 'max_winning_streak': 17, 'avg_hold_hours': 4.228908188585608, 'median_hold_hours': 1.5, 'total_pnl': 15513.259999999998}
+  Year-by-year:
+    2023: n=45 win_rate=0.622 pf=1.093 expectancy_r=+0.0387 total_r=+1.74
+    2024: n=148 win_rate=0.628 pf=1.153 expectancy_r=+0.0618 total_r=+9.14
+    2025: n=139 win_rate=0.698 pf=1.651 expectancy_r=+0.2022 total_r=+28.11
+    2026: n=71 win_rate=0.746 pf=1.991 expectancy_r=+0.2678 total_r=+19.01
+
+-- EURJPY_AMR --
+{'n': 713, 'win_rate': 0.6900420757363254, 'loss_rate': 0.30995792426367463, 'pf': 1.163320373044513, 'expectancy_r': 0.055329943852328166, 'avg_r': 0.055329943852328166, 'median_r': 0.5476190476189342, 'total_r': 39.45024996670998, 'avg_winner': 148.25056910569106, 'avg_loser': -283.70687782805436, 'payoff_ratio': 0.5225483789488564, 'max_dd_r': -17.23238715665266, 'max_losing_streak': 4, 'max_winning_streak': 12, 'avg_hold_hours': 3.1742636746143056, 'median_hold_hours': 1.25, 'total_pnl': 10240.060000000001}
+  Year-by-year:
+    2023: n=93 win_rate=0.731 pf=1.382 expectancy_r=+0.1150 total_r=+10.69
+    2024: n=244 win_rate=0.656 pf=0.989 expectancy_r=-0.0036 total_r=-0.88
+    2025: n=232 win_rate=0.690 pf=1.196 expectancy_r=+0.0655 total_r=+15.20
+    2026: n=144 win_rate=0.722 pf=1.326 expectancy_r=+0.1003 total_r=+14.44
+
+-- AUDJPY_AMR --
+{'n': 651, 'win_rate': 0.6973886328725039, 'loss_rate': 0.30261136712749614, 'pf': 1.148372874814579, 'expectancy_r': 0.05116098320993251, 'avg_r': 0.05116098320993251, 'median_r': 0.5302633874061495, 'total_r': 33.30580006966606, 'avg_winner': 145.76129955947138, 'avg_loser': -292.51553299492383, 'payoff_ratio': 0.498302767265357, 'max_dd_r': -10.24743135659551, 'max_losing_streak': 5, 'max_winning_streak': 18, 'avg_hold_hours': 2.9516129032258065, 'median_hold_hours': 1.25, 'total_pnl': 8550.07}
+  Year-by-year:
+    2023: n=92 win_rate=0.793 pf=1.797 expectancy_r=+0.1910 total_r=+17.57
+    2024: n=224 win_rate=0.674 pf=1.001 expectancy_r=+0.0012 total_r=+0.28
+    2025: n=209 win_rate=0.699 pf=1.211 expectancy_r=+0.0692 total_r=+14.46
+    2026: n=126 win_rate=0.667 pf=1.019 expectancy_r=+0.0079 total_r=+0.99
+
+-- CADJPY_AMR --
+{'n': 599, 'win_rate': 0.6844741235392321, 'loss_rate': 0.31552587646076796, 'pf': 1.084031881635512, 'expectancy_r': 0.02961981076584899, 'avg_r': 0.02961981076584899, 'median_r': 0.5211241392144932, 'total_r': 17.742266648743545, 'avg_winner': 139.0721951219512, 'avg_loser': -278.30455026455024, 'payoff_ratio': 0.49971225763197985, 'max_dd_r': -15.415697404679126, 'max_losing_streak': 6, 'max_winning_streak': 14, 'avg_hold_hours': 3.7262103505843074, 'median_hold_hours': 1.5, 'total_pnl': 4420.040000000001}
+  Year-by-year:
+    2023: n=75 win_rate=0.693 pf=1.092 expectancy_r=+0.0324 total_r=+2.43
+    2024: n=210 win_rate=0.676 pf=1.033 expectancy_r=+0.0125 total_r=+2.62
+    2025: n=201 win_rate=0.657 pf=1.002 expectancy_r=+0.0016 total_r=+0.31
+    2026: n=113 win_rate=0.743 pf=1.383 expectancy_r=+0.1095 total_r=+12.38
+
+-- GBPUSD_MONDAY --
+{'n': 154, 'win_rate': 0.6298701298701299, 'loss_rate': 0.37012987012987014, 'pf': 2.104660859796895, 'expectancy_r': 0.13077046713842255, 'avg_r': 0.13077046713842255, 'median_r': 0.1254518976019738, 'total_r': 20.13865193931707, 'avg_winner': 101.2101030927835, 'avg_loser': -81.83491228070176, 'payoff_ratio': 1.2367594743136394, 'max_dd_r': -2.2255671782358957, 'max_losing_streak': 4, 'max_winning_streak': 9, 'avg_hold_hours': 20.2012987012987, 'median_hold_hours': 21.0, 'total_pnl': 5152.79}
+  Year-by-year:
+    2023: n=18 win_rate=0.722 pf=1.826 expectancy_r=+0.1009 total_r=+1.82
+    2024: n=52 win_rate=0.558 pf=1.164 expectancy_r=+0.0239 total_r=+1.24
+    2025: n=52 win_rate=0.615 pf=2.830 expectancy_r=+0.1880 total_r=+9.78
+    2026: n=32 win_rate=0.719 pf=3.188 expectancy_r=+0.2283 total_r=+7.31
+
+==========================================================================================
+STEP 4 -- TRUE OUT-OF-SAMPLE (chronological, frozen params, no re-fit)
+==========================================================================================
+CADJPY_ARB: OOS window (trailing 12mo, 2025-07-23 to 2026-07-23): {'n': 64, 'win_rate': 0.53125, 'loss_rate': 0.46875, 'pf': 1.5190530948645593, 'expectancy_r': 0.24796423171330448, 'avg_r': 0.24796423171330448, 'median_r': 0.19796892341842537, 'total_r': 15.869710829651487, 'avg_winner': 731.6041176470588, 'avg_loser': -545.8343333333332, 'payoff_ratio': 1.340340966056964, 'max_dd_r': -7.550907368561415, 'max_losing_streak': 6, 'max_winning_streak': 6, 'avg_hold_hours': 27.484375, 'median_hold_hours': 21.5, 'total_pnl': 8499.51}
+GBPJPY_AMR: OOS window (trailing 12mo, 2025-08-11 to 2026-08-11): {'n': 127, 'win_rate': 0.7559055118110236, 'loss_rate': 0.2440944881889764, 'pf': 2.1005150005700304, 'expectancy_r': 0.28702229956826164, 'avg_r': 0.28702229956826164, 'median_r': 0.7111111111110703, 'total_r': 36.451832045169226, 'avg_winner': 199.5996875, 'avg_loser': -294.2683870967742, 'payoff_ratio': 0.6782913022674056, 'max_dd_r': -4.861861994149638, 'max_losing_streak': 3, 'max_winning_streak': 17, 'avg_hold_hours': 4.708661417322834, 'median_hold_hours': 1.5, 'total_pnl': 10039.250000000004}
+EURJPY_AMR: OOS window (trailing 12mo, 2025-08-13 to 2026-08-13): {'n': 236, 'win_rate': 0.7245762711864406, 'loss_rate': 0.2754237288135593, 'pf': 1.3428172057207104, 'expectancy_r': 0.10443417329908918, 'avg_r': 0.10443417329908918, 'median_r': 0.5398967159562709, 'total_r': 24.646464898585045, 'avg_winner': 149.88619883040937, 'avg_loser': -293.6483076923077, 'payoff_ratio': 0.5104275928178139, 'max_dd_r': -5.185923264463753, 'max_losing_streak': 3, 'max_winning_streak': 10, 'avg_hold_hours': 2.9766949152542375, 'median_hold_hours': 1.25, 'total_pnl': 6543.400000000001}
+AUDJPY_AMR: OOS window (trailing 12mo, 2025-08-11 to 2026-08-11): {'n': 205, 'win_rate': 0.6926829268292682, 'loss_rate': 0.3073170731707317, 'pf': 1.1435593865199365, 'expectancy_r': 0.04985232575943923, 'avg_r': 0.04985232575943923, 'median_r': 0.5386565272496288, 'total_r': 10.219726780685042, 'avg_winner': 151.13007042253523, 'avg_loser': -297.8790476190476, 'payoff_ratio': 0.5073538123292676, 'max_dd_r': -9.425921238597732, 'max_losing_streak': 5, 'max_winning_streak': 16, 'avg_hold_hours': 3.325609756097561, 'median_hold_hours': 1.25, 'total_pnl': 2694.0900000000006}
+CADJPY_AMR: OOS window (trailing 12mo, 2025-08-12 to 2026-08-12): {'n': 189, 'win_rate': 0.7301587301587301, 'loss_rate': 0.2698412698412698, 'pf': 1.3053916417427853, 'expectancy_r': 0.09157993460447336, 'avg_r': 0.09157993460447336, 'median_r': 0.5186020293122717, 'total_r': 17.308607640245466, 'avg_winner': 135.74521739130432, 'avg_loser': -281.37960784313725, 'payoff_ratio': 0.48242734586146413, 'max_dd_r': -6.2980725783755585, 'max_losing_streak': 4, 'max_winning_streak': 14, 'avg_hold_hours': 3.312169312169312, 'median_hold_hours': 1.25, 'total_pnl': 4382.4800000000005}
+GBPUSD_MONDAY: OOS window (trailing 12mo, 2025-08-10 to 2026-08-10): {'n': 53, 'win_rate': 0.6226415094339622, 'loss_rate': 0.37735849056603776, 'pf': 2.9292512916267777, 'expectancy_r': 0.17730324015359264, 'avg_r': 0.17730324015359264, 'median_r': 0.16295046402314137, 'total_r': 9.39707172814041, 'avg_winner': 112.19121212121212, 'avg_loser': -63.195499999999996, 'payoff_ratio': 1.7753038131071377, 'max_dd_r': -1.650362296586783, 'max_losing_streak': 4, 'max_winning_streak': 9, 'avg_hold_hours': 20.37735849056604, 'median_hold_hours': 21.0, 'total_pnl': 2438.3999999999996}
+
+NOTE: this is a RECOMPUTED trailing-12-month OOS window using the exact frozen live
+parameters, run fresh in this script -- NOT the original discovery-time OOS figures
+(which were never persisted at trade level). Labeled explicitly, not blended.
+
+==========================================================================================
+STEP 5 -- WALK-FORWARD (6-month rolling windows, frozen params)
+==========================================================================================
+
+-- CADJPY_ARB -- 11 windows
+window_start window_end  n  win_rate       pf  expectancy_r   total_r
+  2023-08-02 2024-01-29 30  0.533333 1.558556      0.266366  7.990968
+  2023-10-31 2024-04-28 33  0.545455 1.674423      0.307479 10.146817
+  2024-01-29 2024-07-27 29  0.586207 1.633474      0.283450  8.220040
+  2024-04-28 2024-10-25 30  0.300000 0.641529     -0.223948 -6.718430
+  2024-07-27 2025-01-23 36  0.305556 0.585311     -0.243271 -8.757773
+  2024-10-25 2025-04-23 36  0.388889 0.720825     -0.157691 -5.676867
+  2025-01-23 2025-07-22 33  0.484848 1.124482      0.064857  2.140276
+  2025-04-23 2025-10-20 37  0.621622 2.118248      0.407650 15.083047
+  2025-07-22 2026-01-18 40  0.525000 1.505352      0.237419  9.496780
+  2025-10-20 2026-04-18 33  0.424242 0.973850     -0.011793 -0.389174
+  2026-01-18 2026-07-17 23  0.521739 1.460475      0.237361  5.459310
+  % profitable windows (n>=10): 63.6%  median PF: 1.460  worst PF: 0.585  best PF: 2.118
+
+-- GBPJPY_AMR -- 11 windows
+window_start window_end  n  win_rate       pf  expectancy_r   total_r
+  2023-08-01 2024-01-28 54  0.611111 1.041101      0.018347  0.990760
+  2023-10-30 2024-04-27 66  0.575758 0.900124     -0.044824 -2.958375
+  2024-01-28 2024-07-26 62  0.661290 1.297587      0.109767  6.805582
+  2024-04-27 2024-10-24 75  0.680000 1.475096      0.161248 12.093591
+  2024-07-26 2025-01-22 85  0.611765 1.103471      0.043376  3.686978
+  2024-10-24 2025-04-22 73  0.616438 1.134666      0.054725  3.994942
+  2025-01-22 2025-07-21 72  0.666667 1.468303      0.159200 11.462375
+  2025-04-22 2025-10-19 70  0.714286 1.829847      0.236443 16.551041
+  2025-07-21 2026-01-17 64  0.750000 2.054343      0.279181 17.867613
+  2025-10-19 2026-04-17 66  0.666667 1.382039      0.135717  8.957334
+  2026-01-17 2026-07-16 59  0.728814 1.830111      0.239656 14.139727
+  % profitable windows (n>=10): 90.9%  median PF: 1.382  worst PF: 0.900  best PF: 2.054
+
+-- EURJPY_AMR -- 11 windows
+window_start window_end   n  win_rate       pf  expectancy_r   total_r
+  2023-08-01 2024-01-28 111  0.747748 1.512163      0.143603 15.939941
+  2023-10-30 2024-04-27 119  0.689076 1.101103      0.035266  4.196690
+  2024-01-28 2024-07-26 117  0.666667 0.984273     -0.005168 -0.604616
+  2024-04-27 2024-10-24 119  0.621849 0.877888     -0.049651 -5.908463
+  2024-07-26 2025-01-22 124  0.604839 0.840914     -0.066564 -8.253940
+  2024-10-24 2025-04-22 114  0.631579 0.958352     -0.015576 -1.775708
+  2025-01-22 2025-07-21 112  0.678571 1.173123      0.059960  6.715512
+  2025-04-22 2025-10-19 113  0.716814 1.337487      0.105235 11.891568
+  2025-07-21 2026-01-17 115  0.730435 1.396645      0.117190 13.476836
+  2025-10-19 2026-04-17 121  0.727273 1.388046      0.116487 14.094919
+  2026-01-17 2026-07-16 117  0.717949 1.320394      0.098959 11.578224
+  % profitable windows (n>=10): 63.6%  median PF: 1.173  worst PF: 0.841  best PF: 1.512
+
+-- AUDJPY_AMR -- 11 windows
+window_start window_end   n  win_rate       pf  expectancy_r   total_r
+  2023-08-01 2024-01-28 110  0.772727 1.584550      0.154785 17.026340
+  2023-10-30 2024-04-27 113  0.707965 1.135647      0.046118  5.211375
+  2024-01-28 2024-07-26 106  0.698113 1.054563      0.019702  2.088371
+  2024-04-27 2024-10-24 109  0.688073 1.089518      0.031458  3.428868
+  2024-07-26 2025-01-22 112  0.642857 0.934559     -0.024937 -2.792954
+  2024-10-24 2025-04-22 109  0.614679 0.849226     -0.062107 -6.769611
+  2025-01-22 2025-07-21 107  0.691589 1.201937      0.067600  7.233183
+  2025-04-22 2025-10-19  96  0.697917 1.175057      0.058893  5.653768
+  2025-07-21 2026-01-17  99  0.717172 1.281248      0.087794  8.691626
+  2025-10-19 2026-04-17 107  0.691589 1.174199      0.060008  6.420856
+  2026-01-17 2026-07-16 103  0.660194 0.997519     -0.000150 -0.015406
+  % profitable windows (n>=10): 72.7%  median PF: 1.136  worst PF: 0.849  best PF: 1.585
+
+-- CADJPY_AMR -- 11 windows
+window_start window_end   n  win_rate       pf  expectancy_r   total_r
+  2023-08-01 2024-01-28  90  0.700000 1.130541      0.044727  4.025468
+  2023-10-30 2024-04-27  93  0.623656 0.795150     -0.084736 -7.880407
+  2024-01-28 2024-07-26  94  0.712766 1.164406      0.053748  5.052348
+  2024-04-27 2024-10-24 113  0.672566 1.028855      0.010982  1.241004
+  2024-07-26 2025-01-22 115  0.643478 0.933041     -0.025374 -2.917993
+  2024-10-24 2025-04-22 108  0.675926 1.114160      0.040763  4.402375
+  2025-01-22 2025-07-21 102  0.617647 0.899315     -0.039803 -4.059949
+  2025-04-22 2025-10-19  91  0.604396 0.790642     -0.087377 -7.951313
+  2025-07-21 2026-01-17  94  0.723404 1.284367      0.086639  8.144108
+  2025-10-19 2026-04-17 105  0.695238 1.127319      0.044081  4.628463
+  2026-01-17 2026-07-16  92  0.739130 1.354632      0.102270  9.408851
+  % profitable windows (n>=10): 63.6%  median PF: 1.114  worst PF: 0.791  best PF: 1.355
+
+-- GBPUSD_MONDAY -- 10 windows
+window_start window_end  n  win_rate       pf  expectancy_r   total_r
+  2023-08-28 2024-02-24 25  0.640000 1.261696      0.037568  0.939198
+  2023-11-26 2024-05-24 25  0.600000 0.871231     -0.020710 -0.517759
+  2024-02-24 2024-08-22 26  0.692308 1.825743      0.092421  2.402940
+  2024-05-24 2024-11-20 26  0.576923 1.428784      0.053417  1.388848
+  2024-08-22 2025-02-18 26  0.500000 1.586945      0.080527  2.093706
+  2024-11-20 2025-05-19 25  0.640000 2.377086      0.189700  4.742501
+  2025-02-18 2025-08-17 25  0.680000 2.453681      0.207657  5.191425
+  2025-05-19 2025-11-15 26  0.615385 2.461499      0.157991  4.107767
+  2025-08-17 2026-02-13 26  0.576923 3.951388      0.195625  5.086254
+  2025-11-15 2026-05-14 26  0.615385 4.134885      0.248486  6.460635
+  % profitable windows (n>=10): 90.0%  median PF: 2.101  worst PF: 0.871  best PF: 4.135
+
+==========================================================================================
+STEP 6 -- COST STRESS
+==========================================================================================
+
+-- CADJPY_ARB --
+   scenario   n  win_rate  loss_rate       pf  expectancy_r    avg_r  median_r   total_r  avg_winner   avg_loser  payoff_ratio   max_dd_r  max_losing_streak  max_winning_streak  avg_hold_hours  median_hold_hours  total_pnl
+     normal 192  0.489583   0.510417 1.262726      0.132621 0.132621 -0.149540 25.463221  673.785426 -511.816633      1.316459 -14.867727                 10                   6       26.307292               13.0   13177.80
+1.5x_spread 192  0.489583   0.510417 1.209750      0.109221 0.109221 -0.157648 20.970407  654.381809 -518.844592      1.261229 -16.031288                 10                   6       26.307292               13.0   10665.12
+  2x_spread 192  0.489583   0.510417 1.159326      0.085821 0.085821 -0.165755 16.477592  635.358511 -525.672041      1.208660 -17.194849                 10                   6       26.307292               13.0    8207.84
+ 1bar_delay 196  0.448980   0.551020 1.144766      0.079535 0.079535 -0.394957 15.588918  693.163068 -493.375463      1.404940 -13.434890                  9                   8       24.484694               12.0    7713.80
+  Classification: ROBUST (PF normal=1.263, PF@2x=1.159)
+
+-- GBPJPY_AMR --
+   scenario   n  win_rate  loss_rate       pf  expectancy_r    avg_r  median_r   total_r  avg_winner   avg_loser  payoff_ratio   max_dd_r  max_losing_streak  max_winning_streak  avg_hold_hours  median_hold_hours  total_pnl
+     normal 403  0.672457   0.327543 1.425582      0.143934 0.143934  0.712829 58.005219  191.753247 -276.150530      0.694379  -7.276393                  5                  17        4.228908                1.5   15513.26
+1.5x_spread 403  0.672457   0.327543 1.313259      0.109576 0.109576  0.670045 44.159294  179.205018 -280.152879      0.639669  -9.489073                  5                  17        4.228908                1.5   11584.38
+  2x_spread 403  0.672457   0.327543 1.207780      0.075219 0.075219  0.627367 30.313368  167.066347 -283.985833      0.588291 -12.555483                  5                  17        4.228908                1.5    7788.85
+ 1bar_delay 403  0.657568   0.342432 1.321042      0.116892 0.116892  0.712551 47.107595  192.656264 -280.048623      0.687939  -9.880971                  4                  13        4.488213                2.0   12407.20
+  Classification: ROBUST (PF normal=1.426, PF@2x=1.208)
+
+-- EURJPY_AMR --
+   scenario   n  win_rate  loss_rate       pf  expectancy_r     avg_r  median_r    total_r  avg_winner   avg_loser  payoff_ratio   max_dd_r  max_losing_streak  max_winning_streak  avg_hold_hours  median_hold_hours  total_pnl
+     normal 713  0.690042   0.309958 1.163320      0.055330  0.055330  0.547619  39.450250  148.250569 -283.706878      0.522548 -17.232387                  4                  12        3.174264               1.25   10240.06
+1.5x_spread 713  0.690042   0.309958 1.020328      0.007749  0.007749  0.488095   5.525027  130.164858 -284.005611      0.458318 -28.836747                  4                  12        3.174264               1.25    1275.87
+  2x_spread 713  0.690042   0.309958 0.889071     -0.039832 -0.039832  0.428970 -28.400196  113.389411 -283.928326      0.399359 -42.752144                  4                  12        3.174264               1.25   -6960.57
+ 1bar_delay 710  0.659155   0.340845 1.015634      0.006405  0.006405  0.543719   4.547520  142.324957 -271.003058      0.525178 -26.874282                  4                  13        3.622887               1.75    1025.34
+  Classification: COST-FRAGILE (PF normal=1.163, PF@2x=0.889)
+
+-- AUDJPY_AMR --
+   scenario   n  win_rate  loss_rate       pf  expectancy_r     avg_r  median_r    total_r  avg_winner   avg_loser  payoff_ratio   max_dd_r  max_losing_streak  max_winning_streak  avg_hold_hours  median_hold_hours  total_pnl
+     normal 651  0.697389   0.302611 1.148373      0.051161  0.051161  0.530263  33.305800  145.761300 -292.515533      0.498303 -10.247431                  5                  18        2.951613               1.25    8550.07
+1.5x_spread 651  0.697389   0.302611 0.986726     -0.003954 -0.003954  0.462544  -2.574310  124.888194 -291.685279      0.428161 -23.270378                  5                  18        2.951613               1.25    -762.76
+  2x_spread 651  0.697389   0.302611 0.837859     -0.059070 -0.059070  0.394759 -38.454420  105.601982 -290.462944      0.363564 -50.447904                  5                  18        2.951613               1.25   -9277.90
+ 1bar_delay 655  0.667176   0.332824 1.001930      0.001495  0.001495  0.525842   0.978904  139.916545 -279.934679      0.499819 -18.522372                  5                  18        2.927481               1.25     117.77
+  Classification: COST-FRAGILE (PF normal=1.148, PF@2x=0.838)
+
+-- CADJPY_AMR --
+   scenario   n  win_rate  loss_rate       pf  expectancy_r     avg_r  median_r    total_r  avg_winner   avg_loser  payoff_ratio   max_dd_r  max_losing_streak  max_winning_streak  avg_hold_hours  median_hold_hours  total_pnl
+     normal 599  0.684474   0.315526 1.084032      0.029620  0.029620  0.521124  17.742267  139.072195 -278.304550      0.499712 -15.415697                  6                  14        3.726210               1.50    4420.04
+1.5x_spread 599  0.684474   0.315526 0.923811     -0.026689 -0.026689  0.447132 -15.986984  118.989902 -279.414603      0.425854 -34.753005                  6                  14        3.726210               1.50   -4023.50
+  2x_spread 599  0.684474   0.315526 0.777395     -0.082999 -0.082999  0.373832 -49.716235  100.386902 -280.128519      0.358360 -61.131011                  6                  14        3.726210               1.50  -11785.66
+ 1bar_delay 602  0.676080   0.323920 1.043260      0.016028  0.016028  0.520488   9.649110  138.080737 -276.248718      0.499842 -14.245848                  5                  15        3.872093               1.75    2330.36
+  Classification: COST-FRAGILE (PF normal=1.084, PF@2x=0.777)
+
+-- GBPUSD_MONDAY --
+   scenario   n  win_rate  loss_rate       pf  expectancy_r    avg_r  median_r   total_r  avg_winner  avg_loser  payoff_ratio  max_dd_r  max_losing_streak  max_winning_streak  avg_hold_hours  median_hold_hours  total_pnl
+     normal 154  0.629870   0.370130 2.104661      0.130770 0.130770  0.125452 20.138652  101.210103 -81.834912      1.236759 -2.225567                  4                   9       20.201299               21.0    5152.79
+1.5x_spread 154  0.623377   0.376623 2.038737      0.125180 0.125180  0.119729 19.277709  100.725937 -81.775517      1.231737 -2.325564                  4                   9       20.201299               21.0    4926.71
+  2x_spread 154  0.623377   0.376623 1.974997      0.119589 0.119589  0.114006 18.416766   99.198542 -83.134655      1.193227 -2.425561                  4                   9       20.201299               21.0    4701.25
+ 1bar_delay 154  0.597403   0.402597 1.730367      0.094160 0.094160  0.122254 14.500594   94.816413 -81.309516      1.166117 -2.497813                  4                   9       19.538961               20.0    3681.92
+  Classification: ROBUST (PF normal=2.105, PF@2x=1.975)
+
+==========================================================================================
+STEP 7 -- PARAMETER SENSITIVITY (small neighborhood, NOT optimization)
+==========================================================================================
+
+-- CADJPY_ARB --
+  tp_mult: 1.8=PF1.272 | 1.9=PF1.245 | 2.0=PF1.263 | 2.1=PF1.313 | 2.2=PF1.270
+    frozen=1.263  worst_neighbor=1.245  best_neighbor=1.313  isolated_peak=False
+
+-- GBPJPY_AMR --
+  z_thr: 2.25=PF1.442 | 2.375=PF1.355 | 2.5=PF1.426 | 2.625=PF1.644 | 2.75=PF1.781
+    frozen=1.426  worst_neighbor=1.355  best_neighbor=1.781  isolated_peak=False
+  sl_mult: 1.125=PF1.455 | 1.188=PF1.497 | 1.25=PF1.426 | 1.312=PF1.408 | 1.375=PF1.429
+    frozen=1.426  worst_neighbor=1.408  best_neighbor=1.497  isolated_peak=False
+
+-- EURJPY_AMR --
+  z_thr: 1.8=PF1.187 | 1.9=PF1.175 | 2.0=PF1.163 | 2.1=PF1.168 | 2.2=PF1.102
+    frozen=1.163  worst_neighbor=1.102  best_neighbor=1.187  isolated_peak=False
+  sl_mult: 1.35=PF1.187 | 1.425=PF1.198 | 1.5=PF1.163 | 1.575=PF1.174 | 1.65=PF1.164
+    frozen=1.163  worst_neighbor=1.163  best_neighbor=1.198  isolated_peak=False
+
+-- AUDJPY_AMR --
+  z_thr: 1.8=PF1.188 | 1.9=PF1.193 | 2.0=PF1.148 | 2.1=PF1.154 | 2.2=PF1.201
+    frozen=1.148  worst_neighbor=1.148  best_neighbor=1.201  isolated_peak=False
+  sl_mult: 1.35=PF1.099 | 1.425=PF1.107 | 1.5=PF1.148 | 1.575=PF1.167 | 1.65=PF1.150
+    frozen=1.148  worst_neighbor=1.099  best_neighbor=1.167  isolated_peak=False
+
+-- CADJPY_AMR --
+  z_thr: 1.8=PF1.012 | 1.9=PF1.005 | 2.0=PF1.084 | 2.1=PF1.029 | 2.2=PF1.011
+    frozen=1.084  worst_neighbor=1.005  best_neighbor=1.084  isolated_peak=False
+  sl_mult: 1.35=PF1.075 | 1.425=PF1.061 | 1.5=PF1.084 | 1.575=PF1.093 | 1.65=PF1.085
+    frozen=1.084  worst_neighbor=1.061  best_neighbor=1.093  isolated_peak=False
+
+-- GBPUSD_MONDAY --
+  sl_mult: 1.125=PF2.018 | 1.188=PF2.113 | 1.25=PF2.105 | 1.312=PF2.149 | 1.375=PF2.142
+    frozen=2.105  worst_neighbor=2.018  best_neighbor=2.149  isolated_peak=False
+  tp_mult: 0.9=PF2.115 | 0.95=PF2.102 | 1.0=PF2.105 | 1.05=PF1.970 | 1.1=PF1.979
+    frozen=2.105  worst_neighbor=1.970  best_neighbor=2.115  isolated_peak=False
+
+==========================================================================================
+STEP 8 -- REGIME ANALYSIS (diagnostic only)
+==========================================================================================
+
+-- CADJPY_ARB --
+  By volatility tercile:
+    LOW: n=60 pf=1.147 expectancy_r=+0.0829
+    NORMAL: n=71 pf=1.732 expectancy_r=+0.3172
+    HIGH: n=60 pf=0.878 expectancy_r=-0.0630
+  By trend tercile:
+    LOW_TREND: n=64 pf=1.417 expectancy_r=+0.2157
+    NORMAL_TREND: n=64 pf=1.793 expectancy_r=+0.3156
+    HIGH_TREND: n=64 pf=0.778 expectancy_r=-0.1334
+  By session:
+    LONDON: n=192 pf=1.263 expectancy_r=+0.1326
+  By day of week:
+    Friday: n=39 pf=0.731 expectancy_r=-0.1424
+    Monday: n=36 pf=1.676 expectancy_r=+0.3250
+    Thursday: n=37 pf=1.025 expectancy_r=+0.0169
+    Tuesday: n=38 pf=1.595 expectancy_r=+0.3003
+    Wednesday: n=42 pf=1.381 expectancy_r=+0.1733
+
+-- GBPJPY_AMR --
+  By volatility tercile:
+    LOW: n=160 pf=1.922 expectancy_r=+0.2467
+    NORMAL: n=138 pf=1.252 expectancy_r=+0.0964
+    HIGH: n=105 pf=1.123 expectancy_r=+0.0497
+  By trend tercile:
+    LOW_TREND: n=134 pf=1.640 expectancy_r=+0.1960
+    NORMAL_TREND: n=134 pf=1.156 expectancy_r=+0.0562
+    HIGH_TREND: n=135 pf=1.544 expectancy_r=+0.1793
+  By session:
+    ASIAN: n=403 pf=1.426 expectancy_r=+0.1439
+  By day of week:
+    Friday: n=79 pf=1.739 expectancy_r=+0.2224
+    Monday: n=107 pf=2.192 expectancy_r=+0.2999
+    Thursday: n=68 pf=0.851 expectancy_r=-0.0826
+    Tuesday: n=77 pf=1.379 expectancy_r=+0.1334
+    Wednesday: n=72 pf=1.127 expectancy_r=+0.0512
+
+-- EURJPY_AMR --
+  By volatility tercile:
+    LOW: n=319 pf=1.164 expectancy_r=+0.0539
+    NORMAL: n=235 pf=1.161 expectancy_r=+0.0559
+    HIGH: n=159 pf=1.164 expectancy_r=+0.0575
+  By trend tercile:
+    LOW_TREND: n=238 pf=1.025 expectancy_r=+0.0107
+    NORMAL_TREND: n=237 pf=1.272 expectancy_r=+0.0853
+    HIGH_TREND: n=238 pf=1.212 expectancy_r=+0.0701
+  By session:
+    ASIAN: n=713 pf=1.163 expectancy_r=+0.0553
+  By day of week:
+    Friday: n=146 pf=1.127 expectancy_r=+0.0468
+    Monday: n=152 pf=1.615 expectancy_r=+0.1671
+    Thursday: n=138 pf=0.897 expectancy_r=-0.0432
+    Tuesday: n=136 pf=1.127 expectancy_r=+0.0428
+    Wednesday: n=141 pf=1.151 expectancy_r=+0.0522
+
+-- AUDJPY_AMR --
+  By volatility tercile:
+    LOW: n=279 pf=1.329 expectancy_r=+0.0987
+    NORMAL: n=214 pf=1.253 expectancy_r=+0.0818
+    HIGH: n=158 pf=0.826 expectancy_r=-0.0744
+  By trend tercile:
+    LOW_TREND: n=217 pf=1.340 expectancy_r=+0.1023
+    NORMAL_TREND: n=217 pf=0.973 expectancy_r=-0.0074
+    HIGH_TREND: n=217 pf=1.173 expectancy_r=+0.0587
+  By session:
+    ASIAN: n=651 pf=1.148 expectancy_r=+0.0512
+  By day of week:
+    Friday: n=133 pf=1.131 expectancy_r=+0.0465
+    Monday: n=141 pf=1.674 expectancy_r=+0.1771
+    Thursday: n=117 pf=0.817 expectancy_r=-0.0774
+    Tuesday: n=129 pf=0.919 expectancy_r=-0.0297
+    Wednesday: n=131 pf=1.390 expectancy_r=+0.1148
+
+-- CADJPY_AMR --
+  By volatility tercile:
+    LOW: n=198 pf=1.557 expectancy_r=+0.1408
+    NORMAL: n=228 pf=1.022 expectancy_r=+0.0095
+    HIGH: n=173 pf=0.831 expectancy_r=-0.0711
+  By trend tercile:
+    LOW_TREND: n=200 pf=1.243 expectancy_r=+0.0755
+    NORMAL_TREND: n=199 pf=0.965 expectancy_r=-0.0122
+    HIGH_TREND: n=200 pf=1.069 expectancy_r=+0.0253
+  By session:
+    ASIAN: n=599 pf=1.084 expectancy_r=+0.0296
+  By day of week:
+    Friday: n=115 pf=1.162 expectancy_r=+0.0535
+    Monday: n=129 pf=1.086 expectancy_r=+0.0303
+    Thursday: n=112 pf=0.729 expectancy_r=-0.1204
+    Tuesday: n=122 pf=1.403 expectancy_r=+0.1148
+    Wednesday: n=121 pf=1.179 expectancy_r=+0.0591
+
+-- GBPUSD_MONDAY --
+  By volatility tercile:
+    LOW: n=27 pf=2.981 expectancy_r=+0.1325
+    NORMAL: n=58 pf=2.712 expectancy_r=+0.1725
+    HIGH: n=69 pf=1.622 expectancy_r=+0.0951
+  By trend tercile:
+    LOW_TREND: n=51 pf=2.185 expectancy_r=+0.1223
+    NORMAL_TREND: n=51 pf=2.233 expectancy_r=+0.1485
+    HIGH_TREND: n=52 pf=1.928 expectancy_r=+0.1218
+  By session:
+    ASIAN: n=154 pf=2.105 expectancy_r=+0.1308
+  By day of week:
+    Monday: n=154 pf=2.105 expectancy_r=+0.1308
+
+==========================================================================================
+STEP 9 -- DIRECTIONAL ANALYSIS (diagnostic only)
+==========================================================================================
+
+-- CADJPY_ARB --
+  BUY: n=111 win_rate=0.514 pf=1.391 expectancy_r=+0.1819 total_r=+20.19 max_dd_r=-13.87
+  SELL: n=81 win_rate=0.457 pf=1.110 expectancy_r=+0.0651 total_r=+5.27 max_dd_r=-9.11
+
+-- GBPJPY_AMR --
+  BUY: n=263 win_rate=0.703 pf=1.647 expectancy_r=+0.1975 total_r=+51.95 max_dd_r=-6.17
+  SELL: n=140 win_rate=0.614 pf=1.107 expectancy_r=+0.0432 total_r=+6.05 max_dd_r=-10.82
+
+-- EURJPY_AMR --
+  BUY: n=423 win_rate=0.742 pf=1.498 expectancy_r=+0.1394 total_r=+58.96 max_dd_r=-7.20
+  SELL: n=290 win_rate=0.614 pf=0.836 expectancy_r=-0.0673 total_r=-19.51 max_dd_r=-23.46
+
+-- AUDJPY_AMR --
+  BUY: n=412 win_rate=0.762 pf=1.591 expectancy_r=+0.1576 total_r=+64.95 max_dd_r=-8.22
+  SELL: n=239 win_rate=0.586 pf=0.706 expectancy_r=-0.1324 total_r=-31.64 max_dd_r=-39.15
+
+-- CADJPY_AMR --
+  BUY: n=353 win_rate=0.742 pf=1.430 expectancy_r=+0.1221 total_r=+43.09 max_dd_r=-5.83
+  SELL: n=246 win_rate=0.602 pf=0.763 expectancy_r=-0.1030 total_r=-25.35 max_dd_r=-30.40
+
+-- GBPUSD_MONDAY --
+  BUY: n=154 win_rate=0.630 pf=2.105 expectancy_r=+0.1308 total_r=+20.14 max_dd_r=-2.23
+
+==========================================================================================
+STEP 10 -- MONTE CARLO (10,000 runs per strategy)
+==========================================================================================
+CADJPY_ARB: {'dd_p50': np.float64(10.829854617894535), 'dd_p75': np.float64(13.083150285697878), 'dd_p90': np.float64(15.599279869549207), 'dd_p95': np.float64(17.40932884483002), 'dd_p99': np.float64(21.29879940811924), 'streak_p50': np.float64(7.0), 'streak_p90': np.float64(9.0), 'streak_p95': np.float64(10.0), 'streak_p99': np.float64(12.010000000000218), 'actual_dd_r': np.float64(14.867726728299361)}
+GBPJPY_AMR: {'dd_p50': np.float64(8.543918803217691), 'dd_p75': np.float64(10.197298425458929), 'dd_p90': np.float64(12.105695166122658), 'dd_p95': np.float64(13.495303236374076), 'dd_p99': np.float64(16.708684544638924), 'streak_p50': np.float64(5.0), 'streak_p90': np.float64(6.0), 'streak_p95': np.float64(7.0), 'streak_p99': np.float64(8.0), 'actual_dd_r': np.float64(7.276392916884738)}
+EURJPY_AMR: {'dd_p50': np.float64(13.513412640826488), 'dd_p75': np.float64(16.18468368100825), 'dd_p90': np.float64(19.20810772090691), 'dd_p95': np.float64(21.477359860103743), 'dd_p99': np.float64(25.97058920202859), 'streak_p50': np.float64(5.0), 'streak_p90': np.float64(7.0), 'streak_p95': np.float64(7.0), 'streak_p99': np.float64(9.0), 'actual_dd_r': np.float64(17.23238715665266)}
+AUDJPY_AMR: {'dd_p50': np.float64(13.38015848913723), 'dd_p75': np.float64(16.055654090685287), 'dd_p90': np.float64(18.979281344088474), 'dd_p95': np.float64(21.032455218814892), 'dd_p99': np.float64(25.24586437852739), 'streak_p50': np.float64(5.0), 'streak_p90': np.float64(6.0), 'streak_p95': np.float64(7.0), 'streak_p99': np.float64(8.0), 'actual_dd_r': np.float64(10.24743135659551)}
+CADJPY_AMR: {'dd_p50': np.float64(15.269519966377207), 'dd_p75': np.float64(18.415903675818775), 'dd_p90': np.float64(21.897652771377086), 'dd_p95': np.float64(24.22232675506917), 'dd_p99': np.float64(28.729468834112573), 'streak_p50': np.float64(5.0), 'streak_p90': np.float64(7.0), 'streak_p95': np.float64(7.0), 'streak_p99': np.float64(8.0), 'actual_dd_r': np.float64(15.415697404679126)}
+GBPUSD_MONDAY: {'dd_p50': np.float64(2.389345358209721), 'dd_p75': np.float64(2.883687472853885), 'dd_p90': np.float64(3.4689341708644146), 'dd_p95': np.float64(3.8705698048695933), 'dd_p99': np.float64(4.723574822438889), 'streak_p50': np.float64(4.0), 'streak_p90': np.float64(6.0), 'streak_p95': np.float64(7.0), 'streak_p99': np.float64(8.0), 'actual_dd_r': np.float64(2.2255671782358957)}
+
+==========================================================================================
+STEP 11 -- BOOTSTRAP CONFIDENCE INTERVALS
+==========================================================================================
+CADJPY_ARB: expectancy_r mean=+0.1326  95% CI=[-0.0396, +0.3007]  crosses_zero=True
+GBPJPY_AMR: expectancy_r mean=+0.1439  95% CI=[+0.0581, +0.2239]  crosses_zero=False
+EURJPY_AMR: expectancy_r mean=+0.0553  95% CI=[-0.0054, +0.1100]  crosses_zero=True
+AUDJPY_AMR: expectancy_r mean=+0.0512  95% CI=[-0.0065, +0.1079]  crosses_zero=True
+CADJPY_AMR: expectancy_r mean=+0.0296  95% CI=[-0.0309, +0.0899]  crosses_zero=True
+GBPUSD_MONDAY: expectancy_r mean=+0.1308  95% CI=[+0.0616, +0.2006]  crosses_zero=False
+
+==========================================================================================
+STEP 13 -- EXIT REASON BREAKDOWN
+==========================================================================================
+CADJPY_ARB: {'SL': 87, 'TP': 59, 'FridayClose': 46}
+GBPJPY_AMR: {'TP': 271, 'SL': 131, 'FridayClose': 1}
+EURJPY_AMR: {'TP': 491, 'SL': 219, 'FridayClose': 3}
+AUDJPY_AMR: {'TP': 453, 'SL': 197, 'FridayClose': 1}
+CADJPY_AMR: {'TP': 410, 'SL': 188, 'FridayClose': 1}
+GBPUSD_MONDAY: {'TimeExit': 133, 'TP': 18, 'SL': 3}
+
+==========================================================================================
+STEP 14 -- CURRENT 6-STRATEGY PORTFOLIO RECONSTRUCTION
+==========================================================================================
+Total trades: 2712  PF: 1.216  Expectancy: +0.0716R  Total R: +194.11
+Max DD: -8.21%   Max losing streak: 13
+Portfolio Monte Carlo: {'dd_p50': np.float64(18.457107667965516), 'dd_p75': np.float64(21.571449218546732), 'dd_p90': np.float64(25.325301255681456), 'dd_p95': np.float64(28.071049039206912), 'dd_p99': np.float64(33.93765905545717), 'streak_p50': np.float64(7.0), 'streak_p90': np.float64(8.0), 'streak_p95': np.float64(9.0), 'streak_p99': np.float64(10.0), 'actual_dd_r': np.float64(29.531355923412384)}
+
+% trades JPY-exposed: 94.3%   % risk-weight JPY-exposed: 94.7%
+
+JPY daily P&L correlation matrix:
+strategy    AUDJPY_AMR  CADJPY_AMR  CADJPY_ARB  EURJPY_AMR  GBPJPY_AMR
+strategy                                                              
+AUDJPY_AMR       1.000       0.221       0.030       0.218       0.233
+CADJPY_AMR       0.221       1.000       0.047       0.294       0.307
+CADJPY_ARB       0.030       0.047       1.000      -0.012       0.020
+EURJPY_AMR       0.218       0.294      -0.012       1.000       0.286
+GBPJPY_AMR       0.233       0.307       0.020       0.286       1.000
+
+Days with 2+ JPY strategies losing: 227 (29.3%)
+Days with 3+ JPY strategies losing: 110 (14.2%)
+Worst clustered JPY loss day: 2024-10-29, $-1,765.34
