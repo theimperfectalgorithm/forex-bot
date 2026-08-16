@@ -1,0 +1,11 @@
+archetype_id,weight,target_normal_corr_band,target_dd_corr_level,realized_normal_corr_mean,realized_drawdown_corr_mean,diversifier_quality,n_reps
+A_nonjpy_londonny_trend,0.5,"(0.1, 0.2)",LOW,0.106,0.055,STRONGER (low normal AND low drawdown corr),300
+A_nonjpy_londonny_trend,1.0,"(0.1, 0.2)",LOW,0.106,0.055,STRONGER (low normal AND low drawdown corr),300
+B_nonjpy_londonny_breakout,0.5,"(0.1, 0.2)",MEDIUM,0.086,0.257,POOR (drawdown corr materially exceeds normal corr),300
+B_nonjpy_londonny_breakout,1.0,"(0.1, 0.2)",MEDIUM,0.086,0.257,POOR (drawdown corr materially exceeds normal corr),300
+C_nonjpy_highvol_specialist,0.5,"(0.0, 0.1)",LOW,0.021,0.04,STRONGER (low normal AND low drawdown corr),300
+C_nonjpy_highvol_specialist,1.0,"(0.0, 0.1)",LOW,0.021,0.04,STRONGER (low normal AND low drawdown corr),300
+D_ny_session_stream,0.5,"(0.1, 0.2)",MEDIUM,0.111,0.314,POOR (drawdown corr materially exceeds normal corr),300
+D_ny_session_stream,1.0,"(0.1, 0.2)",MEDIUM,0.111,0.314,POOR (drawdown corr materially exceeds normal corr),300
+E_londonny_low_ddcorr,0.5,"(0.05, 0.25)",LOW,0.1,0.043,STRONGER (low normal AND low drawdown corr),300
+E_londonny_low_ddcorr,1.0,"(0.05, 0.25)",LOW,0.1,0.043,STRONGER (low normal AND low drawdown corr),300

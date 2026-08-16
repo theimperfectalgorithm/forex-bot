@@ -1,0 +1,4 @@
+mechanism,assumed_high_vol_behavior,assumed_dd_corr_level,combined_max_dd_mean,combined_max_dd_std,combined_total_R_mean,combined_high_vol_R_mean,n_reps,data_type
+mean_reversion (like existing AMR),NEGATIVE,HIGH,-43.797,5.773,172.499,-13.877,300,SIMULATED (mean of 300 draws)
+trend,POSITIVE,LOW,-30.73,3.617,210.837,19.091,300,SIMULATED (mean of 300 draws)
+breakout,POSITIVE,MEDIUM,-32.448,4.115,207.248,17.828,300,SIMULATED (mean of 300 draws)

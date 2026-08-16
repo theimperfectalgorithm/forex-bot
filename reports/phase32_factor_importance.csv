@@ -1,0 +1,5 @@
+factor,additional_drawdown_from_removal_mean,n_reps,data_type
+highvol_compat (->NEGATIVE),7.87,300,SIMULATED (derived from 300-draw-averaged phase32_factor_ablation.csv)
+low_dd_corr (dd_corr->HIGH),5.46,300,SIMULATED (derived from 300-draw-averaged phase32_factor_ablation.csv)
+highvol_compat (->NEUTRAL),3.29,300,SIMULATED (derived from 300-draw-averaged phase32_factor_ablation.csv)
+low_normal_corr (band->0.30-0.40),0.85,300,SIMULATED (derived from 300-draw-averaged phase32_factor_ablation.csv)

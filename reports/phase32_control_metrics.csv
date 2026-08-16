@@ -1,0 +1,2 @@
+strategy_count,date_range,trade_count,total_days,total_R,mean_daily_R,daily_R_std,max_drawdown_R,max_losing_streak_days,high_vol_R,low_vol_R,trending_regime_R,range_regime_R,jpy_exposure_pct,effective_n_strategies,avg_pairwise_correlation,days_2plus_losses_pct
+6,"['2023-08-01 00:00:00+00:00', '2026-08-13 00:00:00+00:00']",2712,774,194.11,0.2508,1.9726,-29.07,7,-6.91,120.64,56.49,86.13,94.7,2.67,0.192,31.01

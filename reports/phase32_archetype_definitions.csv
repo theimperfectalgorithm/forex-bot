@@ -1,0 +1,6 @@
+archetype_id,label,currency,session,mechanism,high_vol_behavior,normal_corr_band,dd_corr_band,trade_freq_per_week
+A_nonjpy_londonny_trend,Non-JPY + London/NY + trend,non-JPY,London/NY,trend,POSITIVE,0.1-0.2,LOW,3.0
+B_nonjpy_londonny_breakout,Non-JPY + London/NY + breakout,non-JPY,London/NY,breakout,POSITIVE,0.1-0.2,MEDIUM,2.0
+C_nonjpy_highvol_specialist,Non-JPY + HIGH-vol specialist,non-JPY,London/NY,volatility_expansion,POSITIVE,0.0-0.1,LOW,1.5
+D_ny_session_stream,New York session return stream,either (session is the isolated factor),New York,unspecified,NEUTRAL,0.1-0.2,MEDIUM,3.0
+E_londonny_low_ddcorr,"London/NY, low drawdown-correlation generalist",non-JPY,London/NY,unspecified,NEUTRAL,0.05-0.25,LOW,2.5

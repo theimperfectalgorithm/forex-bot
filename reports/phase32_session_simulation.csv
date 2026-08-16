@@ -1,0 +1,4 @@
+session_scenario,proxy_archetype,note,control_max_dd,combined_max_dd_mean,combined_max_dd_std,control_total_R,combined_total_R_mean,n_reps,data_type
+London-only,B_nonjpy_londonny_breakout,proxy: Archetype B (London/NY breakout) run at its defined params,-29.07,-32.016,3.58,194.11,204.789,300,SIMULATED (mean of 300 draws)
+New-York-only,D_ny_session_stream,proxy: Archetype D (NY session stream) run at its defined params,-29.07,-36.889,5.585,194.11,191.335,300,SIMULATED (mean of 300 draws)
+London+NY,A_nonjpy_londonny_trend,proxy: Archetype A (London/NY trend) run at its defined params,-29.07,-30.937,3.98,194.11,213.7,300,SIMULATED (mean of 300 draws)

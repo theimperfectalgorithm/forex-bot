@@ -1,0 +1,6 @@
+scenario,combined_max_dd_mean,combined_max_dd_std,dd_delta_vs_control_mean,combined_high_vol_R_mean,combined_total_R_mean,n_reps,data_type
+FULL_PROFILE (non-JPY+London/NY+trend+HIGHvol-positive+low-ddcorr),-30.937,3.98,-1.87,21.667,213.7,300,SIMULATED (mean of 300 draws)
+REMOVE_low_dd_corr (dd_corr->HIGH),-36.403,5.342,-7.33,18.174,203.711,300,SIMULATED (mean of 300 draws)
+REMOVE_highvol_compat (->NEUTRAL),-34.225,4.914,-5.16,3.604,195.637,300,SIMULATED (mean of 300 draws)
+REMOVE_highvol_compat (->NEGATIVE),-38.807,5.982,-9.74,-14.459,177.574,300,SIMULATED (mean of 300 draws)
+REMOVE_low_normal_corr (band->0.30-0.40),-31.785,3.777,-2.72,20.512,216.423,300,SIMULATED (mean of 300 draws)

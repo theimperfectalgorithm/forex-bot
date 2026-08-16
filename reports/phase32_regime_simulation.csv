@@ -1,0 +1,11 @@
+archetype_id,weight,control_high_vol_R,combined_high_vol_R_mean,combined_high_vol_R_std,high_vol_R_change_mean,control_low_vol_R,combined_low_vol_R_mean,low_vol_R_change_mean,n_reps
+A_nonjpy_londonny_trend,0.5,4.5,13.084,4.179,8.584,189.6,190.819,1.219,300
+A_nonjpy_londonny_trend,1.0,4.5,21.667,8.359,17.167,189.6,192.033,2.433,300
+B_nonjpy_londonny_breakout,0.5,4.5,9.92,3.592,5.42,189.6,189.526,-0.074,300
+B_nonjpy_londonny_breakout,1.0,4.5,15.341,7.184,10.841,189.6,189.449,-0.151,300
+C_nonjpy_highvol_specialist,0.5,4.5,9.067,3.122,4.567,189.6,189.558,-0.042,300
+C_nonjpy_highvol_specialist,1.0,4.5,13.633,6.244,9.133,189.6,189.513,-0.087,300
+D_ny_session_stream,0.5,4.5,3.3,4.072,-1.2,189.6,189.42,-0.18,300
+D_ny_session_stream,1.0,4.5,2.1,8.145,-2.4,189.6,189.235,-0.365,300
+E_londonny_low_ddcorr,0.5,4.5,4.294,3.88,-0.206,189.6,190.675,1.075,300
+E_londonny_low_ddcorr,1.0,4.5,4.088,7.759,-0.412,189.6,191.746,2.146,300
