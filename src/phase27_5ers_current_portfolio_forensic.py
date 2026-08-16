@@ -254,8 +254,28 @@ def directional_breakdown(closed: pd.DataFrame) -> pd.DataFrame:
 
 def load_historical():
     hist = pd.read_csv(HIST_TRADES_CSV, parse_dates=['entry_time', 'exit_time'])
-    summ = pd.read_csv(HIST_SUMMARY_CSV, engine='python', on_bad_lines='warn')
+    summ = _load_summary_csv_robust(HIST_SUMMARY_CSV)
     return hist, summ
+
+
+def _load_summary_csv_robust(path):
+    """reports/current_6_strategy_revalidation.csv has a pre-existing bug:
+    parameter_stability_status contains an unquoted comma ("STABLE (broad
+    plateau, both z_thr and sl_mult)"), which splits into an extra field on
+    4 of 7 rows and silently drops them under pandas' normal parser (or
+    on_bad_lines='warn', which just skips them). Parsed here with the csv
+    module and manually re-merged for any row with one extra field, rather
+    than silently losing 4 of 6 strategies' historical baselines."""
+    with open(path, newline='', encoding='utf-8') as f:
+        rows = list(csv.reader(f))
+    header, data_rows = rows[0], rows[1:]
+    fixed = []
+    for row in data_rows:
+        if len(row) == len(header) + 1:
+            # merge the split field back together (index 14: parameter_stability_status)
+            row = row[:14] + [row[14] + ',' + row[15]] + row[16:]
+        fixed.append(row)
+    return pd.DataFrame(fixed, columns=header)
 
 
 def monte_carlo_pooled(hist: pd.DataFrame, live_trade_count: int, n_sims=N_MC):
