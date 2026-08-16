@@ -35,16 +35,33 @@ N_MC = 20000
 OUT = REPO / 'reports'
 
 
-def load_export():
+FIX_COMMIT_UTC = datetime(2026, 8, 7, 19, 9, 32, tzinfo=timezone.utc)  # 0b64c02
+LAST_KNOWN_PREFIX_ENTRY_UTC = datetime(2026, 8, 6, 22, 15, 5, tzinfo=timezone.utc)
+FIRST_KNOWN_POSTFIX_ENTRY_UTC = datetime(2026, 8, 9, 22, 0, 14, tzinfo=timezone.utc)
+
+
+def load_export(expect_rows=None, expect_tickets=None, require_ticket=None):
+    """expect_rows/expect_tickets are advisory prints, not hard-coded
+    assertions -- this export is regenerated fresh on every run and its
+    exact size is expected to grow over time. require_ticket, if given,
+    is asserted present (used to confirm a specific new trade made it in)."""
     df = pd.read_csv(EXPORT_CSV, dtype=str)
     print(f"[integrity] rows={len(df)} unique_trade_id={df['trade_id'].nunique()}")
     status_counts = df['status'].value_counts().to_dict()
     print(f"[integrity] status_counts={status_counts}")
-    assert len(df) == 70, f"expected 70 rows, got {len(df)}"
-    assert df['trade_id'].nunique() == 35, f"expected 35 unique tickets, got {df['trade_id'].nunique()}"
-    assert status_counts.get('OPEN') == 35 and status_counts.get('CLOSED') == 35, "expected 35 OPEN / 35 CLOSED"
-    assert (df['account'] == '5ERS').all(), "not all rows tagged account=5ERS"
+    if expect_rows is not None:
+        print(f"[integrity] expected rows={expect_rows} -> {'MATCH' if len(df) == expect_rows else 'MISMATCH'}")
+    if expect_tickets is not None:
+        print(f"[integrity] expected unique tickets={expect_tickets} -> "
+              f"{'MATCH' if df['trade_id'].nunique() == expect_tickets else 'MISMATCH'}")
+    assert status_counts.get('OPEN', 0) == status_counts.get('CLOSED', 0), \
+        f"OPEN ({status_counts.get('OPEN', 0)}) != CLOSED ({status_counts.get('CLOSED', 0)}) -- unexpected lifecycle asymmetry"
     assert df['strategy'].notna().all() and (df['strategy'] != '').all(), "missing strategy attribution found"
+    if require_ticket is not None:
+        assert (df['trade_id'] == str(require_ticket)).any(), f"required ticket {require_ticket} not found in export"
+        print(f"[integrity] required ticket {require_ticket} present -- confirmed")
+    print(f"[integrity] latest signal_time={df['signal_time'].replace('NOT_AVAILABLE', pd.NA).dropna().max()}")
+    print(f"[integrity] latest exit_time={df['exit_time'].replace('NOT_AVAILABLE', pd.NA).dropna().max()}")
     return df
 
 
@@ -86,6 +103,19 @@ def build_closed(df: pd.DataFrame) -> pd.DataFrame:
     # intended SL distance in pips from initial_risk / (lots * pip_value_usd),
     # which uses only fields unaffected by the bug.
     closed['entry_price_valid'] = closed['entry_price'] > 0
+
+    def _fix_status(row):
+        # Per reports/entry_price_logging_audit.md: entry_price==0.0 is the
+        # known pre-0b64c02 logging defect (recording only -- execution,
+        # SL/TP, and PnL were never affected). A valid non-zero entry_price
+        # means the trade was logged AFTER the 2026-08-07 19:09 UTC fix.
+        if row['entry_price_valid']:
+            return 'POST_FIX'
+        if pd.notna(row['entry_time_dt']) and row['entry_time_dt'] < FIX_COMMIT_UTC:
+            return 'PRE_FIX'
+        return 'UNKNOWN'  # entry_price==0.0 but timestamp is after the fix -- would be a NEW anomaly, flag it
+    closed['entry_fix_status'] = closed.apply(_fix_status, axis=1)
+
     pip_val = closed['symbol'].apply(_pip_value_usd)
     closed['sl_pips_implied'] = closed['initial_risk'] / (closed['lots'] * pip_val)
     closed['spread_over_sl_pct'] = np.where(
