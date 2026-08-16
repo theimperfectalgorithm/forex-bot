@@ -1,0 +1,27 @@
+dimension,category,risk_weight_pct,notes
+strategy,GBPJPY_AMR,13.9,mean_reversion; Asian session; JPY
+strategy,EURJPY_AMR,24.6,mean_reversion; Asian session; JPY
+strategy,AUDJPY_AMR,22.4,mean_reversion; Asian session; JPY
+strategy,CADJPY_AMR,20.6,mean_reversion; Asian session; JPY
+strategy,CADJPY_ARB,13.2,asian_range_breakout; London-open entry; JPY
+strategy,GBPUSD_MONDAY,5.3,calendar_drift; Monday 00:00 server entry (session-labeled ASIAN by hour-bucketing artifact -- see master report methodology note); non-JPY
+currency,JPY,94.7,"5 of 6 strategies carry a JPY leg (base or quote); counts toward both base and quote so currency rows do not sum to 100%"
+currency,CAD,33.8,CADJPY_AMR + CADJPY_ARB both carry CAD
+currency,EUR,24.6,EURJPY_AMR only
+currency,AUD,22.4,AUDJPY_AMR only
+currency,GBP,19.2,GBPJPY_AMR + GBPUSD_MONDAY
+currency,USD,5.3,GBPUSD_MONDAY only (quote currency)
+strategy_family,mean_reversion,81.5,"4 AMR strategies -- GBPJPY/EURJPY/AUDJPY/CADJPY -- share session, exit time, and no-trend-filter design"
+strategy_family,asian_range_breakout,13.2,CADJPY_ARB only
+strategy_family,calendar_drift,5.3,GBPUSD_MONDAY only
+session,ASIAN (00:00-07:00 server),94.7,"4 AMR strategies + GBPUSD_MONDAY (Monday's session label is a generic hour-bucketing artifact, not a designed Asian-session mechanic -- see master report)"
+session,LONDON (07:00-09:00 breakout),13.2,CADJPY_ARB only
+session,NEW_YORK,0.0,"NO current strategy initiates new risk during New York hours (12:00-21:00 UTC) -- zero explicit NY-session exposure in the entire book"
+regime_volatility,HIGH,NOT_APPLICABLE (see portfolio_regime_matrix.csv),"3 of 6 strategies net-negative in HIGH volatility (AUDJPY_AMR/CADJPY_AMR/CADJPY_ARB), combined historical R -6.91 -- the ONLY volatility tercile where the portfolio is net-negative in aggregate"
+regime_volatility,NORMAL,NOT_APPLICABLE,"0 of 6 strategies net-negative, combined R +78.63"
+regime_volatility,LOW,NOT_APPLICABLE,"0 of 6 strategies net-negative, combined R +120.64 -- the portfolio's strongest volatility regime"
+diversification,effective_n_naive_HHI (risk-weight only, ignores correlation),5.19,Of 6 nominal strategies -- overstates true diversification since it ignores co-movement
+diversification,effective_n_correlation_adjusted,2.67,"1/(w'*Sigma*w) using the daily-R Pearson correlation matrix and risk weights -- the more honest measure of how many INDEPENDENT bets this portfolio actually represents"
+diversification,avg_pairwise_daily_R_correlation,0.192,Across the 15 strategy pairs
+diversification,pct_days_2plus_losses,31.01,Of 774 historical trading days
+diversification,pct_days_3plus_losses,15.37,Of 774 historical trading days

@@ -1,0 +1,7 @@
+strategy,instrument,family,session,jpy_exposure,trades,win_rate_pct,pf,expectancy_R,total_R,max_streak
+GBPJPY_AMR,GBPJPY,mean_reversion (asian_hours_reversion),Asian 00:00-07:00 server,True,403,67.2,1.415,0.144,58.005,5
+EURJPY_AMR,EURJPY,mean_reversion (asian_hours_reversion),Asian 00:00-07:00 server,True,713,69.0,1.164,0.055,39.45,4
+AUDJPY_AMR,AUDJPY,mean_reversion (asian_hours_reversion),Asian 00:00-07:00 server,True,651,69.7,1.153,0.051,33.306,5
+CADJPY_AMR,CADJPY,mean_reversion (asian_hours_reversion),Asian 00:00-07:00 server,True,599,68.4,1.086,0.03,17.742,6
+CADJPY_ARB,CADJPY,asian_range_breakout,breakout 07:00-09:00 server,True,192,49.0,1.27,0.133,25.463,10
+GBPUSD_MONDAY,GBPUSD,calendar_drift (monday_drift),Monday 00:00->21:00 server (long-only),False,154,63.0,2.1,0.131,20.139,4
