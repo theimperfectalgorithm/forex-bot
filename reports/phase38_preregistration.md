@@ -85,4 +85,10 @@ Fixed hypothetical weight (0.5x, 1.0x of a standardized 1R-per-trade unit), matc
 
 ---
 
-*No amendment has been made to this document after any Phase 38 result was produced.*
+## Amendment 1 (2026-08-18) — H2 entry-price operationalization
+
+**STOP triggered during implementation, before any usable H2 result existed.** The literal entry rule as originally frozen ("entry at the London-open H1 bar's open price, contingent on price having broken the Asian high/low") is definitionally near-unsatisfiable: the London-open bar's open price is, by market-data construction, essentially identical to the immediately preceding (Asian-session) bar's close — which is itself always inside the Asian range that same bar helped define. Under the literal rule, EURUSD 2019-2026 produced exactly 1 qualifying trade in ~1,900 trading days — not a rejection of the hypothesis, but a non-executable operationalization (confirmed by inspection before any OOS PF/edge number was computed or interpreted).
+
+**Amendment**: the breakout condition is evaluated on the London-open H1 bar's **high/low** (intrabar), not its open — i.e., LONG if that bar's high exceeds the Asian high, SHORT if that bar's low is below the Asian low; entry price = the breakout level itself (Asian high for LONG, Asian low for SHORT), not the bar's open. If both sides are breached within the same bar, direction is resolved by the bar's close position (close > open → LONG, else SHORT) — a fixed, non-optimized tie-break rule, frozen here before any result is computed under the amended rule. All other H2 terms (session boundaries, stop, exit, universe, ±20% parameter perturbation, cost model) are unchanged. This is a necessary operationalization fix, not a threshold or parameter search, and is disclosed as a limitation in the master report.
+
+*No other amendment has been made to this document after any Phase 38 result was produced.*
