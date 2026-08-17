@@ -1,0 +1,6 @@
+candidate_id,oos_h1_n,oos_h1_expectancy_R,oos_h2_n,oos_h2_expectancy_R,both_negative
+H1_USDCAD_NY_ORB,153,-0.072,153,-0.07,True
+H2_AUDUSD_NY_MOMENTUM,266,-0.343,266,-0.257,True
+H3_USDCHF_OVERLAP_CONTINUATION,86,-0.404,86,-0.28,True
+H4_USDCAD_MTF_TREND,31,-0.378,32,0.068,False
+H5_AUDUSD_ATR_VOL_EXPANSION,61,-0.483,62,-0.148,True

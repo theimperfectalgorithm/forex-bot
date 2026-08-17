@@ -1,0 +1,6 @@
+candidate_id,symbol,train_trades,train_pf,train_expectancy_R,val_trades,val_pf,val_expectancy_R,oos_trades,oos_pf,oos_expectancy_R,oos_total_R,oos_win_rate_pct,oos_max_losing_streak
+H1_USDCAD_NY_ORB,USDCAD,396,0.805,-0.13,155,0.897,-0.066,306,0.89,-0.071,-21.72,41.2,7
+H2_AUDUSD_NY_MOMENTUM,AUDUSD,669,0.712,-0.229,279,0.701,-0.24,532,0.639,-0.3,-159.58,28.9,13
+H3_USDCHF_OVERLAP_CONTINUATION,USDCHF,222,0.747,-0.181,96,0.55,-0.328,172,0.54,-0.342,-58.86,33.1,8
+H4_USDCAD_MTF_TREND,USDCAD,91,0.743,-0.192,34,0.892,-0.076,63,0.795,-0.151,-9.52,30.2,6
+H5_AUDUSD_ATR_VOL_EXPANSION,AUDUSD,151,0.834,-0.139,55,0.476,-0.504,123,0.653,-0.314,-38.64,26.0,9
