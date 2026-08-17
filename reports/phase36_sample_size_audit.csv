@@ -1,0 +1,9 @@
+hypothesis_id,oos_trades,informative_for_point_estimate,informative_for_regime_subsplit,assessment
+EXP-125_XAUUSD_LONDON_VOL_EXPANSION,114,True,True,STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; ADEQUATE for a 2-way sub-split (regime/half)
+EXP-126_USDCAD_MOMENTUM_CONTINUATION,57,True,False,"STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; sub-splits (regime tercile, OOS half) are UNDERPOWERED"
+H1_USDCAD_NY_ORB,306,True,True,STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; ADEQUATE for a 2-way sub-split (regime/half)
+H2_AUDUSD_NY_MOMENTUM,532,True,True,STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; ADEQUATE for a 2-way sub-split (regime/half)
+H3_USDCHF_OVERLAP_CONTINUATION,172,True,True,STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; ADEQUATE for a 2-way sub-split (regime/half)
+H4_USDCAD_MTF_TREND,63,True,True,STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; ADEQUATE for a 2-way sub-split (regime/half)
+H5_AUDUSD_ATR_VOL_EXPANSION,123,True,True,STATISTICALLY INFORMATIVE for an aggregate PF/expectancy point estimate; ADEQUATE for a 2-way sub-split (regime/half)
+CURRENT_SIX_LIVE_POST_DEMOTION,19,False,False,OBSERVED ONLY -- far too small (n<30) for any statistically confident point estimate; every prior phase (27-35) has reached this same conclusion independently

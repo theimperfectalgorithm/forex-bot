@@ -1,0 +1,9 @@
+strategy_family,n_hypotheses,n_instruments,classification_breakdown,verdict
+calendar_drift,60,6,"{""B"": 38, ""A"": 20, ""E"": 2}","PARTIAL SIGNAL FOUND -- some cells reached PROMISING (E), none reached PORTFOLIO QUALIFIED (H/I)"
+volatility_contraction_expansion_breakout,1,1,"{""B"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)
+trend_momentum_continuation,1,1,"{""B"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)
+new_york_open_range_breakout,1,1,"{""A"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)
+new_york_session_momentum,1,1,"{""A"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)
+london_ny_overlap_continuation,1,1,"{""A"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)
+multi_timeframe_trend_continuation,1,1,"{""A"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)
+atr_scaled_volatility_expansion,1,1,"{""A"": 1}",NO TESTED IMPLEMENTATION IN THIS FAMILY MET THE EVIDENCE BAR (family not proven to be structurally unusable -- see phase36_master_report.md's explicit interpretation-rule distinction)

@@ -1,0 +1,12 @@
+metric,value
+"Total hypotheses/cells tested (all phases, cumulative)",67
+Distinct instruments tested,6
+Distinct strategy families tested,8
+Distinct sessions tested,12
+"Confirmatory (pre-registered, held-out OOS) candidates",7
+"Exploratory screen cells (Phase30, single IS/OOS split, no separate confirmatory fold)",60
+Candidates rejected,65
+Candidates surviving to PROMISING or better,3
+Taxonomized strategy-family universe (Phase34),16
+Families with at least one confirmatory test,7
+Cumulative family coverage,"7 of 16 (50%, matching Phase35's own tally)"

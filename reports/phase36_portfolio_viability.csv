@@ -1,0 +1,6 @@
+criterion,evidence,assessment
+Historical edge (frozen-parameter reconstruction),"PF 1.211, expectancy 0.072R over 2712 trades",SUPPORTIVE
+Live edge (post-demotion current-six),"PF 0.292, expectancy -0.227R over 19 trades","NEGATIVE POINT ESTIMATE, STATISTICALLY UNINFORMATIVE (n<30)"
+Concentration,"Correlation-adjusted effective N = 2.67 of 6 (Phase31/32, reconfirmed unchanged)","CONCERN, PRE-EXISTING AND ALREADY MONITORED"
+Sample size,19 live post-demotion closed trades,INSUFFICIENT FOR A CONFIDENT LIVE VERDICT EITHER WAY
+Known pre-existing weaknesses,"AUDJPY/CADJPY AMR HIGH-vol weakness (documented since Phase20/21, reconfirmed live in Phase27/29/31/32)","KNOWN, UNDER ACTIVE MONITORING (2026-08-25 checkpoint)"

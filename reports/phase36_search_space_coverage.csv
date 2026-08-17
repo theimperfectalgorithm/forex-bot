@@ -1,0 +1,27 @@
+dimension,value,count,pct_of_68
+strategy_family,calendar_drift,60,89.6
+strategy_family,volatility_contraction_expansion_breakout,1,1.5
+strategy_family,trend_momentum_continuation,1,1.5
+strategy_family,new_york_open_range_breakout,1,1.5
+strategy_family,new_york_session_momentum,1,1.5
+strategy_family,london_ny_overlap_continuation,1,1.5
+strategy_family,multi_timeframe_trend_continuation,1,1.5
+strategy_family,atr_scaled_volatility_expansion,1,1.5
+instrument,USDCAD,13,19.4
+instrument,AUDUSD,12,17.9
+instrument,USDCHF,11,16.4
+instrument,XAUUSD,11,16.4
+instrument,GBPUSD,10,14.9
+instrument,EURUSD,10,14.9
+session,Monday full session,12,17.9
+session,Tuesday full session,12,17.9
+session,Wednesday full session,12,17.9
+session,Thursday full session,12,17.9
+session,Friday full session,12,17.9
+session,London open (07:00 UTC) entry through NY,1,1.5
+session,H4 continuous (no single-session restriction by design),1,1.5
+session,New York (13:00-15:00 UTC range; entries through 20:00 UTC),1,1.5
+session,New York (13:00-21:00 UTC),1,1.5
+session,London/NY overlap (13:00-16:00 UTC entry window; signal from,1,1.5
+session,Unrestricted by session (D1 trend filter + H4 execution),1,1.5
+session,London (07:00 UTC entry),1,1.5
