@@ -1,0 +1,3 @@
+candidate_id,window,overlapping_days,overall_corr,normal_day_corr,n_drawdown_days_in_window,drawdown_day_corr,diversification_gate
+EXP-125_XAUUSD_LONDON_VOL_EXPANSION,"OOS period only (2025-05-01 to 2026-08-14), fair like-for-like comparison",109,-0.13,-0.151,11,0.111,FAIL -- E. POOR DRAWDOWN DIVERSIFICATION (dd_corr 0.111 exceeds normal_corr -0.151 by >0.15)
+EXP-126_USDCAD_MOMENTUM_CONTINUATION,"OOS period only (2025-05-01 to 2026-08-14), fair like-for-like comparison",54,-0.027,-0.112,5,INSUFFICIENT (n<=5 overlap on control drawdown days within this short OOS window),INSUFFICIENT EVIDENCE (too few control-drawdown-day overlaps in this short OOS window)

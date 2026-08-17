@@ -1,0 +1,5 @@
+candidate_id,weight,window,control_total_R,combined_total_R,control_max_dd,combined_max_dd,control_max_streak_days,combined_max_streak_days
+EXP-125_XAUUSD_LONDON_VOL_EXPANSION,0.5,OOS period only (fair comparison),126.72,133.37,-14.53,-14.04,,7
+EXP-125_XAUUSD_LONDON_VOL_EXPANSION,1.0,OOS period only (fair comparison),126.72,140.03,-14.53,-14.53,,7
+EXP-126_USDCAD_MOMENTUM_CONTINUATION,0.5,OOS period only (fair comparison),126.72,131.13,-14.53,-15.05,,7
+EXP-126_USDCAD_MOMENTUM_CONTINUATION,1.0,OOS period only (fair comparison),126.72,135.55,-14.53,-15.58,,7
