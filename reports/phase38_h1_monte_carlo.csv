@@ -1,0 +1,2 @@
+n_sims,oos_trades,data_type,actual_max_dd_R,mc_dd_median,mc_dd_p95,mc_dd_p99,actual_dd_percentile_in_mc,actual_max_streak,mc_streak_p95
+10000,84,SIMULATED (trade-order reshuffle),-14.61,-17.07,-13.69,-12.63,86.3,5,10.0

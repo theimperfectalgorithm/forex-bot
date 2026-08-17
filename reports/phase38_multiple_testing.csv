@@ -1,0 +1,10 @@
+item,type,status,notes
+H1 -- cross-sectional FX relative-momentum,CONFIRMATORY (preregistered),TESTED,"8-currency universe, 4-week lookback, weekly rebalance, long-strongest/short-weakest -- frozen in reports/phase38_preregistration.md before any backtest ran"
+H1 lookback perturbation -20% (16d),CONFIRMATORY robustness check (preregistered),TESTED,"part of the single frozen +-20% perturbation set, not a separate hypothesis"
+H1 lookback perturbation +20% (24d),CONFIRMATORY robustness check (preregistered),TESTED,"part of the single frozen +-20% perturbation set, not a separate hypothesis"
+H2 -- Asian-range breakout continuation,CONFIRMATORY (preregistered),TESTED,"EURUSD/GBPUSD/AUDUSD, Asian [0-7h) range, London-open breakout held to NY close -- frozen before any backtest ran"
+H2 entry-price operationalization amendment,METHODOLOGY FIX (not a result-driven variant),AMENDED BEFORE RESULTS,"literal open-price rule was non-executable by construction (1 trade in ~1900 days); amended to intrabar high/low breakout BEFORE any OOS PF/edge number was computed under the new rule -- see phase38_preregistration.md Amendment 1"
+H2 Asian-window perturbation -20% (5h),CONFIRMATORY robustness check (preregistered),TESTED,"part of the single frozen +-20% perturbation set"
+H2 Asian-window perturbation +20% (8h),CONFIRMATORY robustness check (preregistered),TESTED -- DEGENERATE RESULT (0 trades),"at asian_end_h=8, the perturbed Asian window overlaps the London-open entry hour (7), making a bar breakout of its own contributing range impossible by construction -- disclosed limitation of this specific perturbation value, not a hidden or cherry-picked result"
+Alternative H1 signal families (e.g. normalized-return ranking, trend-strength ranking),NOT TESTED,EXCLUDED BY PREREGISTRATION,"preregistration explicitly required selecting exactly ONE signal family before results; not explored"
+Alternative H2 session mechanisms (volatility state change, cross-session reversal, range compression/expansion),NOT TESTED,EXCLUDED BY PREREGISTRATION,"preregistration explicitly required selecting exactly ONE mechanism before results; not explored"

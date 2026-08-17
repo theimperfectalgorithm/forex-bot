@@ -1,0 +1,11 @@
+hypothesis,metric,n,assessment
+H1 (cross-sectional FX),OOS trades (weekly rebalance),84,STATISTICALLY INFORMATIVE for a point estimate (n>=30)
+H1 (cross-sectional FX),OOS sub-half (n per half),42,ADEQUATE for the sign-consistency check (>=40 total OOS trades)
+H1 (cross-sectional FX),HIGH-vol regime bucket,15,BELOW the 10-trade floor is not the issue here (15>=10) but is thin -- treat WEAK classification cautiously
+H1 (cross-sectional FX),Drawdown-correlation overlap days,8,AT the 8-day floor -- STATISTICALLY INFORMATIVE only marginally; treat CORRELATED classification as directionally suggestive, not definitive
+H1 (cross-sectional FX),Historical regime periods with >=10 trades,5 of 5,all five characterized periods have adequate sample
+H2 (session-specific structures),OOS trades,458,STATISTICALLY INFORMATIVE (large sample; most decisive rejection of the two hypotheses)
+H2 (session-specific structures),OOS sub-half (n per half),229,ADEQUATE
+H2 (session-specific structures),HIGH-vol regime bucket,198,STATISTICALLY INFORMATIVE (well above the 10-trade floor)
+H2 (session-specific structures),Drawdown-correlation overlap days,28,STATISTICALLY INFORMATIVE (well above the 8-day floor)
+H2 (session-specific structures),Historical regime periods with >=10 trades,5 of 5,all five characterized periods have adequate sample

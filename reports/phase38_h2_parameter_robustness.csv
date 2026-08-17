@@ -1,0 +1,4 @@
+perturbation,trades,win_rate_pct,pf,expectancy_R,total_R
+-20% (5.6h~5h),692,39.6,1.05,0.0295,20.4
+baseline (7h),458,37.1,0.798,-0.119,-54.5
++20% (8.4h~8h),0,,,,

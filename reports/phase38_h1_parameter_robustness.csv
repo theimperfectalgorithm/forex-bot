@@ -1,0 +1,4 @@
+perturbation,trades,win_rate_pct,pf,expectancy_R,total_R
+-20% (16d),84,45.2,0.582,-0.2028,-17.03
+baseline (20d),84,45.2,0.649,-0.1648,-13.84
++20% (24d),84,36.9,0.517,-0.2578,-21.66

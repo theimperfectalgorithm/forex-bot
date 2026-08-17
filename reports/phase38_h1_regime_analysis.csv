@@ -1,0 +1,4 @@
+regime,trades,win_rate_pct,pf,expectancy_R,total_R,classification
+HIGH,15,33.3,0.491,-0.6319,-9.48,WEAK
+LOW,41,46.3,0.617,-0.072,-2.95,
+NORMAL,28,50.0,0.893,-0.0504,-1.41,
