@@ -1,0 +1,6 @@
+metric,n,assessment
+OOS trades (aggregate PF/expectancy point estimate),84,STATISTICALLY INFORMATIVE for a point estimate (n>=30)
+OOS sub-half (n per half),42,ADEQUATE
+HIGH-vol regime bucket,20,see phase37_audusd_regime_analysis.csv for the 10-trade floor result
+Drawdown-correlation overlap days,9,STATISTICALLY INFORMATIVE (n>=8)
+Historical regime periods with adequate sample (>=10 trades),5,5 of 5 characterized periods have >=10 trades

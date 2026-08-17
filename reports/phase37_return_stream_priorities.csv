@@ -1,0 +1,11 @@
+rank,class_name,portfolio_independence_score,drawdown_diversification_score,high_vol_compatibility_score,mechanism_diversity_score,data_quality_score,researchability_score,cost_execution_feasibility_score,overfitting_risk_score_inverse,weighted_priority_score_pct,label
+1,Event/macro-conditioned systems,2.5,3,3,3,0.5,1,2,1,79.2,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+2,Index-based return streams,3,1,2.5,3,0.5,2.5,2,2,71.7,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+3,Volatility-conditioned systems,2.5,2,3,2,0.5,1,2,2,69.2,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+4,Cross-sectional FX,2.5,1,2,2,3,2,2,2,67.5,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+5,Multi-asset momentum,3,1,2.5,3,0.5,1,1,1.5,66.7,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+6,Commodity-based return streams,2,1,2,2,2,3,3,2,63.3,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+7,Session-specific structures,2,1,2,2,2.5,2.5,2.5,2,63.3,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+8,Relative-value / spread structures,2.5,1,0,3,2.5,2,2,1.5,60.0,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+9,Cross-asset relationships,3,1,0,3,0.5,2,2,2,58.3,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"
+10,Other structurally distinct mechanisms,0,0,0,2,0.5,0,0,0,11.7,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio"

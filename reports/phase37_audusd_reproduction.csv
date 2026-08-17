@@ -1,0 +1,8 @@
+metric,reproduced,original,match
+oos_trades,84.0,84,True
+oos_pf,3.07,3.07,True
+oos_expectancy_R,0.2548,"NOT DIRECTLY COMPARABLE (original reported mean_R at unrounded precision + t-stat, not expectancy_R by this exact label)",N/A
+oos_win_rate_pct,65.5,NOT AVAILABLE in original registry (only PF/t-stat/mean_R recorded),N/A
+oos_total_R,21.4,NOT AVAILABLE in original registry,N/A
+oos_max_drawdown_R,-2.87,NOT AVAILABLE in original registry,N/A
+oos_max_losing_streak,3.0,NOT AVAILABLE in original registry,N/A

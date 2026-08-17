@@ -1,0 +1,11 @@
+class_name,gap1_highvol_weakness,gap2_drawdown_correlation,gap3_meanreversion_concentration,gap4_asian_london_concentration,gap5_jpy_concentration,gap6_lack_of_different_driver,total_score,note
+Cross-asset relationships,1,1,2,2,2,3,11,RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability claim
+Commodity-based return streams,2,1,2,2,2,2,11,RESEARCH-PRIORITY ASSESSMENT ONLY
+Index-based return streams,2,1,2,3,2,3,13,RESEARCH-PRIORITY ASSESSMENT ONLY
+Cross-sectional FX,1,1,3,2,3,2,12,RESEARCH-PRIORITY ASSESSMENT ONLY
+Relative-value / spread structures,1,1,3,1,2,3,11,RESEARCH-PRIORITY ASSESSMENT ONLY
+Volatility-conditioned systems,3,2,3,1,1,2,12,RESEARCH-PRIORITY ASSESSMENT ONLY -- directly targets Gap1 by construction
+Multi-asset momentum,2,1,3,3,3,3,15,RESEARCH-PRIORITY ASSESSMENT ONLY -- highest total but highest data dependency
+Event/macro-conditioned systems,2,3,2,1,1,3,12,RESEARCH-PRIORITY ASSESSMENT ONLY -- directly targets Gap2 by construction
+Session-specific structures,1,1,2,3,2,2,11,RESEARCH-PRIORITY ASSESSMENT ONLY
+Other structurally distinct mechanisms,0,0,1,1,1,2,5,RESEARCH-PRIORITY ASSESSMENT ONLY -- too undefined to score confidently

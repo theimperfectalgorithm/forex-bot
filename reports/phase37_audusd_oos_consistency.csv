@@ -1,0 +1,2 @@
+oos_h1_trades,oos_h1_expectancy_R,oos_h1_pf,oos_h2_trades,oos_h2_expectancy_R,oos_h2_pf,sign_consistent,total_oos_trades,verdict
+42,0.2323,2.678,42,0.2773,3.572,True,84,PASS

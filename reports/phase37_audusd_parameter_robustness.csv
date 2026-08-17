@@ -1,0 +1,4 @@
+perturbation,trades,win_rate_pct,pf,expectancy_R,total_R
+-20% (ATR11),84,65.5,3.051,0.2532,21.27
+baseline (ATR14),84,65.5,3.07,0.2548,21.4
++20% (ATR17),84,65.5,3.152,0.2601,21.85

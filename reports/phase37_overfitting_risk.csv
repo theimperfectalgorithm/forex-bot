@@ -1,0 +1,11 @@
+class_name,degrees_of_freedom,event_selection_risk,instrument_count_risk,threshold_count_risk,event_sparsity,discretionary_classification_risk,parameter_tuning_frequency_risk,overall_overfitting_risk,rationale
+Cross-asset relationships,MEDIUM,LOW,LOW (2 instruments),MEDIUM,MEDIUM,LOW,MEDIUM,MEDIUM,Lead-lag relationships are well-studied but easy to overfit with lag/window choices
+Commodity-based return streams,LOW,LOW,LOW (1 instrument),LOW,LOW,LOW,LOW,MEDIUM,Similar risk profile to the already-tested XAUUSD candidate
+Index-based return streams,MEDIUM,MEDIUM,LOW,MEDIUM,MEDIUM,LOW,MEDIUM,MEDIUM,Event-window selection around data releases carries real overfitting risk
+Cross-sectional FX,MEDIUM,LOW,HIGH (basket of many pairs),MEDIUM,LOW,LOW,MEDIUM,MEDIUM,Basket construction and ranking rules add real degrees of freedom despite the precedented underlying finding
+Relative-value / spread structures,MEDIUM,LOW,MEDIUM (2 correlated pairs),MEDIUM,LOW,MEDIUM,MEDIUM,MEDIUM-HIGH,Spread-relationship stability itself is a classic overfitting trap
+Volatility-conditioned systems,MEDIUM,LOW,LOW,MEDIUM,MEDIUM,LOW,MEDIUM,MEDIUM,Regime-transition timing has real degrees of freedom in how the transition is defined
+Multi-asset momentum,HIGH,MEDIUM,HIGH (multiple asset classes combined),HIGH,MEDIUM,MEDIUM,HIGH,MEDIUM-HIGH,Most degrees of freedom of any class on this list -- combining signals across asset classes multiplies parameter choices
+Event/macro-conditioned systems,MEDIUM,HIGH,LOW,MEDIUM,HIGH,HIGH,MEDIUM,HIGH,Macro classifier construction is inherently discretionary and event-sparse -- the highest-risk class with a real reason to test
+Session-specific structures,LOW,MEDIUM,LOW,LOW,MEDIUM,LOW,LOW,MEDIUM,Calendar effects are numerous and can be data-mined if not pre-registered tightly -- risk is manageable with discipline, not inherent to the mechanism
+Other structurally distinct mechanisms,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,Too undefined to assess confidently -- microstructure sub-ideas specifically would likely be HIGH given typical degrees of freedom in that space

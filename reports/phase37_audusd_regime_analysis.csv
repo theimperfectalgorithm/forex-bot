@@ -1,0 +1,4 @@
+regime,trades,win_rate_pct,pf,expectancy_R,total_R,max_dd_R,max_losing_streak,classification
+HIGH,20,70.0,6.25,0.3537,7.07,-0.67,2,STRONG
+LOW,48,58.3,2.02,0.1645,7.9,-2.89,4,
+NORMAL,16,81.2,6.13,0.4021,6.43,-0.6,1,
