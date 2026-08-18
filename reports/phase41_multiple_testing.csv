@@ -1,0 +1,13 @@
+item,type,status
+JPY concentration,PRIMARY PREREGISTERED FACTOR,TESTED
+AMR/ARB/Monday mechanism concentration,PRIMARY PREREGISTERED FACTOR,TESTED
+Volatility state (reused vol_tercile column),PRIMARY PREREGISTERED FACTOR,TESTED
+Session concentration (Asian/London),PRIMARY PREREGISTERED FACTOR,TESTED
+Directional (long/short) concentration,PRIMARY PREREGISTERED FACTOR,TESTED
+Currency-level concentration (7 currencies),PRIMARY PREREGISTERED FACTOR,TESTED
+Entry clustering,EXPLORATORY,TESTED -- EXPLORATORY LABEL APPLIED
+Exit clustering (SL/TP mix),EXPLORATORY,TESTED -- EXPLORATORY LABEL APPLIED
+Temporal sequencing (worst 5 days),EXPLORATORY,"TESTED -- EXPLORATORY LABEL APPLIED, PRECEDED not CAUSED"
+7 predeclared factor interactions (Part20),"EXPLORATORY (predeclared, not an unrestricted search)",TESTED
+"Conditional correlation, 15 strategy pairs",PRIMARY PREREGISTERED FACTOR,TESTED
+"Marginal + counterfactual attribution, 6 strategies","PRIMARY PREREGISTERED FACTOR (descriptive accounting, not modeling)",TESTED

@@ -1,0 +1,16 @@
+bucket,vol_state,n_days,n_trades,trade_share_pct,R_contribution,losing_trade_pct,jpy_share_pct
+worst_1pct,LOW,8,12,29.3,-13.391,100.0,100.0
+worst_1pct,NORMAL,8,12,29.3,-12.999,100.0,100.0
+worst_1pct,HIGH,8,17,41.5,-17.666,100.0,88.2
+worst_5pct,LOW,39,34,19.3,-36.553,97.1,97.1
+worst_5pct,NORMAL,39,73,41.5,-71.29,94.5,97.3
+worst_5pct,HIGH,39,69,39.2,-65.219,94.2,92.8
+worst_10pct,LOW,78,89,27.4,-79.046,86.5,98.9
+worst_10pct,NORMAL,78,144,44.3,-123.807,88.2,96.5
+worst_10pct,HIGH,78,92,28.3,-87.538,94.6,93.5
+worst_20pct,LOW,155,189,31.3,-134.544,75.7,98.4
+worst_20pct,NORMAL,155,217,36.0,-158.172,80.2,95.4
+worst_20pct,HIGH,155,197,32.7,-147.681,83.2,92.9
+normal,LOW,619,854,40.5,255.184,17.4,97.2
+normal,NORMAL,619,727,34.5,236.804,18.7,93.4
+normal,HIGH,619,527,25.0,140.768,24.3,89.6

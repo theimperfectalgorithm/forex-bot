@@ -1,0 +1,7 @@
+strategy,total_historical_R,R_contribution_worst20pct,R_contribution_worst10pct,R_contribution_worst5pct,n_stress_days_participated_worst20pct,pct_of_stress_losses_attributable_worst20pct,avg_loss_when_participating_in_stress
+EURJPY_AMR,39.45,-122.082,-69.363,-39.487,125,27.7,-1.088
+CADJPY_AMR,17.74,-105.237,-74.641,-42.547,108,23.9,-1.101
+AUDJPY_AMR,33.31,-104.203,-67.424,-40.834,110,23.7,-1.101
+GBPJPY_AMR,58.01,-82.847,-59.765,-37.243,88,18.8,-1.067
+CADJPY_ARB,25.46,-21.553,-14.849,-10.129,35,4.9,-0.986
+GBPUSD_MONDAY,20.14,-4.476,-4.349,-2.822,15,1.0,-0.471

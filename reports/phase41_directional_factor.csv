@@ -1,0 +1,6 @@
+bucket,n_days,long_trades,short_trades,long_share_pct,long_R,short_R,net_directional_R
+worst_1pct,8,24,17,58.5,-26.124,-17.933,-44.056
+worst_5pct,39,96,80,54.5,-92.579,-80.483,-173.062
+worst_10pct,78,173,152,53.2,-153.004,-137.387,-290.391
+worst_20pct,155,346,257,57.4,-235.896,-204.501,-440.397
+normal,619,1370,739,65.0,495.171,139.331,634.502

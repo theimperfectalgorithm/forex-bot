@@ -1,0 +1,6 @@
+idea,basis,status
+Correlation-aware position sizing (reduce total risk when JPY-cross correlation is elevated),2/15 strategy pairs show diversification loss during stress,FUTURE RESEARCH IDEA -- NOT IMPLEMENTED
+Mechanism-diversification research (a genuinely non-AMR/ARB/calendar-drift return stream) beyond what Phases 38/40 already attempted,"AMR mechanism concentration and stress co-occurrence, see phase41_mechanism_factor.csv",FUTURE RESEARCH IDEA -- NOT IMPLEMENTED
+Direct research into WHY JPY-cross correlation rises during stress (macro risk-sentiment linkage) -- would require the Event/Macro data infrastructure flagged NOT READY in Phase39,JPY factor ranking result,"FUTURE RESEARCH IDEA -- NOT IMPLEMENTED, blocked pending Phase39 infrastructure decision"
+"A volatility-scaling (not directional) defensive framework, distinct from Phase40s rejected directional volatility-gated momentum design","Phase40 EXP-138 future research idea, reiterated here given volatility-state stress co-occurrence",FUTURE RESEARCH IDEA -- NOT IMPLEMENTED
+Session-diversification research targeting the New York session specifically (control has zero NY exposure),phase41_session_factor.csv shows control concentrated in ASIAN/LONDON only,FUTURE RESEARCH IDEA -- NOT IMPLEMENTED

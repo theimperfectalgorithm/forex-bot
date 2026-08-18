@@ -1,0 +1,6 @@
+factor,normal_exposure_pct,stress_exposure_pct_worst5pct,effect_size_pct_pts,evidence_strength
+JPY concentration,94.0,95.5,1.5,NO CLEAR ASSOCIATION
+AMR mechanism concentration,87.2,86.9,-0.3,NO CLEAR ASSOCIATION
+HIGH volatility state,25.0,39.2,14.2,MODERATE
+Conditional correlation (diversification loss),,,2/15 strategy pairs show diversification loss (stress corr > normal corr + 0.15),WEAK
+Session concentration (ASIAN),93.2,91.5,-1.7,NO CLEAR ASSOCIATION

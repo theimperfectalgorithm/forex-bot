@@ -1,0 +1,6 @@
+date,total_R,n_trades,first_trade_strategy,first_trade_time,first_trade_vol_state,sequence_note
+2024-08-05,-6.1947,6,GBPUSD_MONDAY,2024-08-05 00:00:00+00:00,HIGH,"EXPLORATORY -- describes observed order only; PRECEDED, not CAUSED"
+2024-10-29,-5.7746,5,AUDJPY_AMR,2024-10-29 01:15:00+00:00,LOW,"EXPLORATORY -- describes observed order only; PRECEDED, not CAUSED"
+2024-09-11,-5.4723,5,EURJPY_AMR,2024-09-11 02:15:00+00:00,NORMAL,"EXPLORATORY -- describes observed order only; PRECEDED, not CAUSED"
+2025-08-14,-5.3889,5,EURJPY_AMR,2025-08-14 00:00:00+00:00,LOW,"EXPLORATORY -- describes observed order only; PRECEDED, not CAUSED"
+2024-05-30,-5.3744,5,EURJPY_AMR,2024-05-30 00:00:00+00:00,LOW,"EXPLORATORY -- describes observed order only; PRECEDED, not CAUSED"

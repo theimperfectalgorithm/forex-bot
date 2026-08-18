@@ -1,0 +1,16 @@
+bucket,mechanism,n_days,n_trades,risk_share_pct,R_contribution,losing_trade_pct
+worst_1pct,AMR,8,32,78.0,-34.798,100.0
+worst_1pct,ARB,8,7,17.1,-7.234,100.0
+worst_1pct,MONDAY,8,2,4.9,-2.024,100.0
+worst_5pct,AMR,39,153,86.9,-160.111,98.0
+worst_5pct,ARB,39,15,8.5,-10.129,80.0
+worst_5pct,MONDAY,39,8,4.5,-2.822,62.5
+worst_10pct,AMR,78,287,88.3,-271.193,91.3
+worst_10pct,ARB,78,26,8.0,-14.849,80.8
+worst_10pct,MONDAY,78,12,3.7,-4.349,66.7
+worst_20pct,AMR,155,528,87.6,-414.368,81.6
+worst_20pct,ARB,155,48,8.0,-21.553,72.9
+worst_20pct,MONDAY,155,27,4.5,-4.476,55.6
+normal,AMR,619,1838,87.2,562.871,16.8
+normal,ARB,619,144,6.8,47.016,43.8
+normal,MONDAY,619,127,6.0,24.615,33.1

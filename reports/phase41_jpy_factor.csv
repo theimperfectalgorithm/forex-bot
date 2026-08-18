@@ -1,0 +1,6 @@
+bucket,n_days,n_trades,jpy_trade_pct,jpy_risk_R_pct,net_jpy_directional_R,jpy_long_R,jpy_short_R,sample_flag,delta_vs_normal_jpy_trade_pct
+worst_1pct,8,41,95.1,95.4,-42.033,-24.1,-17.933,THIN SAMPLE (<20 days),1.0999999999999943
+worst_5pct,39,176,95.5,98.4,-170.24,-89.757,-80.483,ADEQUATE,1.5
+worst_10pct,78,325,96.3,98.5,-286.042,-148.655,-137.387,ADEQUATE,2.299999999999997
+worst_20pct,155,603,95.5,99.0,-435.921,-231.42,-204.501,ADEQUATE,1.5
+normal,619,2109,94.0,96.1,609.887,470.556,139.331,ADEQUATE,0.0

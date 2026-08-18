@@ -1,0 +1,11 @@
+bucket,session,n_days,n_trades,trade_share_pct,R_contribution,losing_trade_pct
+worst_1pct,ASIAN,8,34,82.9,-36.822,100.0
+worst_1pct,LONDON,8,7,17.1,-7.234,100.0
+worst_5pct,ASIAN,39,161,91.5,-162.933,96.3
+worst_5pct,LONDON,39,15,8.5,-10.129,80.0
+worst_10pct,ASIAN,78,299,92.0,-275.542,90.3
+worst_10pct,LONDON,78,26,8.0,-14.849,80.8
+worst_20pct,ASIAN,155,555,92.0,-418.844,80.4
+worst_20pct,LONDON,155,48,8.0,-21.553,72.9
+normal,ASIAN,619,1965,93.2,587.486,17.8
+normal,LONDON,619,144,6.8,47.016,43.8

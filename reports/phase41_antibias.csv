@@ -1,0 +1,5 @@
+check,jpy_effect_pct_pts,n_days
+Full period (baseline),1.5,774
+Excluding worst single day,1.5,773
+Excluding worst 5 days,1.3,769
+"Post-demotion live sample (separate, n=19 trades -- see phase41_preregistration.md Part C)","INSUFFICIENT SAMPLE (19 live trades, not a daily-ledger-comparable population)",N/A

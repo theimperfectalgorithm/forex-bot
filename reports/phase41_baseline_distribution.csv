@@ -1,0 +1,2 @@
+mean_daily_R,median_daily_R,std_daily_R,skew,kurtosis,positive_day_freq_pct,negative_day_freq_pct,pctile_5,pctile_1,max_daily_gain,max_daily_loss,avg_trades_per_day,avg_concurrent_positions,n_trading_days
+0.2508,0.5914,1.9726,-0.624,0.145,61.6,38.4,-3.4364,-4.9619,5.2671,-6.1947,3.5,3.78,774

@@ -1,0 +1,16 @@
+metric,value
+worst_1pct_threshold_R,-4.9619
+worst_5pct_threshold_R,-3.4364
+worst_10pct_threshold_R,-2.6573
+worst_20pct_threshold_R,-1.2057
+worst_single_day_date,2024-08-05
+worst_single_day_R,-6.1947
+worst_3day_window_R,-12.7553
+worst_5day_window_R,-16.1485
+worst_10day_window_R,-18.1401
+longest_drawdown_days,226
+largest_drawdown_R,-29.067
+largest_drawdown_end_date,2025-01-27
+largest_clustered_loss_window_days,10
+largest_clustered_loss_R,-18.1401
+largest_clustered_loss_dates,2024-07-25; 2024-07-26; 2024-07-29; 2024-07-30; 2024-07-31; 2024-08-01; 2024-08-02; 2024-08-05; 2024-08-06; 2024-08-07

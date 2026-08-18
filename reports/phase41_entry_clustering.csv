@@ -1,0 +1,6 @@
+bucket,n_days,entries_per_day,avg_max_concurrent_positions,note
+worst_1pct,8,5.12,5.25,EXPLORATORY
+worst_5pct,39,4.51,4.74,EXPLORATORY
+worst_10pct,78,4.17,4.47,EXPLORATORY
+worst_20pct,155,3.89,4.19,EXPLORATORY
+normal,619,3.41,3.68,EXPLORATORY
