@@ -1,0 +1,2 @@
+gate,trades,win_rate_pct,pf,expectancy_R,total_R,classification
+"HIGH-volatility behaviour (this candidate trades ONLY in HIGH state, so OOS result = HIGH-vol result)",2228,37.4,0.668,-0.1767,-393.71,C. MATERIALLY DETERIORATES IN HIGH VOLATILITY

@@ -1,0 +1,3 @@
+regime,trades,win_rate_pct,pf,expectancy_R,total_R,max_dd_R,max_losing_streak,classification,note
+HIGH (the only state this strategy trades),2228,37.4,0.668,-0.1767,-393.71,-395.05,26.0,WEAK,
+"LOW/NORMAL (not traded by design -- diagnostic only, per Part16)",N/A BY DESIGN,,,,,,,,This candidate only ever trades in HIGH state; LOW/NORMAL performance is not applicable to this hypothesis

@@ -1,0 +1,4 @@
+transition_type,trades,expectancy_R,total_R,note
+PERSISTENT_HIGH,1877,-0.18178523969136093,-341.2108949006845,DIAGNOSTIC ONLY per Part17 -- not used to create a replacement strategy
+TRANSITION_LOW_TO_HIGH,2,-1.1295003413699467,-2.2590006827398934,DIAGNOSTIC ONLY per Part17 -- not used to create a replacement strategy
+TRANSITION_NORMAL_TO_HIGH,349,-0.14395466642453186,-50.24017858216162,DIAGNOSTIC ONLY per Part17 -- not used to create a replacement strategy

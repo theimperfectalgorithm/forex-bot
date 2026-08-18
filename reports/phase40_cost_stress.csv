@@ -1,0 +1,4 @@
+cost_multiplier,trades,win_rate_pct,pf,expectancy_R,total_R
+normal,2228,37.4,0.668,-0.1767,-393.71
+1.5x,2228,36.0,0.6,-0.2259,-503.21
+2.0x,2228,34.3,0.539,-0.275,-612.71

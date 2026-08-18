@@ -1,0 +1,27 @@
+# Phase 40 — Structural Independence Gate
+
+**Assessed before backtesting, per Part 2. The Phase 40 hypothesis (HIGH-volatility-state trend continuation, `reports/phase40_preregistration.md`) is compared against every prior confirmatory/live mechanism.**
+
+| Prior mechanism | Closest shared element | Key difference |
+|---|---|---|
+| **AMR** (Asian-hours mean reversion) | Both are session-scoped | AMR is mean-reversion (fades range extremes); Phase 40 is momentum-continuation, gated by volatility state, not session-range position. AMR is Asian-session; Phase 40 is New York. Different mechanism, different session, opposite directional logic. |
+| **ARB** | None significant | ARB's exact live mechanics are not part of this project's confirmatory-hypothesis ledger (predates it); no shared signal construction. |
+| **GBPUSD Monday** | Both are directional | GBPUSD Monday is calendar/day-of-week drift (open-to-close, no volatility conditioning). Phase 40 has no calendar dependency at all — it fires on any weekday, gated only by volatility state. |
+| **AUDUSD Monday LONG** | Both are directional, both use ATR | AUDUSD Monday LONG's ATR use is purely a normalization denominator for the R-multiple, not a trade-activation gate — the Monday trade fires every week regardless of volatility. Phase 40's volatility state IS the activation condition; without HIGH state, no trade occurs at all. This is the single most important distinction, since it is the exact concept Phase 40 was preregistered to test that AUDUSD Monday LONG does not. |
+| **Phase 33 XAUUSD** (volatility-contraction-to-expansion breakout) | Both reference volatility | Phase 33's XAUUSD candidate traded a **volatility-state transition** (contraction→expansion breakout) on a single instrument (XAUUSD), fixed-target exit. Phase 40 trades a **persistent HIGH state** (not a transition) across a 4-instrument non-JPY FX universe, with an ATR-stop/session-close exit, no profit target. Related (both volatility-aware) but a different conditioning logic (level vs. transition) and different instrument/asset class. |
+| **Phase 33 USDCAD** (H4 trend/momentum continuation) | Both are trend-continuation | Phase 33's USDCAD candidate had no volatility conditioning at all — it traded on every signal regardless of realized volatility. Phase 40 trades ONLY in HIGH-volatility bars; most bars produce no trade. This volatility-gating is the entire point of Phase 40 and is absent from the Phase 33 design. |
+| **Phase 35 H1 (NY-ORB)** | Both are NY-session | H1 is a range-breakout mechanism (opening-range high/low break); Phase 40 is a volatility-state-gated momentum continuation with no range-breakout logic at all. |
+| **Phase 35 H2 (NY momentum)** | Both are NY-session momentum-continuation | This is the closest prior comparison. H2 fired on every NY-session bar meeting its momentum-continuation filter, unconditional on realized volatility. Phase 40 fires ONLY when the preceding bar was in the TRAIN-fixed HIGH-volatility tercile — a materially different, genuinely volatility-gated activation condition, not merely a parameter change to H2. H2 also traded AUDUSD only; Phase 40 trades a 4-instrument non-JPY universe. |
+| **Phase 35 H3 (overlap continuation)** | Session-scoped continuation | H3 traded the London/NY overlap window specifically, with an efficiency-ratio signal, no volatility gate. Different session, different signal, no shared conditioning logic. |
+| **Phase 35 H4 (MTF trend)** | Trend-continuation | D1-filtered H4 execution, no volatility conditioning, no session restriction. Different timeframe design, no shared gate. |
+| **Phase 35 H5 (ATR-scaled vol expansion)** | Both reference ATR | H5 used ATR to **scale the exit** (adaptive target), not to gate entry — trades fired on every signal regardless of volatility state; only the exit distance varied. Phase 40 uses ATR-state to gate **entry itself** — a structurally different role for the same underlying measure. |
+| **Phase 38 H1 (cross-sectional FX)** | None significant | Entirely different mechanism (multi-instrument relative-ranking basket), no volatility conditioning, no session restriction. |
+| **Phase 38 H2 (Asian-range session-transition breakout)** | Both are session-triggered | H2 triggers at the Asian→London transition on a range-breakout condition; Phase 40 triggers within the NY session on a volatility-state condition, with no range/breakout logic. Different session, different trigger mechanism, different conditioning variable. |
+
+## Classification
+
+**B. RELATED BUT MEANINGFULLY DIFFERENT.**
+
+The closest prior work (Phase 35 H2's NY-session momentum-continuation, and Phase 35 H5's ATR-scaled exit) each share one element with Phase 40 (session or ATR-use respectively) but neither combines them the way Phase 40 does: Phase 40 is the first hypothesis in this project's ledger to use realized volatility as a genuine trade-**activation gate** (not an exit-scaling factor, not an R-multiple normalizer, not a post-hoc regime label) combined with directional momentum. This is not classified A (genuinely distinct) only because the underlying instruments, session, and general momentum-continuation logic have each individually been tested before (Phase 35 H2 shares the NY-session-momentum concept; Phase 35 H5 shares ATR-derived logic) — the novelty is specifically in the *volatility-as-activation-gate* mechanism, not in every structural element simultaneously.
+
+**Not classified C (duplicative).** Per Part 2, backtesting proceeds.

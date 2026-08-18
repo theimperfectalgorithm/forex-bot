@@ -1,0 +1,5 @@
+metric,n,assessment
+OOS trades,2228,STATISTICALLY INFORMATIVE (n>=30)
+OOS sub-half (n per half),1113,ADEQUATE
+Drawdown-correlation overlap days,26,STATISTICALLY INFORMATIVE (n>=8)
+Historical regime periods with >=10 trades,5,5 of 5 periods have >=10 trades

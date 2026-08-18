@@ -1,0 +1,5 @@
+compared_to,shared_signal_mechanism,shared_session,shared_instruments,classification
+AMR,None (AMR=Asian-range mean-reversion; Phase40=NY volatility-gated momentum),No (Asian vs NY),No (AMR is JPY-cross; Phase40 is non-JPY),STRONGLY DISTINCT
+ARB,Not fully documented in this ledger (predates confirmatory framework),UNKNOWN,Partial overlap possible (ARB is JPY-cross),UNKNOWN
+GBPUSD Monday,None (calendar drift vs volatility-gated momentum),No (full-session vs NY-only),"Partial (GBPUSD overlaps GBPUSD, but different mechanism)",MEANINGFULLY DISTINCT
+Existing 6-strategy control (aggregate),None of the 6 live strategies use volatility-state gating as an entry condition,Partial (control has zero confirmed NY-session exposure per Phase31),Partial (non-JPY vs control JPY-heavy),MEANINGFULLY DISTINCT structurally -- see drawdown-correlation result above for the decisive test
