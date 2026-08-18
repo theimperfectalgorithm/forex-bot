@@ -1,0 +1,8 @@
+session_bucket,hypothesis_count,confirmatory_count,unique_mechanisms_tested,mechanisms,genuinely_unexplored
+multi-session,14,2,2,calendar_drift; multi_timeframe_trend_continuation,NO
+UNKNOWN,50,2,3,calendar_drift; trend_momentum_continuation; volatility_contraction_expansion_breakout,NO
+New York,2,2,2,new_york_open_range_breakout; new_york_session_momentum,NO
+London/NY overlap,1,1,1,london_ny_overlap_continuation,NO
+London,1,1,1,atr_scaled_volatility_expansion,NO
+session-independent,1,1,1,cross_sectional_relative_momentum,NO
+Asian,1,1,1,session_transition_breakout_continuation,NO

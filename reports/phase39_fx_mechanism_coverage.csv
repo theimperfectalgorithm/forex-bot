@@ -1,0 +1,11 @@
+mechanism,confirmatory_hypotheses,unique_instruments,unique_sessions,initial_edge_count,robustness_pass_count,portfolio_qualified_count,note
+volatility_contraction_expansion_breakout,1,1,1,1,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+trend_momentum_continuation,1,1,1,1,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+new_york_open_range_breakout,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+new_york_session_momentum,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+london_ny_overlap_continuation,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+multi_timeframe_trend_continuation,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+atr_scaled_volatility_expansion,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+calendar_drift,1,1,1,1,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+cross_sectional_relative_momentum,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)
+session_transition_breakout_continuation,1,1,1,0,0,0,Confirmatory-only count (excludes the 60-cell exploratory calendar/drift screen to avoid pooled significance)

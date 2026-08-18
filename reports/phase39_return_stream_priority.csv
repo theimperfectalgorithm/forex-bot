@@ -1,0 +1,4 @@
+rank,class_name,portfolio_independence_score,drawdown_diversification_score,high_vol_compatibility_score,mechanism_diversity_score,data_quality_score,researchability_score,cost_execution_feasibility_score,overfitting_risk_score_inverse,weighted_priority_score_pct,label
+1,Volatility-conditioned (self-calculated),2,2,3,2,2.5,2.5,2.5,2,75.0,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio or be profitable"
+2,Index-based,3,2,1,3,2,1.5,1.5,2,73.3,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio or be profitable"
+3,Event/Macro-conditioned,3,3,2,3,0,0.5,0.5,0.5,72.5,"RESEARCH-PRIORITY ASSESSMENT ONLY -- not a profitability score, not a claim the class will diversify the portfolio or be profitable"

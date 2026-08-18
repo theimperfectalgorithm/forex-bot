@@ -1,0 +1,11 @@
+strategy_family,hypothesis_count,pct_of_total,type,unique_instruments,final_classifications,classification_confidence
+calendar_drift,61,87.1,MIXED (screen + confirmatory),6,"A. REJECTED -- no edge; B. REJECTED -- insufficient robustness (IS/OOS inconsistent); B. REJECTED -- insufficient robustness (did not clear pre-de; E. PROMISING -- requires more validation; F. REJECTED -- POOR DRAWDOWN DIVERSIFICATION (Phase37, super",HIGH (explicit strategy_family field in source ledger)
+volatility_contraction_expansion_breakout,1,1.4,CONFIRMATORY (preregistered),1,B. REJECTED -- ROBUSTNESS FAILURE,HIGH (explicit strategy_family field in source ledger)
+trend_momentum_continuation,1,1.4,CONFIRMATORY (preregistered),1,B. REJECTED -- ROBUSTNESS FAILURE,HIGH (explicit strategy_family field in source ledger)
+new_york_open_range_breakout,1,1.4,CONFIRMATORY (preregistered),1,A. REJECTED -- NO EDGE,HIGH (explicit strategy_family field in source ledger)
+new_york_session_momentum,1,1.4,CONFIRMATORY (preregistered),1,A. REJECTED -- NO EDGE,HIGH (explicit strategy_family field in source ledger)
+london_ny_overlap_continuation,1,1.4,CONFIRMATORY (preregistered),1,A. REJECTED -- NO EDGE,HIGH (explicit strategy_family field in source ledger)
+multi_timeframe_trend_continuation,1,1.4,CONFIRMATORY (preregistered),1,A. REJECTED -- NO EDGE (though the smallest-magnitude reject,HIGH (explicit strategy_family field in source ledger)
+atr_scaled_volatility_expansion,1,1.4,CONFIRMATORY (preregistered),1,A. REJECTED -- NO EDGE,HIGH (explicit strategy_family field in source ledger)
+cross_sectional_relative_momentum,1,1.4,CONFIRMATORY (preregistered),1,B. REJECTED -- NO CREDIBLE OOS EDGE,HIGH (explicit strategy_family field in source ledger)
+session_transition_breakout_continuation,1,1.4,CONFIRMATORY (preregistered),1,B. REJECTED -- NO CREDIBLE OOS EDGE,HIGH (explicit strategy_family field in source ledger)

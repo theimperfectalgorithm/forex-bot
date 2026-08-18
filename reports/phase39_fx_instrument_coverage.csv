@@ -1,0 +1,9 @@
+instrument,hypothesis_count,confirmatory_count,unique_families_tested,is_jpy,asset_class
+AUDUSD,13,3,3,NO,FX major
+USDCAD,13,3,4,NO,FX major
+USDCHF,11,1,2,NO,FX major
+XAUUSD,11,1,2,NO,Commodity (metals)
+EURUSD,10,0,1,NO,FX major
+GBPUSD,10,0,1,NO,FX major
+SYNTHETIC (cross-sectional basket),1,1,1,NO,Synthetic basket
+EURUSD/GBPUSD/AUDUSD,1,1,1,NO,FX major

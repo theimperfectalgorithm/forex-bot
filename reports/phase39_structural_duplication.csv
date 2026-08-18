@@ -1,0 +1,9 @@
+return_driver_group,member_hypotheses,raw_count,classification
+volatility-state-change breakout,volatility_contraction_expansion_breakout/XAUUSD; atr_scaled_volatility_expansion/AUDUSD,2,C. NEAR-DUPLICATES (same return driver)
+trend/momentum continuation,trend_momentum_continuation/USDCAD; multi_timeframe_trend_continuation/USDCAD,2,C. NEAR-DUPLICATES (same return driver)
+single-session range breakout,new_york_open_range_breakout/USDCAD,1,A. GENUINELY DISTINCT
+single-session momentum continuation,new_york_session_momentum/AUDUSD,1,A. GENUINELY DISTINCT
+single-window continuation,london_ny_overlap_continuation/USDCHF,1,A. GENUINELY DISTINCT
+day-of-week open-to-close drift,calendar_drift/AUDUSD,1,A. GENUINELY DISTINCT
+cross-instrument relative ranking,cross_sectional_relative_momentum/SYNTHETIC (7 USD-pair legs: EURUSD/GBPUSD/AUDUSD/NZDUSD/USDJPY/USDCAD/USDCHF),1,A. GENUINELY DISTINCT
+session-transition range breakout,session_transition_breakout_continuation/EURUSD/GBPUSD/AUDUSD,1,A. GENUINELY DISTINCT
