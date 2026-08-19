@@ -1,0 +1,5 @@
+control,pct_dd_reduction,pct_total_R_reduction,pct_suppressed_winners,final_classification,reason
+B_high_vol_50pct,30.4,1.9,60.8,C. REJECTED -- NO MEANINGFUL BENEFIT,"60.8% of suppressed trades were historical winners -- control removes activity broadly, not selectively bad trades, despite a nominal 30.4% drawdown reduction"
+C_high_vol_concurrency4,-4.5,8.4,65.6,C. REJECTED -- NO MEANINGFUL BENEFIT,No drawdown reduction observed (dd_red=-4.5%)
+D_transition_high_to_normal,5.7,-10.1,58.5,C. REJECTED -- NO MEANINGFUL BENEFIT,"58.5% of suppressed trades were historical winners -- control removes activity broadly, not selectively bad trades, despite a nominal 5.7% drawdown reduction"
+E_concurrency5_agnostic,0.0,0.3,50.0,C. REJECTED -- NO MEANINGFUL BENEFIT,No drawdown reduction observed (dd_red=0.0%)

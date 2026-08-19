@@ -1,0 +1,5 @@
+control,pct_dd_reduction,pct_total_R_reduction,pct_trade_reduction,pct_worst5day_reduction,tradeoff_ratio_dd_per_R_sacrificed
+B_high_vol_50pct,30.4,1.9,15.4,30.0,16.06
+C_high_vol_concurrency4,-4.5,8.4,6.0,0.0,-0.53
+D_transition_high_to_normal,5.7,-10.1,10.1,0.0,-0.56
+E_concurrency5_agnostic,0.0,0.3,0.1,0.0,0.0

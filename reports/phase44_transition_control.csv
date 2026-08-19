@@ -1,0 +1,2 @@
+control,total_R,max_dd_R,worst_day_R,worst_5day_R,worst_10day_R,pctile95_daily_loss,pctile99_daily_loss,downside_dev,dd_duration_days,recovery_duration_days,pf,trade_count
+D_transition_high_to_normal,213.675,-27.416,-6.1947,-16.1484,-13.3633,-3.2982,-4.8964,1.3726,114,98,1.269,2437

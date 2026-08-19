@@ -1,0 +1,4 @@
+item,status
+Any control reaching A. HISTORICALLY PROMISING would require a genuinely out-of-sample walk-forward or paper-trading validation before any live consideration,FUTURE VALIDATION REQUIREMENT -- NOT IMPLEMENTED
+"Investigate a milder (e.g. 25%) HIGH-vol suppression fraction as a separate, independently preregistered future phase, if Control B shows a directionally promising but insufficiently large effect",FUTURE VALIDATION CANDIDATE -- NOT TESTED (would require new preregistration)
+"Investigate whether suppressed-winner trades cluster in specific strategies, informing a more selective (not exposure-agnostic) future control design",FUTURE RESEARCH IDEA -- NOT IMPLEMENTED

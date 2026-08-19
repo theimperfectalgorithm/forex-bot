@@ -1,0 +1,2 @@
+note,status
+"Cost sensitivity (baseline vs 2x cost) is NOT COMPUTABLE from this dataset -- r_multiple/pnl do not separately expose the cost component per trade, and Phase44 does not re-simulate trades (only suppresses/retains historical ones). Disclosed limitation per preregistration section 3, not fabricated.",UNKNOWN BY DATA LIMITATION

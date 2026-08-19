@@ -1,0 +1,18 @@
+period,note,control,n_days,total_R,max_dd_R
+A_2019_2020,UNKNOWN BY DATA ABSENCE,,,,
+B_2021_2022,UNKNOWN BY DATA ABSENCE,,,,
+C_2023_2024,,A_baseline,366.0,51.792,-28.844
+C_2023_2024,,B_high_vol_50pct,366.0,68.921,-20.231
+C_2023_2024,,C_high_vol_concurrency4,357.0,52.717,-30.366
+C_2023_2024,,D_transition_high_to_normal,332.0,63.549,-27.416
+C_2023_2024,,E_concurrency5_agnostic,366.0,51.792,-28.844
+D_2025,,A_baseline,254.0,81.918,-14.533
+D_2025,,B_high_vol_50pct,254.0,63.159,-16.426
+D_2025,,C_high_vol_concurrency4,243.0,76.394,-14.113
+D_2025,,D_transition_high_to_normal,219.0,78.173,-13.933
+D_2025,,E_concurrency5_agnostic,254.0,81.261,-14.533
+E_2026_YTD,,A_baseline,154.0,60.395,-13.975
+E_2026_YTD,,B_high_vol_50pct,154.0,58.35,-14.956
+E_2026_YTD,,C_high_vol_concurrency4,150.0,48.743,-19.019
+E_2026_YTD,,D_transition_high_to_normal,144.0,71.953,-9.079
+E_2026_YTD,,E_concurrency5_agnostic,154.0,60.395,-13.975

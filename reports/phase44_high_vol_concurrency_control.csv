@@ -1,0 +1,2 @@
+control,total_R,max_dd_R,worst_day_R,worst_5day_R,worst_10day_R,pctile95_daily_loss,pctile99_daily_loss,downside_dev,dd_duration_days,recovery_duration_days,pf,trade_count
+C_high_vol_concurrency4,177.855,-30.366,-5.7746,-16.1484,-17.1814,-3.2455,-4.4499,1.3259,179,162,1.206,2549

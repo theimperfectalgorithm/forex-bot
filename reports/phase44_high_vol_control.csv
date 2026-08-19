@@ -1,0 +1,2 @@
+control,total_R,max_dd_R,worst_day_R,worst_5day_R,worst_10day_R,pctile95_daily_loss,pctile99_daily_loss,downside_dev,dd_duration_days,recovery_duration_days,pf,trade_count
+B_high_vol_50pct,190.43,-20.231,-5.7746,-11.3,-12.249,-2.9843,-4.3799,1.2002,170,146,1.252,2294

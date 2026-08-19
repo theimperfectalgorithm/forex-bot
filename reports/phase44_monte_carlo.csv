@@ -1,0 +1,6 @@
+control,n_sims,n_trades,data_type,actual_max_dd_R,mc_dd_median,mc_dd_p95,actual_dd_percentile_in_mc
+A_baseline,10000,2712,SIMULATED (trade-order reshuffle),-29.068,-18.422,-13.298,3.9
+B_high_vol_50pct,10000,2294,SIMULATED (trade-order reshuffle),-20.231,-16.161,-11.669,18.1
+C_high_vol_concurrency4,10000,2549,SIMULATED (trade-order reshuffle),-30.366,-18.435,-13.248,2.6
+D_transition_high_to_normal,10000,2437,SIMULATED (trade-order reshuffle),-27.416,-15.775,-11.52,1.7
+E_concurrency5_agnostic,10000,2710,SIMULATED (trade-order reshuffle),-29.068,-18.474,-13.373,4.1
