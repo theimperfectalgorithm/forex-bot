@@ -1,0 +1,7 @@
+strategy,status,reason
+AUDJPY_AMR,INSUFFICIENT DATA / REQUIRES NEW RE-EXECUTION INFRASTRUCTURE,"The historical ledger stores only already-executed outcomes, not a re-runnable backtest engine bound to live price history -- see phase46_preregistration.md section 4. Not fabricated."
+CADJPY_AMR,INSUFFICIENT DATA / REQUIRES NEW RE-EXECUTION INFRASTRUCTURE,"The historical ledger stores only already-executed outcomes, not a re-runnable backtest engine bound to live price history -- see phase46_preregistration.md section 4. Not fabricated."
+EURJPY_AMR,INSUFFICIENT DATA / REQUIRES NEW RE-EXECUTION INFRASTRUCTURE,"The historical ledger stores only already-executed outcomes, not a re-runnable backtest engine bound to live price history -- see phase46_preregistration.md section 4. Not fabricated."
+GBPJPY_AMR,INSUFFICIENT DATA / REQUIRES NEW RE-EXECUTION INFRASTRUCTURE,"The historical ledger stores only already-executed outcomes, not a re-runnable backtest engine bound to live price history -- see phase46_preregistration.md section 4. Not fabricated."
+CADJPY_ARB,INSUFFICIENT DATA / REQUIRES NEW RE-EXECUTION INFRASTRUCTURE,"The historical ledger stores only already-executed outcomes, not a re-runnable backtest engine bound to live price history -- see phase46_preregistration.md section 4. Not fabricated."
+GBPUSD_MONDAY,INSUFFICIENT DATA / REQUIRES NEW RE-EXECUTION INFRASTRUCTURE,"The historical ledger stores only already-executed outcomes, not a re-runnable backtest engine bound to live price history -- see phase46_preregistration.md section 4. Not fabricated."

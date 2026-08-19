@@ -1,0 +1,7 @@
+strategy,verified_in_data_source,n_historical_trades,date_range_start,date_range_end,mechanism_family,jpy_linked,live_feed_name_match
+AUDJPY_AMR,YES (data/phase26_all_trades.csv),651,2023-08-01,2026-08-13,mean_reversion,YES,AUDJPY_AMR (exact match)
+CADJPY_AMR,YES (data/phase26_all_trades.csv),599,2023-08-01,2026-08-13,mean_reversion,YES,CADJPY_AMR (exact match)
+EURJPY_AMR,YES (data/phase26_all_trades.csv),713,2023-08-01,2026-08-13,mean_reversion,YES,EURJPY_AMR (exact match)
+GBPJPY_AMR,YES (data/phase26_all_trades.csv),403,2023-08-01,2026-08-13,mean_reversion,YES,GBPJPY_AMR (exact match)
+CADJPY_ARB,YES (data/phase26_all_trades.csv),192,2023-08-01,2026-08-13,range_breakout,YES,CADJPY_ARB (exact match)
+GBPUSD_MONDAY,YES (data/phase26_all_trades.csv),154,2023-08-01,2026-08-13,calendar_drift,NO,"GBPUSD_MON in reports/5ers_trade_export.csv (normalized to GBPUSD_MONDAY, confirmed same strategy via symbol=GBPUSD and strategy_reason fields)"

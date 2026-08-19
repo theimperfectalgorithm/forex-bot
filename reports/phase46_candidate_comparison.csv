@@ -1,0 +1,7 @@
+strategy,oos_pf,gate1_vs_phase33_40_candidates,phase33_40_candidate_gate1_pass_rate_pct,would_be_rejected_if_new_candidate_today,rejecting_gate_if_any
+AUDJPY_AMR,1.2,PASS,27.3,False,None on the computable gates -- parameter/cost robustness gates could not be evaluated (see preregistration section 4)
+CADJPY_AMR,1.14,PASS,27.3,False,None on the computable gates -- parameter/cost robustness gates could not be evaluated (see preregistration section 4)
+EURJPY_AMR,1.313,PASS,27.3,False,None on the computable gates -- parameter/cost robustness gates could not be evaluated (see preregistration section 4)
+GBPJPY_AMR,1.767,PASS,27.3,False,None on the computable gates -- parameter/cost robustness gates could not be evaluated (see preregistration section 4)
+CADJPY_ARB,1.584,PASS,27.3,False,None on the computable gates -- parameter/cost robustness gates could not be evaluated (see preregistration section 4)
+GBPUSD_MONDAY,2.472,PASS,27.3,False,None on the computable gates -- parameter/cost robustness gates could not be evaluated (see preregistration section 4)

@@ -1,0 +1,7 @@
+strategy,status,reason
+AUDJPY_AMR,NOT COMPUTABLE FROM THIS DATASET,r_multiple/pnl do not separately expose each trades cost component; same disclosed limitation as Phase44 (reports/phase44_cost_sensitivity.csv)
+CADJPY_AMR,NOT COMPUTABLE FROM THIS DATASET,r_multiple/pnl do not separately expose each trades cost component; same disclosed limitation as Phase44 (reports/phase44_cost_sensitivity.csv)
+EURJPY_AMR,NOT COMPUTABLE FROM THIS DATASET,r_multiple/pnl do not separately expose each trades cost component; same disclosed limitation as Phase44 (reports/phase44_cost_sensitivity.csv)
+GBPJPY_AMR,NOT COMPUTABLE FROM THIS DATASET,r_multiple/pnl do not separately expose each trades cost component; same disclosed limitation as Phase44 (reports/phase44_cost_sensitivity.csv)
+CADJPY_ARB,NOT COMPUTABLE FROM THIS DATASET,r_multiple/pnl do not separately expose each trades cost component; same disclosed limitation as Phase44 (reports/phase44_cost_sensitivity.csv)
+GBPUSD_MONDAY,NOT COMPUTABLE FROM THIS DATASET,r_multiple/pnl do not separately expose each trades cost component; same disclosed limitation as Phase44 (reports/phase44_cost_sensitivity.csv)
