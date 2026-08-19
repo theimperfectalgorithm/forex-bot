@@ -1,0 +1,2 @@
+note,corr_open_risk_R_vs_position_count,conclusion
+DISCLOSED: total open risk in R equals open-position count for this dataset (fixed fractional-risk-per-trade sizing) -- see phase43_preregistration.md section 3,1.0,H2 as specified (position count vs total open risk as SEPARATE explanatory variables) cannot be tested as two independent variables with this dataset -- they are identical by construction. This is itself the finding: this control has no variation in per-trade risk sizing to exploit.

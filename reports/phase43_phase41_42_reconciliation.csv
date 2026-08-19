@@ -1,0 +1,4 @@
+phase,finding,evidence
+Phase41,H. NO SINGLE DOMINANT FACTOR,JPY/AMR concentration NOT stress-specific; HIGH-vol trade share = strongest but MODERATE factor
+Phase42,C. MODERATE / PROMISING BUT NOT CONFIRMED (volatility),"Non-monotonic, AMR/ARB-concentrated, concurrency interaction present"
+Phase43,SEE phase43_evidence_matrix.csv for final classification,"Tests whether exposure (position count, correlated risk, direction, JPY, mechanism) explains the Phase42 volatility interaction"

@@ -1,0 +1,5 @@
+vol_state,amr_exposure,total_open_risk,n_days,mean_R,loss_prob_pct
+HIGH,high_AMR,high_open_risk,179,-0.0749,45.8
+HIGH,high_AMR,low_open_risk,24,0.0787,29.2
+HIGH,low_AMR,high_open_risk,3,1.1437,33.3
+HIGH,low_AMR,low_open_risk,52,0.3305,34.6

@@ -1,0 +1,2 @@
+n_trades,n_trading_days,total_R,assessment
+19,8,-4.32,"INSUFFICIENT LIVE SAMPLE (n=19 trades) -- exposure/volatility interaction not separately re-tested, not pooled with historical control"

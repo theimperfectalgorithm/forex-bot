@@ -1,0 +1,12 @@
+offset_hours,avg_open_position_count_across_5_worst_days
+-24,0.4
+-12,1.2
+-8,1.4
+-4,1.2
+-2,0.8
+-1,0.8
+0,0.8
+1,0.8
+2,0.8
+4,0.6
+8,0.4

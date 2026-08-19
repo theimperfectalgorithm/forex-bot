@@ -1,0 +1,6 @@
+bucket,n_days,avg_max_currency_concentration,avg_n_currency_factors,avg_open_position_count
+worst_1pct,8,0.954,5.25,5.25
+worst_5pct,39,0.961,5.13,4.74
+worst_10pct,78,0.969,4.92,4.47
+worst_20pct,155,0.961,4.75,4.19
+normal,619,0.953,4.41,3.68

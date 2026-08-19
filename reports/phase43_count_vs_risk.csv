@@ -1,0 +1,2 @@
+note
+Position-count vs open-risk matrix is DEGENERATE (a single diagonal) for this dataset since open risk in R equals position count by construction -- see phase43_open_risk.csv. The position-count breakdown alone (phase43_position_count.csv) is the informative table.

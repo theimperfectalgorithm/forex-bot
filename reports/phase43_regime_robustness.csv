@@ -1,0 +1,6 @@
+period,n_days,note,high_vol_4plus_avg_R,non_high_vol_4plus_avg_R,effect_direction
+A_2019_2020,0,UNKNOWN BY DATA ABSENCE,,,
+B_2021_2022,0,UNKNOWN BY DATA ABSENCE,,,
+C_2023_2024,366,,-0.2744,0.2546,NEGATIVE (high-vol+4plus worse)
+D_2025,254,,0.2247,0.451,NEGATIVE (high-vol+4plus worse)
+E_2026_YTD,154,,-0.0666,0.543,NEGATIVE (high-vol+4plus worse)

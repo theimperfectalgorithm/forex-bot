@@ -1,0 +1,5 @@
+excluding_worst_n_days,n_days_remaining,high_vol_4plus_avg_R,non_high_vol_4plus_avg_R,diff
+0,774,-0.0548,0.3766,-0.4314
+1,773,-0.0209,0.3766,-0.3975
+5,769,0.0094,0.4345,-0.4251
+10,764,0.1258,0.452,-0.3261

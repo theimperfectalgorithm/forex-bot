@@ -1,0 +1,10 @@
+vol_state,directional_bucket,n_days,mean_R,loss_prob_pct
+LOW,long_heavy,169,0.5395,32.5
+LOW,short_heavy,57,-0.0339,42.1
+LOW,balanced,32,0.2722,40.6
+NORMAL,long_heavy,157,0.5302,35.0
+NORMAL,short_heavy,81,-0.1791,45.7
+NORMAL,balanced,20,0.9163,25.0
+HIGH,long_heavy,140,0.1104,40.0
+HIGH,short_heavy,96,-0.2042,47.9
+HIGH,balanced,22,0.6021,27.3

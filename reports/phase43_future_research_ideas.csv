@@ -1,0 +1,4 @@
+idea,basis,status
+"Future portfolio-control research: investigate whether limiting concurrent HIGH-vol-state positions (not a specific cap) reduces tail severity, as a DEDICATED intervention-testing phase","H1 finding: HIGH-vol + 4+ positions shows a real, if modest, negative effect vs HIGH-vol + fewer positions",FUTURE PORTFOLIO-CONTROL RESEARCH HYPOTHESIS -- NOT IMPLEMENTED
+"Investigate whether currency-factor concentration (not just position count) is the more precise exposure measure, given H3s currency-concentration finding",phase43_correlated_risk.csv,FUTURE RESEARCH HYPOTHESIS -- NOT IMPLEMENTED
+Investigate whether pre-existing exposure specifically (not new entries) drives the volatility-expansion-event deterioration found in H4,phase43_exposure_before_vol_expansion.csv,FUTURE RESEARCH HYPOTHESIS -- NOT IMPLEMENTED

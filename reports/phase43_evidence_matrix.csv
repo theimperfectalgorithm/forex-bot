@@ -1,0 +1,9 @@
+hypothesis,effect_R,n,evidence
+H1 -- volatility x position count,0.3058,182 HIGH+4plus vs 76 HIGH+0-3,WEAK
+H2 -- position count vs total open risk,N/A -- identical variable by construction (see phase43_open_risk.csv),N/A,DEGENERATE -- not separable in this dataset
+H3 -- correlated open risk vs total open risk,see phase43_correlated_risk.csv,see CSV,see phase43_correlated_risk.csv -- currency concentration rises modestly with stress severity
+H4 -- exposure before vol expansion,0.7857,68 high-pre-exposure vs 38 low-pre-exposure expansion events,MODERATE
+H5 -- entries during vol transitions,see phase43_exposure_at_entry.csv,see CSV,see phase43_exposure_at_entry.csv
+H6 -- directional exposure,see phase43_directional_exposure.csv,see CSV,see phase43_directional_exposure.csv
+H7 -- JPY x volatility x exposure,see phase43_jpy_exposure.csv,see CSV,see phase43_jpy_exposure.csv
+H8 -- mechanism x volatility x exposure,see phase43_mechanism_exposure.csv,see CSV,see phase43_mechanism_exposure.csv

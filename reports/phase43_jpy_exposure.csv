@@ -1,0 +1,5 @@
+vol_state,jpy_exposure,total_open_risk,n_days,mean_R,loss_prob_pct
+HIGH,high_JPY,high_open_risk,164,-0.1024,46.3
+HIGH,high_JPY,low_open_risk,0,,
+HIGH,low_JPY,high_open_risk,18,0.3782,38.9
+HIGH,low_JPY,low_open_risk,76,0.251,32.9

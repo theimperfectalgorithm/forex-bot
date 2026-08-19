@@ -1,0 +1,5 @@
+tail_bucket,n_days,pct_high_vol,pct_high_vol_and_4plus_positions,avg_position_count
+worst_20pct,155,40.6,32.3,4.19
+worst_10pct,78,39.7,34.6,4.47
+worst_5pct,39,53.8,53.8,4.74
+worst_1pct,8,62.5,62.5,5.25
