@@ -1,0 +1,8 @@
+dimension,evidence_needed
+Live performance within historical distribution,Bootstrap percentile of live result within the 10th-90th percentile band (see phase45_live_sample_sufficiency.csv methodology)
+No new failure mode,"Live losses attributable to already-characterized factors (JPY/AMR saturation, HIGH-vol, Phase41/42 findings), not a novel pattern"
+Stable execution,NOT YET JUSTIFIABLE -- no baseline established (same gap as deterioration framework)
+No unexplained regime break,Live volatility/session/currency characteristics consistent with the historical regime periods already characterized (Phase36/41/42)
+Strategy-level evidence,Each strategy individually not classified UNUSUAL or worse in phase45_live_vs_historical.csv
+Portfolio-level evidence,Portfolio-level live result within expected variation per the block-bootstrap (phase45_live_sample_sufficiency.csv)
+Sufficient sample size,"See phase45_forward_validation requirement -- current post-demotion sample (n reported in phase45_live_validation.csv) is explicitly assessed against this bar, not assumed sufficient"

@@ -1,0 +1,10 @@
+activity,info_gain,cost,overfitting_risk,recommendation
+Continued live validation (accumulate post-demotion sample),HIGH,LOW (already running),NONE (observational),CONTINUE
+Formal parameter/cost-stress robustness testing of the current-6 live strategies,"MODERATE-HIGH (closes a real, disclosed gap)",LOW (existing infrastructure),LOW if no re-parameterization follows,"CONTINUE -- high-value, low-cost"
+Portfolio-control OOS validation (if a future control is designed),UNKNOWN (no control has passed Phase44s bar yet),MODERATE,LOW if genuinely OOS,NOT YET APPLICABLE -- no control qualifies (Phase44)
+"Volatility-conditioned research (self-calculated, non-directional framing)",MODERATE (Phase39 found this the most immediately researchable alternative),LOW,LOW-MEDIUM,"CONTINUE -- per Phase39, not restarted here"
+Event/macro data infrastructure investment,POTENTIALLY HIGH (targets Gap2 directly),HIGH,HIGH once built (Phase39s own finding),CONTINUE TO DEFER -- unchanged from Phase39/41-44
+Index-based research infrastructure,MODERATE,MODERATE,LOW-MEDIUM,CONTINUE TO CONSIDER -- unchanged from Phase39
+Another undifferentiated FX-technical strategy search,"LOW (Phase39 ceiling finding, reconfirmed by Phase40s rejection)",LOW,MODERATE (multiple-testing accumulation),STOP
+Rescuing/re-parameterizing any rejected Phase33-44 candidate,LOW (explicitly the p-hacking pattern this projects discipline exists to prevent),LOW,HIGH,STOP
+Optimizing a portfolio control against the same historical sample used in Phase41-44,"LOW (in-sample, already disclosed as such)",LOW,HIGH,STOP

@@ -1,0 +1,9 @@
+decision,minimum_evidence
+A. Changing a strategy,"Individual strategy classified UNUSUAL or worse in phase45_live_vs_historical.csv for >=100 live trades, corroborated by a specific, characterized new failure mode (not already-known JPY/AMR/HIGH-vol weakness)"
+B. Pausing a strategy,"Sustained negative expectancy (phase45_deterioration_framework.csv row 1) for that specific strategy over >=100 trades, OR a statistically unusual loss sequence (Monte Carlo <5th percentile) with no corroborating benign explanation"
+C. Changing portfolio risk,NO EVIDENCE-BASED THRESHOLD ESTABLISHED -- this project has never formally studied risk-sizing sensitivity
+D. Adding a new strategy,"A candidate reaching Phase33-40s J.PORTFOLIO QUALIFIED classification -- none has, to date (see phase45_research_master_ledger.csv)"
+E. Removing a strategy,"Same bar as pausing (B), sustained over a longer window (this project has never established a distinct, higher bar for permanent removal vs. temporary pause)"
+F. Deploying a portfolio control,"A control reaching Phase44s A.HISTORICALLY PROMISING classification, followed by independent OOS/paper-trading validation -- none has, to date (see phase44_evidence_matrix.csv)"
+G. Increasing capital,NO EVIDENCE-BASED THRESHOLD ESTABLISHED -- this project has not studied capital-scaling effects
+H. Decreasing capital,NO EVIDENCE-BASED THRESHOLD ESTABLISHED -- same gap as G

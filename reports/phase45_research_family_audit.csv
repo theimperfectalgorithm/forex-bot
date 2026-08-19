@@ -1,0 +1,12 @@
+strategy_family,n_hypotheses,n_reaching_gate1_edge,n_rejected_no_edge,n_portfolio_qualified,classifications
+atr_scaled_volatility_expansion,1,0,1,0,A. REJECTED -- NO EDGE
+calendar_drift,1,1,0,0,F. REJECTED -- POOR DRAWDOWN DIVERSIFICATION (Phas
+cross_sectional_relative_momentum,1,0,1,0,B. REJECTED -- NO CREDIBLE OOS EDGE
+london_ny_overlap_continuation,1,0,1,0,A. REJECTED -- NO EDGE
+multi_timeframe_trend_continuation,1,0,1,0,A. REJECTED -- NO EDGE (though the smallest-magnit
+new_york_open_range_breakout,1,0,1,0,A. REJECTED -- NO EDGE
+new_york_session_momentum,1,0,1,0,A. REJECTED -- NO EDGE
+session_transition_breakout_continuation,1,0,1,0,B. REJECTED -- NO CREDIBLE OOS EDGE
+trend_momentum_continuation,1,1,0,0,B. REJECTED -- ROBUSTNESS FAILURE
+volatility_conditioned_trend_continuation,1,0,1,0,B. REJECTED -- NO CREDIBLE OOS EDGE
+volatility_contraction_expansion_breakout,1,1,0,0,B. REJECTED -- ROBUSTNESS FAILURE

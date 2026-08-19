@@ -1,0 +1,2 @@
+total_trades,total_R,pf,expectancy_R,win_rate_pct,avg_win_R,avg_loss_R,max_dd_R,longest_dd_days,recovery_days,daily_std_R,daily_skew,daily_kurtosis,worst_day_R,worst_5day_R,worst_10day_R
+2712,194.105,1.211,0.0716,67.0,0.612,-1.027,-29.068,226,91,1.9726,-0.624,0.145,-6.1947,-16.1484,-18.1402

@@ -1,0 +1,7 @@
+strategy,total_R,pct_of_portfolio_R,trade_count,pct_of_portfolio_trades,win_contribution_R,loss_contribution_R,pf
+GBPJPY_AMR,58.01,29.9,403,14.9,197.82,-139.82,1.415
+EURJPY_AMR,39.45,20.3,713,26.3,280.43,-240.98,1.164
+AUDJPY_AMR,33.31,17.2,651,24.0,251.18,-217.88,1.153
+CADJPY_ARB,25.46,13.1,192,7.1,119.79,-94.33,1.27
+GBPUSD_MONDAY,20.14,10.4,154,5.7,38.44,-18.3,2.1
+CADJPY_AMR,17.74,9.1,599,22.1,224.93,-207.18,1.086

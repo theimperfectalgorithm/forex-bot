@@ -1,0 +1,4 @@
+population,n_trades,total_R,total_profit,win_rate_pct,pf
+ALL CLOSED (current-6 strategies only),33,-7.09,-95.92,36.4,0.431
+"POST-DEMOTION (>=2026-07-31), current-6 only",19,-4.32,-66.07,36.8,
+"GBPJPY_ARB (7th strategy, NOT part of frozen current-6 control -- reported separately)",3,-4.23,-104.84,0.0,

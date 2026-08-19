@@ -1,0 +1,7 @@
+gap,category,detail
+Live post-demotion sample size,REQUIRES TIME,Only 19 closed current-6 trades since demotion -- see phase45_live_sample_sufficiency.csv for the quantified forward-validation requirement
+Formal parameter/cost-stress robustness testing of the current-6 strategies themselves,CAN FIX NOW,These strategies predate the Phase33+ preregistration discipline and have never been individually subjected to it -- technically feasible today with existing infrastructure
+Historical economic-calendar / point-in-time macro data,REQUIRES NEW DATA SOURCE,Confirmed blocked in Phase39 -- unchanged
+Execution-quality / slippage baseline,REQUIRES TIME + NEW DATA SOURCE,No historical fill-quality monitoring has been established; would need to be built and then observed over a live period
+Pre-2023 historical data for the current-6 strategies,REQUIRES NEW DATA SOURCE (or may not exist),The control reconstruction starts 2023-08-01; whether older broker/strategy history exists was not investigated in this phase
+Independent (non-in-sample) validation of Phase44s counterfactual controls,REQUIRES TIME,Phase44 explicitly labeled all findings IN-SAMPLE COUNTERFACTUAL EVIDENCE

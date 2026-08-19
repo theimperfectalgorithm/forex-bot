@@ -1,0 +1,2 @@
+live_n_trades,live_total_R,n_bootstrap_draws,bootstrap_method,bootstrap_median_R,bootstrap_p5_R,bootstrap_p95_R,live_result_percentile_in_bootstrap,interpretation
+19,-4.32,10000,"SIMULATED (contiguous block bootstrap of historical trade-order R, block size = live sample size)",1.525,-7.034,8.222,9.4,UNUSUAL (outside 10th-90th percentile of same-sized historical samples)

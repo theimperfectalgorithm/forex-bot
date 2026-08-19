@@ -1,0 +1,11 @@
+dimension,rating,explanation
+Historical edge,MODERATE,"PF 1.211, total R 194.105 over 2712 trades -- real but not exceptional (see phase45_historical_portfolio.csv)"
+Robustness,WEAK,"Current-6 strategies predate this projects preregistration/parameter-perturbation discipline -- no formal +/-20% or cost-stress test exists for any of them, unlike every Phase33+ candidate"
+Regime diversity,MODERATE,Reconstruction spans 2023-08 to 2026-08 (3 of 5 project-standard regime periods); pre-2023 UNKNOWN BY DATA ABSENCE
+Strategy independence,WEAK (effective N=3.1 of 6 nominal),"Average full-period pairwise correlation 0.192; JPY/AMR concentration is structural (Phase41/42), not a stress-specific artifact"
+Live validation,INSUFFICIENT,19 post-demotion closed trades -- see phase45_live_sample_sufficiency.csv for the quantified bootstrap assessment
+Execution integrity,UNKNOWN,No slippage/fill-quality monitoring baseline established in this project
+Risk integrity,NOT SEPARATELY AUDITED THIS PHASE,"Position-sizing/risk-limit configuration audit is out of this phases scope (would require live config inspection, not historical data analysis)"
+Stress behaviour,MODERATE,Phase41/42/43 found no single dominant stress factor; HIGH-volatility is the strongest (MODERATE) association; Phase44 found no portfolio control improves this without cost
+Research breadth,MODERATE,11 confirmatory hypotheses across 11 distinct families tested (Phase30-40); Phase39 found FX-technical ceiling reached for undifferentiated search
+Evidence sufficiency (overall),WEAK-TO-MODERATE,"Strong historical reconstruction evidence, weak formal robustness evidence, and an explicitly insufficient live sample -- see final classification in the master report"
