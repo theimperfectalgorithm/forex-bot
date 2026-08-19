@@ -1,0 +1,9 @@
+hypothesis,effect_size_R,n_days,evidence,robust_to_extreme_day_removal,robust_across_regimes
+H1 -- Absolute volatility (continuous),0.3233,258 HIGH vs 516 non-HIGH,WEAK,see phase42_extreme_day_sensitivity.csv,see phase42_regime_robustness.csv
+H2 -- Volatility change / transitions,"see phase42_volatility_change.csv (varies by transition, several THIN SAMPLE)",varies,"MODERATE for select transitions, INSUFFICIENT for others (thin samples)",not separately re-tested,not separately re-tested
+H3 -- Volatility acceleration,0.222,93 HIGH+HIGH_ACCEL vs 107 HIGH+STABLE,WEAK,not separately re-tested,not separately re-tested
+H4 -- Volatility x concurrent exposure (5+/6+),0.4669,96 HIGH+5plus vs 150 non-HIGH+5plus,WEAK,"see phase42_extreme_day_sensitivity.csv (H4 not separately re-run, disclosed limitation)",not separately re-tested
+H5 -- Volatility x session,N/A -- control has zero NY/overlap trades,N/A,INSUFFICIENT (Asian/London only; NY transition UNKNOWN BY DATA ABSENCE),N/A,N/A
+H6 -- Volatility x direction,see phase42_volatility_direction.csv,see CSV,see phase42_volatility_direction.csv for per-state directional R split,not separately re-tested,not separately re-tested
+H7 -- Volatility x JPY,see phase42_volatility_jpy.csv,see CSV,see phase42_volatility_jpy.csv,not separately re-tested,not separately re-tested
+H8 -- Volatility x mechanism,see phase42_volatility_mechanism.csv,see CSV,see phase42_volatility_mechanism.csv,not separately re-tested,not separately re-tested

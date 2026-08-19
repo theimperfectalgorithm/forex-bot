@@ -1,0 +1,6 @@
+acceleration_state,n_days,avg_daily_R,loss_prob_pct,worst_day_R
+LOW,256,0.1929,40.6,-5.7746
+NORMAL,258,0.2137,38.4,-6.1947
+HIGH,258,0.3221,36.4,-5.4723
+HIGH_VOL + HIGH_ACCEL,93,-0.1354,44.1,-5.4723
+HIGH_VOL + STABLE_ACCEL,107,0.0866,42.1,-6.1947

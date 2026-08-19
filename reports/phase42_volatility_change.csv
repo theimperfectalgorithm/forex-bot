@@ -1,0 +1,9 @@
+transition,n_days,avg_daily_R,loss_prob_pct,tail_loss_worst_R,avg_concurrent_positions,avg_simultaneous_losing_strategies,sample_flag
+stable_LOW,154,0.3187,37.7,-5.3889,3.34,0.91,ADEQUATE
+stable_NORMAL,103,0.4635,33.0,-4.8776,3.99,1.12,ADEQUATE
+stable_HIGH,152,0.0208,42.8,-6.1947,4.02,1.45,ADEQUATE
+LOW_to_HIGH,27,-0.0415,40.7,-4.3172,4.0,1.48,ADEQUATE
+NORMAL_to_HIGH,79,0.0892,40.5,-5.3587,3.77,1.35,ADEQUATE
+HIGH_to_HIGH,0,,,,,,THIN (<20)
+HIGH_to_NORMAL,79,-0.2477,51.9,-5.7746,3.99,1.44,ADEQUATE
+NORMAL_to_LOW,76,0.413,34.2,-3.2921,3.63,0.87,ADEQUATE

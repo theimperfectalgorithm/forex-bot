@@ -1,0 +1,6 @@
+lag_window,corr_vol_vs_R,n_days
+same_day,-0.08,774
+previous_trading_day,-0.067,773
+previous_session,UNKNOWN BY DATA LIMITATION,N/A -- no continuous intraday session-level volatility series stored
+previous_4_hours,UNKNOWN BY DATA LIMITATION,"N/A -- trade-level granularity only, not continuous intraday"
+previous_8_hours,UNKNOWN BY DATA LIMITATION,"N/A -- trade-level granularity only, not continuous intraday"

@@ -1,0 +1,5 @@
+vol_state,jpy_exposure,n_days,avg_daily_R,loss_prob_pct
+LOW,high_JPY,238,0.2943,37.4
+LOW,low_JPY,20,1.3955,15.0
+HIGH,high_JPY,176,-0.1442,43.8
+HIGH,low_JPY,82,0.4204,37.8

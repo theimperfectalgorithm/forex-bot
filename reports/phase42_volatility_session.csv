@@ -1,0 +1,4 @@
+vol_state,n_days,asian_R,london_R,avg_daily_R,note
+LOW,258,84.079,13.872,0.3797,"Control has ZERO New York or overlap-session trades (confirmed Phase41 data integrity) -- London->NY transition is UNKNOWN BY DATA ABSENCE, not tested"
+NORMAL,258,74.845,12.215,0.3374,"Control has ZERO New York or overlap-session trades (confirmed Phase41 data integrity) -- London->NY transition is UNKNOWN BY DATA ABSENCE, not tested"
+HIGH,258,9.718,-0.624,0.0352,"Control has ZERO New York or overlap-session trades (confirmed Phase41 data integrity) -- London->NY transition is UNKNOWN BY DATA ABSENCE, not tested"

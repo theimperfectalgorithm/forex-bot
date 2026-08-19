@@ -1,0 +1,2 @@
+n_trades,n_trading_days,total_R,avg_ATR,assessment
+19,8,-4.32,24.774,"INSUFFICIENT LIVE SAMPLE (n=19 trades) -- not pooled with the historical control, no deterioration/improvement inferred"

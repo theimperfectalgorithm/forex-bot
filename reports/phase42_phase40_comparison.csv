@@ -1,0 +1,4 @@
+question,answer
+Does volatility work as a trading SIGNAL (Phase40)?,"NO -- Phase40s HIGH-volatility-state trend continuation was REJECTED (OOS PF 0.668, n=2228, largest sample tested)"
+Does volatility work as a portfolio RISK-STATE descriptor (Phase42)?,"corr(vol_pctile, daily_R) = -0.08 across the full control; see phase42_volatility_percentiles.csv for the continuous relationship and phase42_evidence_matrix.csv for the final classification"
+Interpretation,"A variable can be a poor DIRECTIONAL trading signal (Phase40: predicting price direction conditional on HIGH vol failed) while still being a legitimate RISK-STATE descriptor (Phase42: characterizing when the EXISTING portfolios losses are more likely/larger) -- these are logically independent questions, not in tension"
