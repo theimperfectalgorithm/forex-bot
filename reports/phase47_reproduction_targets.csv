@@ -1,0 +1,7 @@
+strategy,source,n_historical_trades
+AUDJPY_AMR,"data/phase26_all_trades.csv (already-validated historical ledger, used as control since Phase31)",651
+CADJPY_AMR,"data/phase26_all_trades.csv (already-validated historical ledger, used as control since Phase31)",599
+EURJPY_AMR,"data/phase26_all_trades.csv (already-validated historical ledger, used as control since Phase31)",713
+GBPJPY_AMR,"data/phase26_all_trades.csv (already-validated historical ledger, used as control since Phase31)",403
+CADJPY_ARB,"data/phase26_all_trades.csv (already-validated historical ledger, used as control since Phase31)",192
+GBPUSD_MONDAY,"data/phase26_all_trades.csv (already-validated historical ledger, used as control since Phase31)",154

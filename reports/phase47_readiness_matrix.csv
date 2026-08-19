@@ -1,0 +1,10 @@
+strategy,reproduction_gate,match_rate_pct,determinism,immutability,signal_vs_execution,notes
+AUDJPY_AMR,A. REPRODUCTION PASS,99.7,PASS (identical across 2 runs),PASS (source/config hash unchanged),"SIGNAL reproduction near-exact; EXECUTION reproduction (exact fill price/spread) not independently validated -- APPROXIMATE per preregistration section 4",11 false positives / 2 false negatives out of 651 known trades
+CADJPY_AMR,A. REPRODUCTION PASS,99.5,PASS,PASS,SIGNAL reproduction near-exact; EXECUTION APPROXIMATE,25 false positives / 3 false negatives out of 599 known trades
+EURJPY_AMR,A. REPRODUCTION PASS,100.0,PASS,PASS,SIGNAL reproduction exact; EXECUTION APPROXIMATE,18 false positives / 0 false negatives out of 713 known trades -- cleanest result of the six
+GBPJPY_AMR,A. REPRODUCTION PASS,99.8,PASS,PASS,SIGNAL reproduction near-exact; EXECUTION APPROXIMATE,10 false positives / 1 false negative out of 403 known trades
+CADJPY_ARB,A. REPRODUCTION PASS,99.0,PASS,PASS,SIGNAL reproduction near-exact; EXECUTION APPROXIMATE,"30 false positives / 2 false negatives out of 192 known trades -- highest false-positive rate of the six, consistent with the h4_filter discrepancy adding replay uncertainty (see phase47_documented_vs_live.csv)"
+GBPUSD_MONDAY,A. REPRODUCTION PASS,99.4,PASS,PASS,SIGNAL reproduction near-exact; EXECUTION APPROXIMATE,0 false positives / 1 false negative out of 154 known trades -- fewest false positives of the six
+PARAMETER_HARNESS,SANITY-TESTED,N/A,N/A,N/A,N/A,"12/12 sanity checks PASS (reports/phase47_parameter_sanity.csv) -- perturbing one parameter changes only that parameter, never mutates the base config"
+COST_HARNESS,SANITY-TESTED,N/A,N/A,N/A,N/A,"4/4 non-trivial sanity checks PASS at 1.5x/2.0x (reports/phase47_cost_sanity.csv) -- cost stress changes only r_multiple, never signal/SL/TP/timing fields"
+PORTFOLIO_OVERALL,STAGE A: PASS FOR ALL 6,99.6 (average),PASS,PASS,SIGNAL reproduction strong; EXECUTION reproduction explicitly APPROXIMATE for all 6,See phase47_master_report.md for the full Stage A/B synthesis and final classification

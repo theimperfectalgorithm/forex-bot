@@ -1,0 +1,7 @@
+multiplier,r_multiple_changed,protected_fields_unchanged,unrelated_changed_fields,base_trade_not_mutated,PASS,orig_r
+1.0,False,True,[],True,False,1.2
+1.5,True,True,[],True,True,1.2
+2.0,True,True,[],True,True,1.2
+1.0,False,True,[],True,False,-1.0
+1.5,True,True,[],True,True,-1.0
+2.0,True,True,[],True,True,-1.0

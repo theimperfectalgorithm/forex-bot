@@ -1,0 +1,20 @@
+strategy,parameter,category,perturbable,baseline_value,rationale
+AUDJPY_AMR,z_threshold,continuous,YES,2.0,z-score entry threshold -- a genuine continuous signal parameter
+AUDJPY_AMR,sl_multiplier,continuous,YES,1.5,stop-loss multiplier of the TP distance -- continuous
+AUDJPY_AMR,entry_end_hour,discrete/structural,NO,4,"per-pair structural session-window choice, not a +/-20% perturbation target per Part18"
+CADJPY_AMR,z_threshold,continuous,YES,2.0,same as AUDJPY_AMR
+CADJPY_AMR,sl_multiplier,continuous,YES,1.5,same as AUDJPY_AMR
+CADJPY_AMR,entry_end_hour,discrete/structural,NO,4,same as AUDJPY_AMR
+EURJPY_AMR,z_threshold,continuous,YES,2.0,same as AUDJPY_AMR
+EURJPY_AMR,sl_multiplier,continuous,YES,1.5,same as AUDJPY_AMR
+EURJPY_AMR,entry_end_hour,discrete/structural,NO,6,"differs from AUDJPY/CADJPY (6 vs 4) -- a genuine per-pair value, still not perturbed"
+GBPJPY_AMR,z_threshold,continuous,YES,2.0,same as AUDJPY_AMR
+GBPJPY_AMR,sl_multiplier,continuous,YES,1.5,same as AUDJPY_AMR
+GBPJPY_AMR,entry_end_hour,discrete/structural,NO,4,same as AUDJPY_AMR
+CADJPY_ARB,tp_multiplier,continuous,YES,2.0,reward:risk multiplier of the Asian range distance -- continuous
+CADJPY_ARB,min_range_pips,continuous,YES,15 (strategy default; not overridden in CADJPY YAML),minimum Asian range filter -- continuous
+CADJPY_ARB,h4_filter,categorical,NO,false,"binary on/off structural filter, not a +/-20% target per Part18 -- see phase47_documented_vs_live.csv for the discrepancy this flag raised"
+GBPUSD_MONDAY,sl_atr_mult,continuous,YES,1.25,ATR-based SL multiplier -- continuous
+GBPUSD_MONDAY,tp_atr_mult,continuous,YES,1.0,ATR-based TP multiplier -- continuous
+ALL_SIX,session,structural,NO,per-strategy session windows,"structural session-window definitions -- not perturbed per Part18's explicit instruction"
+ALL_SIX,risk_percent,position-sizing input,NO,varies by strategy,"position-sizing input, not a signal parameter -- out of this harness's scope"

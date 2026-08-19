@@ -1,0 +1,3 @@
+population,total_trades,total_R
+KNOWN HISTORICAL (data/phase26_all_trades.csv),2712,194.11
+"RECONSTRUCTED (this harness, signal-count basis -- R not independently computed per-trade, see limitations)",2797,"NOT COMPUTED (execution/fill model not built for full R reconstruction, per disclosed APPROXIMATE REPRODUCTION scope)"

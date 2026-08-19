@@ -1,0 +1,13 @@
+param,pct,target_param_changed,unrelated_params_unchanged,unrelated_changed_keys,base_config_not_mutated,PASS,strategy
+z_threshold,-0.2,True,True,[],True,True,AUDJPY_AMR
+z_threshold,0.2,True,True,[],True,True,AUDJPY_AMR
+sl_multiplier,-0.2,True,True,[],True,True,AUDJPY_AMR
+sl_multiplier,0.2,True,True,[],True,True,AUDJPY_AMR
+tp_multiplier,-0.2,True,True,[],True,True,CADJPY_ARB
+tp_multiplier,0.2,True,True,[],True,True,CADJPY_ARB
+min_range_pips,-0.2,True,True,[],True,True,CADJPY_ARB
+min_range_pips,0.2,True,True,[],True,True,CADJPY_ARB
+sl_atr_mult,-0.2,True,True,[],True,True,GBPUSD_MONDAY
+sl_atr_mult,0.2,True,True,[],True,True,GBPUSD_MONDAY
+tp_atr_mult,-0.2,True,True,[],True,True,GBPUSD_MONDAY
+tp_atr_mult,0.2,True,True,[],True,True,GBPUSD_MONDAY

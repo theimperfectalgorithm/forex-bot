@@ -1,0 +1,7 @@
+strategy,run1_trades,run2_trades,identical
+AUDJPY_AMR,660,660,True
+CADJPY_AMR,621,621,True
+EURJPY_AMR,731,731,True
+GBPJPY_AMR,412,412,True
+CADJPY_ARB,220,220,True
+GBPUSD_MONDAY,153,153,True
