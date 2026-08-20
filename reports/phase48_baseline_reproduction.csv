@@ -1,0 +1,7 @@
+strategy,phase47_known_trades,phase48_simulated_total_trades,phase48_simulated_oos_trades,consistent_with_phase47
+AUDJPY_AMR,651,659,272,True
+CADJPY_AMR,599,621,258,True
+EURJPY_AMR,713,730,308,True
+GBPJPY_AMR,403,412,173,True
+CADJPY_ARB,192,223,87,False
+GBPUSD_MONDAY,154,153,67,True

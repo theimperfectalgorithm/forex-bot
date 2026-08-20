@@ -1,0 +1,13 @@
+strategy,parameter,baseline_expectancy_R,max_pct_change,sensitivity,sign_reversal
+AUDJPY_AMR,z_threshold,0.1285,14.7,STABLE,False
+AUDJPY_AMR,sl_multiplier,0.1285,10.2,STABLE,False
+CADJPY_AMR,z_threshold,0.139,15.4,MODERATELY SENSITIVE,False
+CADJPY_AMR,sl_multiplier,0.139,14.6,STABLE,False
+EURJPY_AMR,z_threshold,0.1256,29.3,MODERATELY SENSITIVE,False
+EURJPY_AMR,sl_multiplier,0.1256,16.9,MODERATELY SENSITIVE,False
+GBPJPY_AMR,z_threshold,0.2722,5.8,STABLE,False
+GBPJPY_AMR,sl_multiplier,0.2722,17.8,MODERATELY SENSITIVE,False
+CADJPY_ARB,tp_multiplier,0.2831,26.5,MODERATELY SENSITIVE,False
+CADJPY_ARB,min_range_pips,0.2831,0.0,STABLE,False
+GBPUSD_MONDAY,sl_atr_mult,0.1847,15.4,MODERATELY SENSITIVE,False
+GBPUSD_MONDAY,tp_atr_mult,0.1847,15.1,MODERATELY SENSITIVE,False

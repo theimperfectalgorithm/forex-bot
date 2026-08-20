@@ -1,0 +1,13 @@
+strategy,parameter,category,baseline_value
+AUDJPY_AMR,z_threshold,continuous,2.0
+AUDJPY_AMR,sl_multiplier,continuous,1.5
+CADJPY_AMR,z_threshold,continuous,2.0
+CADJPY_AMR,sl_multiplier,continuous,1.5
+EURJPY_AMR,z_threshold,continuous,2.0
+EURJPY_AMR,sl_multiplier,continuous,1.5
+GBPJPY_AMR,z_threshold,continuous,2.5
+GBPJPY_AMR,sl_multiplier,continuous,1.25
+CADJPY_ARB,tp_multiplier,continuous,2.0
+CADJPY_ARB,min_range_pips,continuous,10.0
+GBPUSD_MONDAY,sl_atr_mult,continuous,1.25
+GBPUSD_MONDAY,tp_atr_mult,continuous,1.0
