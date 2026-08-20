@@ -1,0 +1,9 @@
+hypothesis,excluding_worst_n_days,effect,evidence
+H1_pooled,1,-0.0325,ADEQUATE SAMPLE
+H1_pooled,5,-0.0444,ADEQUATE SAMPLE
+H2,1,0.0094,ADEQUATE SAMPLE
+H2,5,-0.0392,ADEQUATE SAMPLE
+H1_pooled,N/A,-0.448,validation_first_half
+H1_pooled,N/A,0.0027,validation_second_half
+H2,N/A,-0.1223,validation_first_half
+H2,N/A,-0.1423,validation_second_half

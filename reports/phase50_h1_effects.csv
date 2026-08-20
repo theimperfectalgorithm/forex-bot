@@ -1,0 +1,5 @@
+period,mean_hi,mean_lo,n_hi,n_lo,effect,se,ci95_lo,ci95_hi,value,n_adequate_cells
+discovery_pooled_unconditional,0.1488,-0.0078,312.0,74.0,0.1566,0.259,-0.3511,0.6643,,
+validation_pooled_unconditional,0.3319,0.5509,307.0,80.0,-0.2191,0.2259,-0.6618,0.2236,,
+discovery_cellwise_majority_direction_negative,,,,,,,,,False,2.0
+validation_cellwise_majority_direction_negative,,,,,,,,,False,2.0

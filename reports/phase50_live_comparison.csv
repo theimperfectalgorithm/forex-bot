@@ -1,0 +1,2 @@
+n_live_trades,live_jpy_share_pct,historical_jpy_median_pct,live_jpy_above_historical_median,note
+19,89.5,100.0,False,"CONTEXTUAL EVIDENCE ONLY -- sample (n=19) far too small for validation, per preregistration section 13"

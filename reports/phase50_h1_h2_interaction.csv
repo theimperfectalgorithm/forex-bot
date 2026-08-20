@@ -1,0 +1,3 @@
+period,mean_hi,mean_lo,n_hi,n_lo,effect,se,ci95_lo,ci95_hi,evidence,label
+discovery,0.2909,-0.027,177,209,0.3178,0.2079,-0.0895,0.7252,ADEQUATE SAMPLE,EXPLORATORY
+validation,0.2717,0.466,177,210,-0.1943,0.1961,-0.5786,0.19,ADEQUATE SAMPLE,EXPLORATORY

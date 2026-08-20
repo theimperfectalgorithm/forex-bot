@@ -1,0 +1,5 @@
+fold,hypothesis,discovery_n,validation_n,discovery_effect,validation_effect
+fold1,H1,257,257,-0.126,0.1221
+fold1,H2,257,257,0.0188,0.3303
+fold2,H1,514,259,0.0069,-0.1202
+fold2,H2,514,259,0.1193,-0.1219

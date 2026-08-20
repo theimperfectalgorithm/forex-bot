@@ -1,0 +1,6 @@
+item,type,n_subtests
+"H1 -- conditional JPY exposure (6 vol x concurrency cells, discovery+validation)",PRIMARY PREREGISTERED,12
+"H2 -- concurrency concentration (full-population, discovery+validation)",PRIMARY PREREGISTERED,2
+H2 secondary descriptive (worst-10% subset),"SECONDARY DESCRIPTIVE, not primary",2
+Walk-forward (2 folds x 2 hypotheses),PRIMARY PREREGISTERED ROBUSTNESS CHECK,4
+H1 x H2 interaction,SECONDARY EXPLORATORY,2

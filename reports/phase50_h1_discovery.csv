@@ -1,0 +1,7 @@
+vol_state_T-1,concurrency_4plus_T-1,n_hi,n_lo,evidence,mean_hi,mean_lo,effect,se,ci95_lo,ci95_hi,stress_rate_hi_pct,stress_rate_lo_pct
+LOW,True,64,8,INSUFFICIENT SAMPLE,,,,,,,,
+LOW,False,62,2,INSUFFICIENT SAMPLE,,,,,,,,
+NORMAL,True,58,21,ADEQUATE SAMPLE,0.1035,0.6114,-0.5079,0.4259,-1.3427,0.3268,13.8,0.0
+NORMAL,False,42,4,INSUFFICIENT SAMPLE,,,,,,,,
+HIGH,True,55,38,ADEQUATE SAMPLE,0.4341,-0.6071,1.0412,0.4594,0.1407,1.9417,10.9,18.4
+HIGH,False,31,1,INSUFFICIENT SAMPLE,,,,,,,,

@@ -1,0 +1,3 @@
+hypothesis,discovery_effect,validation_effect,discovery_cellwise_majority_negative,validation_cellwise_majority_negative
+H1,0.1566,-0.2191,False,False
+H2,0.1979,-0.1358,False,True

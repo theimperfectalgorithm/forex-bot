@@ -1,0 +1,3 @@
+check,pass,n_rows_checked,n_failures,note
+T-1 date strictly precedes T date for every row,True,773,0,
+No same-day (T) information used in any T-1 predictor field,True,773,0,"By construction -- predictor fields are sourced exclusively from row i-1 of the chronologically sorted daily ledger, never row i"

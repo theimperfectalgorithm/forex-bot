@@ -1,0 +1,5 @@
+metric,mean_hi,mean_lo,n_hi,n_lo,effect,se,ci95_lo,ci95_hi,evidence,stress_rate_hi_pct,stress_rate_lo_pct,value,n,note
+H2 primary (full population) discovery effect,0.1916,-0.0063,244.0,142.0,0.1979,0.2111,-0.2158,0.6115,ADEQUATE SAMPLE,11.1,11.3,,,
+H2 primary (full population) validation effect,0.3277,0.4635,246.0,141.0,-0.1358,0.1991,-0.5261,0.2545,ADEQUATE SAMPLE,11.0,5.7,,,
+"SECONDARY DESCRIPTIVE -- within worst-10%-day (T) population, total T_total_R when T-1 concurrency was <4",,,,,,,,,,,,-93.482,24.0,"Descriptive only, not the primary predictive test, per preregistration section 5/17"
+SECONDARY DESCRIPTIVE -- total T_total_R across all worst-10%-day (T) population,,,,,,,,,,,,-290.391,78.0,

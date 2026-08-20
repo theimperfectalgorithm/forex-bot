@@ -1,0 +1,2 @@
+period,mean_hi,mean_lo,n_hi,n_lo,effect,se,ci95_lo,ci95_hi,evidence,stress_rate_hi_pct,stress_rate_lo_pct
+discovery,0.1916,-0.0063,244,142,0.1979,0.2111,-0.2158,0.6115,ADEQUATE SAMPLE,11.1,11.3
