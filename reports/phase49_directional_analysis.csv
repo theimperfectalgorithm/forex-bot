@@ -1,0 +1,7 @@
+condition,long_heavy_n,long_heavy_mean_R,short_heavy_n,short_heavy_mean_R
+normal_vol,320,0.5376,196,0.0663
+high_vol,138,0.1312,120,-0.0751
+high_concurrency,292,0.4113,198,-0.0712
+stress_day,38,-3.8087,40,-3.6415
+jpy_heavy,346,0.1879,274,0.0455
+amr_heavy,257,0.2041,207,0.0428

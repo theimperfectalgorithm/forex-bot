@@ -1,0 +1,9 @@
+factor,half,n_days,n_hi,n_lo,effect_hi_minus_lo
+JPY exposure (median split),earlier,387,313,74,-0.5358
+JPY exposure (median split),later,387,307,80,-0.712
+AMR exposure (median split),earlier,387,235,152,-0.0165
+AMR exposure (median split),later,387,229,158,-0.5644
+Concurrency 4+,earlier,387,245,142,-0.2006
+Concurrency 4+,later,387,245,142,0.0127
+HIGH volatility,earlier,387,126,261,-0.4641
+HIGH volatility,later,387,132,255,-0.1946

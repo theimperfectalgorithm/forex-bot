@@ -1,0 +1,4 @@
+vol_state,amr_high_n,amr_high_mean_R,amr_low_n,amr_low_mean_R
+LOW,184,0.3115,74,0.5492
+NORMAL,146,0.2156,112,0.4963
+HIGH,134,-0.205,124,0.2949

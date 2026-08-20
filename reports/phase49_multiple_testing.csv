@@ -1,0 +1,12 @@
+item,type,n_sub_tests
+12 preregistered joint-state combinations (Part9),PRIMARY PREREGISTERED,72
+9 marginal stress factors (Part8),PRIMARY PREREGISTERED,27
+Transition analysis (Part12),PRIMARY PREREGISTERED (reuses Phase42 definition),5
+Concurrency thresholds 1-6+ (Part13),PRIMARY PREREGISTERED,6
+Strategy-combination analysis (Part14),"EXPLORATORY (data-driven grouping, not preregistered a priori)",15
+GBPJPY_AMR-specific analysis (Part15),PRIMARY PREREGISTERED (directly motivated by Phase48 finding),4
+JPY/AMR conditional analysis (Part16-17),PRIMARY PREREGISTERED,9
+Directional asymmetry (Part18),PRIMARY PREREGISTERED (reuses Phase42 finding),6
+Session analysis (Part19),PRIMARY PREREGISTERED,3
+Multi-factor OLS model (Part20),"PRIMARY PREREGISTERED, EXPLANATORY ONLY",7
+Temporal validation (Part21),PRIMARY PREREGISTERED,8

@@ -1,0 +1,28 @@
+factor,column,bucket,normal_mean,normal_n,stress_mean,stress_n,effect,evidence
+volatility percentile,vol_pctile,worst_10pct,48.5463,619,56.9519,78,8.406,PLAUSIBLE
+volatility percentile,vol_pctile,worst_5pct,48.5463,619,64.1523,39,15.606,MODERATE
+volatility percentile,vol_pctile,worst_1pct,48.5463,619,,8,,INSUFFICIENT SAMPLE
+concurrency,max_concurrent,worst_10pct,3.6769,619,4.4744,78,0.798,MODERATE
+concurrency,max_concurrent,worst_5pct,3.6769,619,4.7436,39,1.067,MODERATE
+concurrency,max_concurrent,worst_1pct,3.6769,619,,8,,INSUFFICIENT SAMPLE
+JPY exposure,jpy_share_pct,worst_10pct,95.3094,619,96.9436,78,1.634,PLAUSIBLE
+JPY exposure,jpy_share_pct,worst_5pct,95.3094,619,96.0667,39,0.757,PLAUSIBLE
+JPY exposure,jpy_share_pct,worst_1pct,95.3094,619,,8,,INSUFFICIENT SAMPLE
+AMR exposure,amr_share_pct,worst_10pct,88.9334,619,89.5744,78,0.641,PLAUSIBLE
+AMR exposure,amr_share_pct,worst_5pct,88.9334,619,88.2923,39,-0.641,PLAUSIBLE
+AMR exposure,amr_share_pct,worst_1pct,88.9334,619,,8,,INSUFFICIENT SAMPLE
+ARB exposure,arb_share_pct,worst_10pct,6.3784,619,7.3718,78,0.993,PLAUSIBLE
+ARB exposure,arb_share_pct,worst_5pct,6.3784,619,7.7795,39,1.401,MODERATE
+ARB exposure,arb_share_pct,worst_1pct,6.3784,619,,8,,INSUFFICIENT SAMPLE
+directional bias (long share),long_share_pct,worst_10pct,63.6386,619,52.7333,78,-10.905,PLAUSIBLE
+directional bias (long share),long_share_pct,worst_5pct,63.6386,619,54.2282,39,-9.41,PLAUSIBLE
+directional bias (long share),long_share_pct,worst_1pct,63.6386,619,,8,,INSUFFICIENT SAMPLE
+strategy count,n_strategies_active,worst_10pct,3.4071,619,4.1667,78,0.76,MODERATE
+strategy count,n_strategies_active,worst_5pct,3.4071,619,4.5128,39,1.106,MODERATE
+strategy count,n_strategies_active,worst_1pct,3.4071,619,,8,,INSUFFICIENT SAMPLE
+simultaneous JPY positions,n_simultaneous_jpy,worst_10pct,3.4701,619,4.3205,78,0.85,MODERATE
+simultaneous JPY positions,n_simultaneous_jpy,worst_5pct,3.4701,619,4.5385,39,1.068,MODERATE
+simultaneous JPY positions,n_simultaneous_jpy,worst_1pct,3.4701,619,,8,,INSUFFICIENT SAMPLE
+simultaneous AMR positions,n_simultaneous_amr,worst_10pct,3.0565,619,3.7564,78,0.7,MODERATE
+simultaneous AMR positions,n_simultaneous_amr,worst_5pct,3.0565,619,3.9231,39,0.867,MODERATE
+simultaneous AMR positions,n_simultaneous_amr,worst_1pct,3.0565,619,,8,,INSUFFICIENT SAMPLE

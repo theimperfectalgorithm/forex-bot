@@ -1,0 +1,3 @@
+counterfactual,actual_total_R,counterfactual_total_R,label
+Remove GBPJPY_AMR trades from worst-10% days,-290.391,-230.626,DESCRIPTIVE COUNTERFACTUAL -- not a validated control
+Worst-10% days with concurrency<4 only (excludes 4+ days entirely),-290.391,-25.9,DESCRIPTIVE COUNTERFACTUAL -- not a validated control

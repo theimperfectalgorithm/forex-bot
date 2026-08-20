@@ -1,0 +1,4 @@
+session_profile,n_days,mean_R,stress_day_pct
+ASIAN_AND_LONDON,190,0.2567,13.7
+ASIAN_ONLY,582,0.2486,8.9
+LONDON_ONLY,2,,0.0

@@ -1,0 +1,4 @@
+bucket,n_days,avg_simultaneous_losing_strategies,pct_days_with_2plus_losers
+worst_1pct,8,5.12,100.0
+worst_5pct,39,4.28,100.0
+worst_10pct,78,3.73,100.0

@@ -1,0 +1,5 @@
+question,active_mean_R,active_n,inactive_mean_R,inactive_n
+GBPJPY alone (portfolio-day R on days GBPJPY_AMR trades vs days it does not),0.1728,403,0.3355,371.0
+GBPJPY + HIGH volatility,-0.1928,139,,
+GBPJPY + 4+ concurrency,0.1562,380,,
+GBPJPY own-R correlation with total portfolio R on active days,0.727,403,,

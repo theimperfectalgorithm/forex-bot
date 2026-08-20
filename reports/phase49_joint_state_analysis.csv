@@ -1,0 +1,73 @@
+combination,state,n_days,mean_R,worst_R,evidence
+A_vol_x_concurrency,"{'vol_high': True, 'conc_4plus': True}",182,-0.0548,-6.1947,ADEQUATE SAMPLE
+A_vol_x_concurrency,"{'vol_high': True, 'conc_4plus': False}",76,0.251,-3.295,ADEQUATE SAMPLE
+A_vol_x_concurrency,"{'vol_high': False, 'conc_4plus': True}",308,0.3766,-5.7746,ADEQUATE SAMPLE
+A_vol_x_concurrency,"{'vol_high': False, 'conc_4plus': False}",208,0.3319,-3.3726,ADEQUATE SAMPLE
+B_vol_x_jpy,"{'vol_high': True, 'jpy_high': True}",176,-0.1442,-5.4723,ADEQUATE SAMPLE
+B_vol_x_jpy,"{'vol_high': True, 'jpy_high': False}",82,0.4204,-6.1947,ADEQUATE SAMPLE
+B_vol_x_jpy,"{'vol_high': False, 'jpy_high': True}",444,0.2317,-5.7746,ADEQUATE SAMPLE
+B_vol_x_jpy,"{'vol_high': False, 'jpy_high': False}",72,1.1411,-4.8776,ADEQUATE SAMPLE
+C_vol_x_amr,"{'vol_high': True, 'amr_high': True}",134,-0.205,-4.3838,ADEQUATE SAMPLE
+C_vol_x_amr,"{'vol_high': True, 'amr_high': False}",124,0.2949,-6.1947,ADEQUATE SAMPLE
+C_vol_x_amr,"{'vol_high': False, 'amr_high': True}",330,0.269,-4.458,ADEQUATE SAMPLE
+C_vol_x_amr,"{'vol_high': False, 'amr_high': False}",186,0.5174,-5.7746,ADEQUATE SAMPLE
+D_vol_x_direction,"{'vol_high': True, 'long_heavy': True}",138,0.1312,-6.1947,ADEQUATE SAMPLE
+D_vol_x_direction,"{'vol_high': True, 'long_heavy': False}",120,-0.0751,-5.3587,ADEQUATE SAMPLE
+D_vol_x_direction,"{'vol_high': False, 'long_heavy': True}",320,0.5376,-5.7746,ADEQUATE SAMPLE
+D_vol_x_direction,"{'vol_high': False, 'long_heavy': False}",196,0.0663,-4.458,ADEQUATE SAMPLE
+E_concurrency_x_jpy,"{'conc_4plus': True, 'jpy_high': True}",354,0.0014,-5.7746,ADEQUATE SAMPLE
+E_concurrency_x_jpy,"{'conc_4plus': True, 'jpy_high': False}",136,0.7758,-6.1947,ADEQUATE SAMPLE
+E_concurrency_x_jpy,"{'conc_4plus': False, 'jpy_high': True}",266,0.2894,-3.3726,ADEQUATE SAMPLE
+E_concurrency_x_jpy,"{'conc_4plus': False, 'jpy_high': False}",18,0.6179,-2.313,ADEQUATE SAMPLE
+F_concurrency_x_amr,"{'conc_4plus': True, 'amr_high': True}",237,-0.0474,-4.458,ADEQUATE SAMPLE
+F_concurrency_x_amr,"{'conc_4plus': True, 'amr_high': False}",253,0.4634,-6.1947,ADEQUATE SAMPLE
+F_concurrency_x_amr,"{'conc_4plus': False, 'amr_high': True}",227,0.3196,-3.3726,ADEQUATE SAMPLE
+F_concurrency_x_amr,"{'conc_4plus': False, 'amr_high': False}",57,0.2728,-3.2194,ADEQUATE SAMPLE
+G_concurrency_x_direction,"{'conc_4plus': True, 'long_heavy': True}",292,0.4113,-6.1947,ADEQUATE SAMPLE
+G_concurrency_x_direction,"{'conc_4plus': True, 'long_heavy': False}",198,-0.0712,-5.3587,ADEQUATE SAMPLE
+G_concurrency_x_direction,"{'conc_4plus': False, 'long_heavy': True}",166,0.4219,-3.3726,ADEQUATE SAMPLE
+G_concurrency_x_direction,"{'conc_4plus': False, 'long_heavy': False}",118,0.1532,-3.2254,ADEQUATE SAMPLE
+H_amr_x_jpy,"{'amr_high': True, 'jpy_high': True}",464,0.1321,-4.458,ADEQUATE SAMPLE
+H_amr_x_jpy,"{'amr_high': True, 'jpy_high': False}",0,,,INSUFFICIENT SAMPLE
+H_amr_x_jpy,"{'amr_high': False, 'jpy_high': True}",156,0.1036,-5.7746,ADEQUATE SAMPLE
+H_amr_x_jpy,"{'amr_high': False, 'jpy_high': False}",154,0.7573,-6.1947,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': True, 'conc_4plus': True, 'amr_high': True}",77,-0.4322,-4.3838,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': True, 'conc_4plus': True, 'amr_high': False}",105,0.2219,-6.1947,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': True, 'conc_4plus': False, 'amr_high': True}",57,0.1019,-3.295,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': True, 'conc_4plus': False, 'amr_high': False}",19,0.6982,-2.0736,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': False, 'conc_4plus': True, 'amr_high': True}",160,0.1377,-4.458,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': False, 'conc_4plus': True, 'amr_high': False}",148,0.6348,-5.7746,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': False, 'conc_4plus': False, 'amr_high': True}",170,0.3926,-3.3726,ADEQUATE SAMPLE
+I_vol_x_conc_x_amr,"{'vol_high': False, 'conc_4plus': False, 'amr_high': False}",38,0.0601,-3.2194,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': True, 'conc_4plus': True, 'jpy_high': True}",108,-0.3447,-5.4723,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': True, 'conc_4plus': True, 'jpy_high': False}",74,0.3682,-6.1947,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': True, 'conc_4plus': False, 'jpy_high': True}",68,0.1742,-3.295,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': True, 'conc_4plus': False, 'jpy_high': False}",8,,,INSUFFICIENT SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': False, 'conc_4plus': True, 'jpy_high': True}",246,0.1533,-5.7746,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': False, 'conc_4plus': True, 'jpy_high': False}",62,1.2623,-4.8776,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': False, 'conc_4plus': False, 'jpy_high': True}",198,0.329,-3.3726,ADEQUATE SAMPLE
+J_vol_x_conc_x_jpy,"{'vol_high': False, 'conc_4plus': False, 'jpy_high': False}",10,0.3894,-2.313,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': True, 'conc_4plus': True, 'long_heavy': True}",93,-0.0186,-6.1947,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': True, 'conc_4plus': True, 'long_heavy': False}",89,-0.0927,-5.3587,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': True, 'conc_4plus': False, 'long_heavy': True}",45,0.4409,-3.295,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': True, 'conc_4plus': False, 'long_heavy': False}",31,-0.0248,-3.199,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': False, 'conc_4plus': True, 'long_heavy': True}",199,0.6122,-5.7746,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': False, 'conc_4plus': True, 'long_heavy': False}",109,-0.0537,-4.458,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': False, 'conc_4plus': False, 'long_heavy': True}",121,0.4148,-3.3726,ADEQUATE SAMPLE
+K_vol_x_conc_x_direction,"{'vol_high': False, 'conc_4plus': False, 'long_heavy': False}",87,0.2166,-3.2254,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': True, 'jpy_high': True, 'long_heavy': True}",46,-0.8183,-5.4723,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': True, 'jpy_high': True, 'long_heavy': False}",62,0.0067,-5.3587,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': True, 'jpy_high': False, 'long_heavy': True}",47,0.7641,-6.1947,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': True, 'jpy_high': False, 'long_heavy': False}",27,-0.321,-5.1898,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': False, 'jpy_high': True, 'long_heavy': True}",39,0.3027,-3.295,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': False, 'jpy_high': True, 'long_heavy': False}",29,0.0015,-3.199,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': False, 'jpy_high': False, 'long_heavy': True}",6,,,INSUFFICIENT SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': True, 'conc_4plus': False, 'jpy_high': False, 'long_heavy': False}",2,,,INSUFFICIENT SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': True, 'jpy_high': True, 'long_heavy': True}",147,0.302,-5.7746,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': True, 'jpy_high': True, 'long_heavy': False}",99,-0.0674,-4.458,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': True, 'jpy_high': False, 'long_heavy': True}",52,1.4894,-4.8776,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': True, 'jpy_high': False, 'long_heavy': False}",10,0.0815,-3.4352,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': False, 'jpy_high': True, 'long_heavy': True}",114,0.4075,-3.3726,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': False, 'jpy_high': True, 'long_heavy': False}",84,0.2225,-3.2254,ADEQUATE SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': False, 'jpy_high': False, 'long_heavy': True}",7,,,INSUFFICIENT SAMPLE
+L_vol_x_conc_x_jpy_x_direction,"{'vol_high': False, 'conc_4plus': False, 'jpy_high': False, 'long_heavy': False}",3,,,INSUFFICIENT SAMPLE

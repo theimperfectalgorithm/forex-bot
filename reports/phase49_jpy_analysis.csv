@@ -1,0 +1,7 @@
+vol_state,concurrency_4plus,jpy_high_n,jpy_high_mean_R,jpy_low_n,jpy_low_mean_R
+LOW,True,117,0.2122,17,1.5065
+LOW,False,121,0.3737,3,
+NORMAL,True,129,0.0999,45,1.17
+NORMAL,False,77,0.2588,7,
+HIGH,True,108,-0.3447,74,0.3682
+HIGH,False,68,0.1742,8,

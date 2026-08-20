@@ -1,0 +1,5 @@
+bucket,n_days,threshold_R
+worst_1pct,8,
+worst_5pct,39,
+worst_10pct,78,
+normal,619,
