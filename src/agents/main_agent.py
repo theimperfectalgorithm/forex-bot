@@ -117,15 +117,21 @@ RISK_PCT_BY_KEY = {_key_of(name, cfg): cfg.get('risk_percent', 1.0) / 100.0
 
 # -- schedule thresholds (minutes since midnight)
 #
-# TIMEZONE NOTE (fix 2026-07-07): MT5 bar timestamps are SERVER time
-# (UTC+3 in summer / UTC+2 in winter -- see
-# agent_strategy.server_utc_offset_hours()). All strategy bar-hour rules
-# and every backtest window are in SERVER coordinates, so all SESSION
-# steps below are gated on server minutes (srv), computed each cycle.
-# Only day-cycle steps (market agent, report, Thursday warning, Friday
-# close, state rollover) stay on real UTC. Without this, ARB and
-# monday_drift could never fire (their signal bars closed hours before
-# the real-UTC windows opened) and AMR ran on a truncated window.
+# TIMEZONE NOTE (fix 2026-07-07, amended 2026-08-23): MT5 bar timestamps
+# are SERVER time (UTC+3 in summer / UTC+2 in winter -- see
+# agent_strategy.server_utc_offset_hours()). ARB and monday_drift's bar-hour
+# rules and backtest windows are in SERVER coordinates, so those SESSION
+# steps are gated on server minutes (srv), computed each cycle. Without
+# this, ARB and monday_drift could never fire (their signal bars closed
+# hours before the real-UTC windows opened).
+#
+# AMR (AsianHoursReversion) is the EXCEPTION: its session rules
+# (entry_end_hour per pair, 07:00 force-close) are defined in real UTC,
+# not server time -- confirmed from the trading log, a CADJPY AMR TIME
+# EXIT fired at 04:00 UTC while the broker was UTC+3, i.e. exactly one
+# server-time-offset early. AMR scheduling below is gated on real-UTC
+# minutes (t), NOT srv. Day-cycle steps (market agent, report, Thursday
+# warning, Friday close, state rollover) also stay on real UTC as before.
 T_MARKET_AGENT   =  0 * 60 +  0    # 00:00
 T_LONDON_PREP    =  7 * 60 + 45    # 07:45
 T_LONDON_START   =  8 * 60 +  0    # 08:00
@@ -135,10 +141,13 @@ T_NY_START       = 13 * 60 +  0    # 13:00
 T_NY_END         = 20 * 60 + 45    # 20:45  (last bar check)
 T_EURUSD_START   = 12 * 60 +  0    # 12:00  EURUSD dual-strategy window open
 T_EURUSD_END     = 15 * 60 + 45    # 15:45  EURUSD dual-strategy window close
-T_ASIAN_END      =  6 * 60 +  0    # 06:00  last AMR entry-check cycle (each
+T_AMR_START      =  0 * 60 +  0    # 00:00 UTC  AMR entry window opens
+T_AMR_END        =  6 * 60 +  0    # 06:00 UTC  last AMR entry-check cycle (the
+                                   #        latest configured per-pair
+                                   #        entry_end_hour, EURJPY; each
                                    #        strategy also enforces its own
                                    #        tighter entry_end_hour internally)
-T_ASIAN_EXIT     =  7 * 60 +  0    # 07:00  force-close any open @amr position
+T_AMR_EXIT       =  7 * 60 +  0    # 07:00 UTC  force-close any open @amr position
 T_MONDAY_END     =  2 * 60 +  0    # 02:00  last @mon entry-check cycle (the
                                    #        signal bar closes at 01:00)
 T_MONDAY_EXIT    = 21 * 60 +  0    # 21:00  force-close any open @mon position
@@ -584,8 +593,10 @@ def step_asian_time_exit(state: dict, log: logging.Logger,
                          label: str = 'AMR'):
     """
     Force-close any still-open position whose strategy_key ends in
-    `suffix` (07:00 UTC for @amr, 21:00 Monday for @mon) -- both books
-    are time-boxed by design. monitor_positions records the exit next
+    `suffix` (07:00 real UTC for @amr; 21:00 MT5 server time Monday for
+    @mon -- the two books' exit gates run on different clocks, see the
+    TIMEZONE NOTE by the schedule constants) -- both books are
+    time-boxed by design. monitor_positions records the exit next
     cycle. 5ers news rule: a close that lands inside a high-impact news
     blackout is DEFERRED to the next 15-min cycle (the step retries
     until every close succeeds outside a blackout window).
@@ -1061,19 +1072,20 @@ def main():
                 step_market(state, log)
                 save_state(state)
 
-            # -- server 00:00-06:00  Asian-hours reversion checks (every
-            #    15 min; = real ~21:00-03:00 UTC). NOTE: the window spans
-            #    the real-UTC state rollover; re-entry after the rollover
-            #    is blocked by the strategy's own server-date dedup plus
-            #    the one-open-position-per-symbol check.
-            if (srv <= T_ASIAN_END and AMR_KEYS
+            # -- real UTC 00:00-06:00  Asian-hours reversion checks (every
+            #    15 min). The orchestrator polls all AMR keys up to the
+            #    latest configured per-pair entry_end_hour (EURJPY,
+            #    06:00 UTC); each strategy's own check_signal() enforces
+            #    its tighter per-pair cutoff (GBPJPY/AUDJPY/CADJPY stop at
+            #    04:00 UTC) and returns NO_SIGNAL after its own cutoff.
+            if (t <= T_AMR_END and AMR_KEYS
                     and state.get('market_ran')
                     and state.get('trade_allowed', False)):
                 step_check_asian_reversion(state, log)
                 save_state(state)
 
-            # -- server 07:00  Asian time exit: flat all @amr pre-London
-            if (srv >= T_ASIAN_EXIT and AMR_KEYS
+            # -- real UTC 07:00  AMR time exit: flat all @amr pre-London
+            if (t >= T_AMR_EXIT and AMR_KEYS
                     and not state.get('asian_exit_done', False)):
                 step_asian_time_exit(state, log)
                 save_state(state)
