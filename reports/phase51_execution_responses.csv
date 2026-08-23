@@ -1,0 +1,2 @@
+source_required,status,reason
+"production execution log (order_send/close_position responses, retcodes)",UNAVAILABLE,not present on this machine; see preregistration Part 1

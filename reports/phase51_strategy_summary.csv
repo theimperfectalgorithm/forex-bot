@@ -1,0 +1,6 @@
+strategy,closed_trades,london_exit_expected,correctly_executed,position_already_closed_pre_exit,deviations,deviation_rate_pct,unresolved_data_unavailable,actual_total_R,scope
+AUDJPY_AMR,9,9,3,6,0,0.0,0,-3.12,PORTFOLIO-WIDE
+CADJPY_AMR,6,6,4,2,0,0.0,0,-2.04,PORTFOLIO-WIDE
+CADJPY_ARB,4,0,0,0,0,NOT_AVAILABLE,0,-0.84,STRATEGY-SPECIFIC (no scheduled exit by design)
+EURJPY_AMR,9,9,2,7,0,0.0,0,-1.0,PORTFOLIO-WIDE
+GBPJPY_AMR,2,2,1,1,0,0.0,0,0.87,PORTFOLIO-WIDE

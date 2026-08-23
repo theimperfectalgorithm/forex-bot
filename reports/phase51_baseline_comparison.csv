@@ -1,0 +1,2 @@
+baseline_period,baseline_deviation_rate_pct,current_live_period,current_live_deviation_rate_pct,note
+2026-07-20 to 2026-08-13 (the only available trade-level window),0.0,2026-08-14 to 2026-08-23 (task-specified primary window),DATA_UNAVAILABLE,"No comparison is possible -- the current live period has zero rows of trade-level evidence on this machine (see preregistration Part 1). The baseline period deviation rate is reported here as the only computable figure, not as a stand-in for the current period."

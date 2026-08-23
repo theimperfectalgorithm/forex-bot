@@ -1,0 +1,2 @@
+note
+"DATA_UNAVAILABLE for the same reason as concurrency (see phase51_concurrency_execution.csv) -- no live-period volatility-state field exists in the only available evidence source, and the historical research ledger is deliberately not mixed in here."

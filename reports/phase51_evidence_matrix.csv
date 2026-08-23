@@ -1,0 +1,7 @@
+evidence_level,source,status
+1,MT5 deal/order history,UNAVAILABLE
+2,production execution response/log,UNAVAILABLE
+3,production journal event,UNAVAILABLE
+4,"production trade log (raw, live host)",UNAVAILABLE
+5,live source code/configuration (this repo checkout),"AVAILABLE, used"
+6,secondary derived export (reports/5ers_trade_export.csv),"AVAILABLE, used -- sole trade-level evidence source, covers 2026-07-20 to 2026-08-13 only"

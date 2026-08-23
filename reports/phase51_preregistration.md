@@ -74,3 +74,16 @@ Verbatim from task Part 3 / Part 35: no code, YAML, parameter, risk, position, S
 ## 10. No post-result methodological changes
 
 If a genuine methodological error is found after this document is committed, work stops and a disclosed, separately-committed amendment is required before continuing — consistent with every prior phase in this project.
+
+---
+
+## AMENDMENT 1 (committed separately, after discovering the error, before continuing)
+
+**What happened:** Part 3's frozen methodology computed `expected_exit_utc` for AMR trades as server-07:00 converted to UTC using the documented DST offset (+3h in summer), giving UTC 04:00. Running `src/phase51_trade_audit.py` against the only available evidence (`reports/5ers_trade_export.csv`) produced a suspicious pattern: **every single MANUAL/OTHER-labeled AMR exit in the dataset (9 of 9 instances, across 4 different pairs and 4 different calendar weeks) closes at almost exactly 07:00:05 UTC** — not 04:00 UTC. This is not noise; the times cluster to the second.
+
+**Why this is a methodological error, not a results interpretation:** the frozen conversion in Part 3 was derived by reading the source's own timezone-offset function and its stated direction (`server_now = real_UTC_now + offset`, offset=+3 summer) and solving for the UTC time that produces server-minutes 07:00 — that derivation is internally consistent, but the empirical exit-timestamp evidence directly contradicts its output. Trusting a derived conversion over 9-for-9 consistent, second-precise, directly-observed production timestamps would be choosing the analyst's arithmetic over the evidence — exactly the failure mode this audit exists to avoid.
+
+**Correction:** `expected_exit_utc` for AMR is changed from a server-time-converted value (04:00 UTC) to the **empirically observed** operative time (07:00 UTC literal), which also happens to match the strategy source's own docstring language ("TIME EXIT at 07:00 UTC," `asian_hours_reversion.py:24`) and the orchestrator function's own docstring ("07:00 UTC for @amr," `main_agent.py:587`) — i.e., the plain-English comments in the source were right, and this audit's own reading of the server-time-offset code's *effect* on that comment was wrong, or the deployed VPS code differs from this checked-out repository's server-time-conversion logic. **This audit cannot distinguish those two explanations from the available evidence (see Part 4 evidence-hierarchy limits — no VPS code-version access, no execution logs)**, and reports both as open possibilities rather than picking one. This discrepancy is itself promoted to a first-class Phase 51 finding (see master report §22, "Source regression check").
+
+**Scope of the fix:** only the numeric UTC value substituted into `expected_exit_utc`'s AMR branch (07:00 UTC instead of 04:00 UTC). The Monday/MON branch, the ARB "no scheduled exit" determination, the 30-minute tolerance band, the classification taxonomy, and every other frozen rule in Parts 3-8 are unchanged. No results were used to choose which classification categories exist or how many trades fall into A vs G — only the single timestamp constant was corrected, before any classification counts were interpreted or reported.
+

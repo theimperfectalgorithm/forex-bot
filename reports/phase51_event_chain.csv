@@ -1,0 +1,301 @@
+trade_id,strategy,step,step_status,event_classification,note
+578493052,AUDJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+578493052,AUDJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+578493052,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+578493052,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+578493052,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493052,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493052,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493052,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+578493052,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+578493052,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493053,CADJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+578493053,CADJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+578493053,CADJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+578493053,CADJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+578493053,CADJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493053,CADJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493053,CADJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493053,CADJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+578493053,CADJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+578493053,CADJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493733,EURJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+578493733,EURJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+578493733,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+578493733,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+578493733,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493733,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493733,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+578493733,EURJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+578493733,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+578493733,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579088315,AUDJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579088315,AUDJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579088315,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+579088315,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+579088315,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579088315,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579088315,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579088315,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579088315,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579088315,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579594382,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579594382,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579594382,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+579594382,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+579594382,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579594382,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579594382,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579594382,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579594382,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+579594382,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579709124,CADJPY_ARB,ENTRY,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+579709124,CADJPY_ARB,POSITION_OPEN,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+579709124,CADJPY_ARB,LONDON_OPEN_TIME,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+579709124,CADJPY_ARB,SCHEDULED_EXIT_CHECK,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+579709124,CADJPY_ARB,EXIT_SIGNAL_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579709124,CADJPY_ARB,EXECUTION_REQUEST,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579709124,CADJPY_ARB,MT5_RESPONSE,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+579709124,CADJPY_ARB,POSITION_CLOSED,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+579709124,CADJPY_ARB,TRADE_LOG_UPDATE,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+579709124,CADJPY_ARB,JOURNAL_EXIT_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176231,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+580176231,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+580176231,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+580176231,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+580176231,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176231,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176231,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176231,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+580176231,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+580176231,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176229,AUDJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+580176229,AUDJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+580176229,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+580176229,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+580176229,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176229,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176229,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+580176229,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+580176229,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+580176229,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581248231,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581248231,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581248231,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+581248231,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+581248231,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581248231,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581248231,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581248231,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581248231,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581248231,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581832143,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581832143,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581832143,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+581832143,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+581832143,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581832143,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581832143,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581832143,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581832143,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+581832143,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581914043,CADJPY_ARB,ENTRY,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+581914043,CADJPY_ARB,POSITION_OPEN,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+581914043,CADJPY_ARB,LONDON_OPEN_TIME,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+581914043,CADJPY_ARB,SCHEDULED_EXIT_CHECK,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+581914043,CADJPY_ARB,EXIT_SIGNAL_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581914043,CADJPY_ARB,EXECUTION_REQUEST,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581914043,CADJPY_ARB,MT5_RESPONSE,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+581914043,CADJPY_ARB,POSITION_CLOSED,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+581914043,CADJPY_ARB,TRADE_LOG_UPDATE,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+581914043,CADJPY_ARB,JOURNAL_EXIT_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033055,AUDJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+583033055,AUDJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+583033055,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+583033055,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+583033055,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033055,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033055,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033055,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+583033055,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+583033055,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033057,CADJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+583033057,CADJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+583033057,CADJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+583033057,CADJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+583033057,CADJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033057,CADJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033057,CADJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583033057,CADJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+583033057,CADJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+583033057,CADJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622176,AUDJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622176,AUDJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622176,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+583622176,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+583622176,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622176,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622176,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622176,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622176,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622176,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622177,CADJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622177,CADJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622177,CADJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+583622177,CADJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+583622177,CADJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622177,CADJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622177,CADJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583622177,CADJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622177,CADJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+583622177,CADJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583676662,GBPJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+583676662,GBPJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+583676662,GBPJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+583676662,GBPJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+583676662,GBPJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583676662,GBPJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583676662,GBPJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+583676662,GBPJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+583676662,GBPJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+583676662,GBPJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202064,AUDJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+584202064,AUDJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+584202064,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+584202064,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+584202064,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202064,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202064,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202064,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+584202064,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+584202064,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202065,CADJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+584202065,CADJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+584202065,CADJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+584202065,CADJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+584202065,CADJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202065,CADJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202065,CADJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+584202065,CADJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+584202065,CADJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+584202065,CADJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+585486268,AUDJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+585486268,AUDJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+585486268,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+585486268,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+585486268,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+585486268,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+585486268,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+585486268,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+585486268,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+585486268,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586121074,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586121074,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586121074,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+586121074,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+586121074,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586121074,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586121074,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586121074,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586121074,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586121074,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714281,AUDJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714281,AUDJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714281,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+586714281,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+586714281,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714281,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714281,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714281,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714281,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714281,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714282,CADJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714282,CADJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714282,CADJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+586714282,CADJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+586714282,CADJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714282,CADJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714282,CADJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+586714282,CADJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714282,CADJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+586714282,CADJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348562,AUDJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348562,AUDJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348562,AUDJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+587348562,AUDJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+587348562,AUDJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348562,AUDJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348562,AUDJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348562,AUDJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348562,AUDJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348562,AUDJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348576,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348576,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348576,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+587348576,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+587348576,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348576,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348576,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587348576,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348576,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587348576,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587366610,GBPJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587366610,GBPJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587366610,GBPJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+587366610,GBPJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+587366610,GBPJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587366610,GBPJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587366610,GBPJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587366610,GBPJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587366610,GBPJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+587366610,GBPJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588015355,EURJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+588015355,EURJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+588015355,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+588015355,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+588015355,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588015355,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588015355,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588015355,EURJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+588015355,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+588015355,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587497789,CADJPY_ARB,ENTRY,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+587497789,CADJPY_ARB,POSITION_OPEN,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+587497789,CADJPY_ARB,LONDON_OPEN_TIME,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+587497789,CADJPY_ARB,SCHEDULED_EXIT_CHECK,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+587497789,CADJPY_ARB,EXIT_SIGNAL_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587497789,CADJPY_ARB,EXECUTION_REQUEST,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587497789,CADJPY_ARB,MT5_RESPONSE,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+587497789,CADJPY_ARB,POSITION_CLOSED,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+587497789,CADJPY_ARB,TRADE_LOG_UPDATE,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+587497789,CADJPY_ARB,JOURNAL_EXIT_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588619758,EURJPY_AMR,ENTRY,OBSERVED,H. POSITION_ALREADY_CLOSED,
+588619758,EURJPY_AMR,POSITION_OPEN,OBSERVED,H. POSITION_ALREADY_CLOSED,
+588619758,EURJPY_AMR,LONDON_OPEN_TIME,INFERRED,H. POSITION_ALREADY_CLOSED,
+588619758,EURJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,H. POSITION_ALREADY_CLOSED,
+588619758,EURJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588619758,EURJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588619758,EURJPY_AMR,MT5_RESPONSE,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588619758,EURJPY_AMR,POSITION_CLOSED,OBSERVED,H. POSITION_ALREADY_CLOSED,
+588619758,EURJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,H. POSITION_ALREADY_CLOSED,
+588619758,EURJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,H. POSITION_ALREADY_CLOSED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588589244,CADJPY_AMR,ENTRY,OBSERVED,A. CORRECTLY_EXECUTED,
+588589244,CADJPY_AMR,POSITION_OPEN,OBSERVED,A. CORRECTLY_EXECUTED,
+588589244,CADJPY_AMR,LONDON_OPEN_TIME,INFERRED,A. CORRECTLY_EXECUTED,
+588589244,CADJPY_AMR,SCHEDULED_EXIT_CHECK,INFERRED,A. CORRECTLY_EXECUTED,
+588589244,CADJPY_AMR,EXIT_SIGNAL_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588589244,CADJPY_AMR,EXECUTION_REQUEST,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588589244,CADJPY_AMR,MT5_RESPONSE,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588589244,CADJPY_AMR,POSITION_CLOSED,OBSERVED,A. CORRECTLY_EXECUTED,
+588589244,CADJPY_AMR,TRADE_LOG_UPDATE,OBSERVED,A. CORRECTLY_EXECUTED,
+588589244,CADJPY_AMR,JOURNAL_EXIT_EVENT,UNAVAILABLE,A. CORRECTLY_EXECUTED,deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588709831,CADJPY_ARB,ENTRY,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+588709831,CADJPY_ARB,POSITION_OPEN,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+588709831,CADJPY_ARB,LONDON_OPEN_TIME,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+588709831,CADJPY_ARB,SCHEDULED_EXIT_CHECK,NOT_APPLICABLE,N/A -- not applicable (ARB has no scheduled exit),
+588709831,CADJPY_ARB,EXIT_SIGNAL_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588709831,CADJPY_ARB,EXECUTION_REQUEST,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588709831,CADJPY_ARB,MT5_RESPONSE,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization
+588709831,CADJPY_ARB,POSITION_CLOSED,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+588709831,CADJPY_ARB,TRADE_LOG_UPDATE,OBSERVED,N/A -- not applicable (ARB has no scheduled exit),
+588709831,CADJPY_ARB,JOURNAL_EXIT_EVENT,UNAVAILABLE,N/A -- not applicable (ARB has no scheduled exit),deviation point cannot be isolated beyond POSITION_CLOSED with only export-level evidence; journal/execution-log/MT5 access required for finer localization

@@ -1,0 +1,2 @@
+source_required,status,reason
+MT5 deal/order history (live query),UNAVAILABLE,"this machine has no live MT5/5ers connection; no MT5 calls made in this audit-only phase, see preregistration Part 1 and Part 9"

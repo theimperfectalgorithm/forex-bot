@@ -1,0 +1,4 @@
+strategy_family,parameter,documented_in_source_comment,derived_from_server_time_offset_logic,empirically_observed_in_export,verdict
+AMR,scheduled_exit_trigger,"07:00 UTC (asian_hours_reversion.py:24, main_agent.py:587)","04:00 UTC (server 07:00, DST offset +3h)",07:00:05 UTC (9/9 closed MANUAL/OTHER AMR exits),MISMATCH between derived-from-code-logic value and both the source comment and the observed behavior -- see AMENDMENT 1 in preregistration and master report SS22
+MON,scheduled_exit_trigger,"21:00 UTC Monday (monday_drift.py:16,63)","18:00 UTC Monday (server 21:00, DST offset +3h)",NO CLOSED MONDAY TRADES IN AVAILABLE WINDOW -- cannot verify,UNRESOLVED -- no observational evidence either way in the available window
+ARB,scheduled_exit_trigger,none -- source contains no time-exit logic,N/A,"N/A -- confirmed all CADJPY_ARB exits are SL/TP/other, never a scheduled-exit label",CONSISTENT (no scheduled exit expected or observed)
