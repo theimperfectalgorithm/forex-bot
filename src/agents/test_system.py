@@ -355,7 +355,10 @@ try:
     #     Logged June P&L = +$1,567.93  =>  discrepancy = -$497.20
     m_lines = _monthly_reconciliation_lines('2026-06', current_balance=101_070.73)
     has_mismatch = any('MISMATCH' in l for l in m_lines)
-    has_note     = any('unlogged' in l for l in m_lines)
+    # Net-P&L reconciliation now reports cost coverage/remaining difference;
+    # the obsolete "unlogged" wording is no longer required.
+    has_note     = any(('COST COVERAGE' in l or 'remains after recorded costs' in l)
+                       for l in m_lines)
     mark         = PASS if (has_mismatch and has_note) else FAIL
     print(f"  {mark}  Monthly reconciliation correctly flags June discrepancy")
     for line in m_lines:

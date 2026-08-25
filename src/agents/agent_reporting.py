@@ -58,6 +58,7 @@ if str(BASE_DIR) not in sys.path:
 # starting_balance every other agent uses.
 from core.account_config import (STARTING_BALANCE, TARGET_BALANCE,
                                  HARD_FLOOR, MAX_DAILY_LOSS_PCT)
+from core.trade_cost_ledger import load_cost_ledger
 RECON_TOLERANCE    = 1.00   # dollar tolerance for P&L reconciliation
 
 EQUITY_HEADERS = [
@@ -124,6 +125,54 @@ def _read_logged_pnl_for_date(date_str: str) -> float:
     return round(total, 2)
 
 
+def _read_accounting_pnl_for_date(date_str: str) -> dict:
+    """Read gross/net P&L for closed CSV rows, joining the optional cost ledger.
+
+    Legacy rows without a sidecar record stay readable as gross-only.  They
+    are counted as incomplete coverage rather than assigned invented costs.
+    """
+    out = {'gross_pnl': 0.0, 'commission': 0.0, 'swap': 0.0, 'fee': 0.0,
+           'net_pnl': 0.0, 'trade_count': 0, 'cost_covered': 0,
+           'legacy_without_costs': 0}
+    if not TRADES_CSV.exists():
+        return out
+    ledger = load_cost_ledger()
+    with open(TRADES_CSV, newline='', encoding='utf-8') as f:
+        for row in csv.DictReader(f):
+            if row.get('Status') != 'CLOSED':
+                continue
+            if not (row.get('ExitTime') or '').strip().startswith(date_str):
+                continue
+            try:
+                gross = float(row.get('PnL') or 0.0)
+            except (ValueError, TypeError):
+                gross = 0.0
+            out['trade_count'] += 1
+            out['gross_pnl'] += gross
+            record = ledger.get(str(row.get('Ticket') or ''))
+            if record is None:
+                out['legacy_without_costs'] += 1
+                out['net_pnl'] += gross
+                continue
+            out['cost_covered'] += 1
+            for field in ('commission', 'swap', 'fee'):
+                try:
+                    out[field] += float(record.get(field) or 0.0)
+                except (ValueError, TypeError):
+                    pass
+            try:
+                out['net_pnl'] += float(record['net_pnl'])
+            except (KeyError, ValueError, TypeError):
+                # A malformed partial record cannot be silently treated as
+                # full coverage; preserve the gross-only fallback instead.
+                out['cost_covered'] -= 1
+                out['legacy_without_costs'] += 1
+                out['net_pnl'] += gross
+    for field in ('gross_pnl', 'commission', 'swap', 'fee', 'net_pnl'):
+        out[field] = round(out[field], 2)
+    return out
+
+
 def _read_prev_closing_balance(today: str) -> float:
     """
     Return the most recent Balance recorded in equity_curve.csv whose Date
@@ -145,31 +194,36 @@ def _read_prev_closing_balance(today: str) -> float:
         return STARTING_BALANCE
 
 
-def _reconciliation_check(date_str: str, logged_pnl: float,
+def _reconciliation_check(date_str: str, logged_pnl: float | dict,
                            current_balance: float, prev_balance: float,
                            log: logging.Logger) -> dict:
     """
-    Compare logged P&L (sum of CSV trades) against actual balance change
-    (current MT5 balance minus yesterday's closing balance).
+    Compare net logged P&L against actual balance change. A float remains
+    accepted for backward-compatible callers and represents gross-only data.
 
     Returns a dict with: matched, logged_pnl, actual_change, discrepancy,
     prev_balance, current_balance.
     """
+    accounting = (logged_pnl if isinstance(logged_pnl, dict) else {
+        'gross_pnl': float(logged_pnl), 'commission': 0.0, 'swap': 0.0,
+        'fee': 0.0, 'net_pnl': float(logged_pnl), 'cost_covered': 0,
+        'legacy_without_costs': 0})
     actual_change = round(current_balance - prev_balance, 2)
-    discrepancy   = round(actual_change - logged_pnl, 2)
+    discrepancy   = round(actual_change - accounting['net_pnl'], 2)
     matched       = abs(discrepancy) <= RECON_TOLERANCE
 
     if not matched:
         log.warning(
             f"RECONCILIATION MISMATCH on {date_str}: "
-            f"logged_pnl={logged_pnl:+.2f}  actual_change={actual_change:+.2f}  "
-            f"discrepancy={discrepancy:+.2f} -- likely unlogged trade exits "
-            f"(manual closes, crashes, or restarts); review MT5 history"
+            f"net_pnl={accounting['net_pnl']:+.2f}  actual_change={actual_change:+.2f}  "
+            f"discrepancy={discrepancy:+.2f}; cost coverage="
+            f"{accounting.get('cost_covered', 0)} records"
         )
 
     return {
         'matched'        : matched,
-        'logged_pnl'     : logged_pnl,
+        'logged_pnl'     : accounting['gross_pnl'],
+        **accounting,
         'actual_change'  : actual_change,
         'discrepancy'    : discrepancy,
         'prev_balance'   : prev_balance,
@@ -188,22 +242,7 @@ def _monthly_reconciliation_lines(month_str: str, current_balance: float) -> lis
 
     Returns a list of report-text lines ready to append to the daily report.
     """
-    # Logged P&L: sum every CLOSED trade whose ExitTime is in this month
-    monthly_logged = 0.0
-    trade_count    = 0
-    if TRADES_CSV.exists():
-        with open(TRADES_CSV, newline='', encoding='utf-8') as f:
-            for row in csv.DictReader(f):
-                if row.get('Status') != 'CLOSED':
-                    continue
-                exit_time = (row.get('ExitTime') or '').strip()
-                if exit_time.startswith(month_str):
-                    try:
-                        monthly_logged += float(row.get('PnL') or 0)
-                        trade_count    += 1
-                    except (ValueError, TypeError):
-                        pass
-    monthly_logged = round(monthly_logged, 2)
+    accounting = _read_accounting_pnl_for_date(month_str)
 
     # Start-of-month balance: last equity_curve row whose Date is before this month
     start_balance = STARTING_BALANCE
@@ -218,14 +257,18 @@ def _monthly_reconciliation_lines(month_str: str, current_balance: float) -> lis
                 pass
 
     monthly_actual = round(current_balance - start_balance, 2)
-    discrepancy    = round(monthly_actual - monthly_logged, 2)
+    discrepancy    = round(monthly_actual - accounting['net_pnl'], 2)
     matched        = abs(discrepancy) <= RECON_TOLERANCE
 
     lines = [
         "",
         "  MONTH-TO-DATE RECONCILIATION",
         f"  Month                : {month_str}",
-        f"  Logged trades P&L    : ${monthly_logged:>+10,.2f}   ({trade_count} closed trades in CSV)",
+        f"  Gross P&L            : ${accounting['gross_pnl']:>+10,.2f}   ({accounting['trade_count']} closed trades in CSV)",
+        f"  Commission           : ${accounting['commission']:>+10,.2f}",
+        f"  Swap                 : ${accounting['swap']:>+10,.2f}",
+        f"  Fees                 : ${accounting['fee']:>+10,.2f}",
+        f"  Net P&L              : ${accounting['net_pnl']:>+10,.2f}",
         f"  Actual P&L (vs bal)  : ${monthly_actual:>+10,.2f}   "
         f"(${current_balance:,.2f} - start ${start_balance:,.2f})",
     ]
@@ -235,8 +278,10 @@ def _monthly_reconciliation_lines(month_str: str, current_balance: float) -> lis
     else:
         lines.append(f"  Discrepancy          : ${discrepancy:>+10,.2f}")
         lines.append(f"  STATUS               : MISMATCH")
-        lines.append(f"  NOTE: ${abs(discrepancy):,.2f} unaccounted for -- review MT5 history")
-        lines.append(f"        for unlogged exits (manual closes, crashes, restarts).")
+        lines.append(f"  NOTE: ${abs(discrepancy):,.2f} remains after recorded costs -- review MT5 history.")
+    if accounting['legacy_without_costs']:
+        lines.append(f"  COST COVERAGE        : {accounting['cost_covered']}/{accounting['trade_count']} "
+                     f"trades; {accounting['legacy_without_costs']} legacy gross-only record(s).")
 
     return lines
 
@@ -385,18 +430,24 @@ def _write_report(state: dict, stats: dict, flags: list, log: logging.Logger,
     if recon is not None:
         lines += ["", "  RECONCILIATION CHECK"]
         if recon['matched']:
-            lines.append(f"  PASS -- logged P&L matches actual balance change")
-            lines.append(f"  Logged P&L (CSV)   : ${recon['logged_pnl']:>+10,.2f}")
-            lines.append(f"  Actual bal change  : ${recon['actual_change']:>+10,.2f}")
-            lines.append(f"  Discrepancy        : none (within ${RECON_TOLERANCE:.2f} tolerance)")
+            lines.append(f"  PASS -- net P&L matches actual balance change")
+            lines.append(f"  Gross P&L          : ${recon['gross_pnl']:>+10,.2f}")
+            lines.append(f"  Commission / swap / fees: ${recon['commission']:>+.2f} / ${recon['swap']:>+.2f} / ${recon['fee']:>+.2f}")
+            lines.append(f"  Net P&L            : ${recon['net_pnl']:>+10,.2f}")
+            lines.append(f"  Balance change      : ${recon['actual_change']:>+10,.2f}")
+            lines.append(f"  Reconciliation difference: none (within ${RECON_TOLERANCE:.2f} tolerance)")
         else:
             lines.append(f"  MISMATCH DETECTED")
-            lines.append(f"  Logged P&L (CSV)   : ${recon['logged_pnl']:>+10,.2f}")
-            lines.append(f"  Actual bal change  : ${recon['actual_change']:>+10,.2f}")
-            lines.append(f"  Discrepancy        : ${recon['discrepancy']:>+10,.2f}")
-            lines.append(f"  NOTE: Discrepancy likely indicates unlogged trade exits")
-            lines.append(f"        (manual closes, crashes, or restarts).")
-            lines.append(f"        Review MT5 history directly to identify missing trade(s).")
+            lines.append(f"  Gross P&L          : ${recon['gross_pnl']:>+10,.2f}")
+            lines.append(f"  Commission / swap / fees: ${recon['commission']:>+.2f} / ${recon['swap']:>+.2f} / ${recon['fee']:>+.2f}")
+            lines.append(f"  Net P&L            : ${recon['net_pnl']:>+10,.2f}")
+            lines.append(f"  Balance change      : ${recon['actual_change']:>+10,.2f}")
+            lines.append(f"  Reconciliation difference: ${recon['discrepancy']:>+10,.2f}")
+            if recon.get('legacy_without_costs'):
+                lines.append(f"  COST COVERAGE        : {recon['cost_covered']} ledger record(s), "
+                             f"{recon['legacy_without_costs']} legacy gross-only record(s).")
+            else:
+                lines.append(f"  NOTE: Difference remains after recorded costs; review MT5 history.")
 
     # Anomaly flags
     if flags:
@@ -454,8 +505,8 @@ def run(daily_state: dict) -> dict:
                 balance = acct.balance
 
         # Daily reconciliation: compare CSV-logged P&L against actual balance move
-        logged_pnl    = _read_logged_pnl_for_date(date_str)
-        recon         = _reconciliation_check(date_str, logged_pnl, balance, prev_balance, log)
+        accounting    = _read_accounting_pnl_for_date(date_str)
+        recon         = _reconciliation_check(date_str, accounting, balance, prev_balance, log)
 
         # Month-to-date reconciliation section for the report
         monthly_lines = _monthly_reconciliation_lines(month_str, balance)

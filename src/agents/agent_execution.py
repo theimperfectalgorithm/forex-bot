@@ -42,6 +42,12 @@ DATA_DIR    = BASE_DIR / 'data'
 LOGS_DIR    = DATA_DIR / 'logs'
 TRADES_LOG  = DATA_DIR / 'trades_log.csv'
 
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from core.mt5_time import observed_server_utc_offset_hours, server_epoch_to_utc
+from core.trade_cost_ledger import aggregate_position_deals, append_cost_record
+
 # -- logging
 def _log() -> logging.Logger:
     log = logging.getLogger('EXECUTION')
@@ -442,15 +448,57 @@ def _find_exit_deal(deals, ticket: int):
     )
 
 
-def _format_exit_deal(deal) -> dict:
+def _format_exit_deal(deal, position_deals, observed_offset_hours: int) -> dict:
+    """Keep legacy gross P&L while carrying separate MT5 accounting fields."""
+    accounting = aggregate_position_deals(position_deals, deal.position_id)
+    # A history lookup failure must not invent a zero-gross close.  The exit
+    # deal is already authoritative for the legacy field in that narrow case.
+    if not accounting['deal_count']:
+        accounting.update({
+            'gross_pnl': round(float(deal.profit or 0.0), 2),
+            'commission': round(float(getattr(deal, 'commission', 0.0) or 0.0), 2),
+            'swap': round(float(getattr(deal, 'swap', 0.0) or 0.0), 2),
+            'fee': round(float(getattr(deal, 'fee', 0.0) or 0.0), 2),
+            'deal_count': 1,
+        })
+        accounting['net_pnl'] = round(
+            accounting['gross_pnl'] + accounting['commission']
+            + accounting['swap'] + accounting['fee'], 2)
+    exit_time = server_epoch_to_utc(deal.time, observed_offset_hours).isoformat()
     return {
         'exit_price'  : deal.price,
-        'exit_time'   : datetime.fromtimestamp(deal.time, tz=timezone.utc).isoformat(),
+        'exit_time'   : exit_time,
         'exit_reason' : ('TP'          if deal.reason == mt5.DEAL_REASON_TP  else
                          'SL'          if deal.reason == mt5.DEAL_REASON_SL  else
                          'MANUAL/OTHER'),
-        'exit_pnl'    : deal.profit,
+        # exit_pnl deliberately retains its historical GROSS semantics for
+        # strategy analytics, health monitoring, and R calculations.
+        'exit_pnl'    : accounting['gross_pnl'],
+        **accounting,
+        'server_offset_h': observed_offset_hours,
     }
+
+
+def _position_deals(ticket: int, fallback_deals) -> list:
+    """Return all deals for a position, falling back to the already-read window."""
+    try:
+        deals = mt5.history_deals_get(position=ticket)
+        if deals is not None:
+            return list(deals)
+    except Exception:
+        pass
+    return [d for d in (fallback_deals or []) if getattr(d, 'position_id', None) == ticket]
+
+
+def _observed_offset_or_fallback(log: logging.Logger) -> int:
+    offset = observed_server_utc_offset_hours(mt5)
+    if offset is not None:
+        return offset
+    # This is only a live-path contingency. Historical repair must supply an
+    # independently known historical offset and is intentionally not done here.
+    fallback = 3 if 3 <= datetime.now(timezone.utc).month <= 10 else 2
+    log.warning(f"MT5 server offset could not be observed; using live DST fallback UTC+{fallback}")
+    return fallback
 
 
 def _get_closed_deal(ticket: int, log: logging.Logger) -> dict | None:
@@ -484,7 +532,8 @@ def _get_closed_deal(ticket: int, log: logging.Logger) -> dict | None:
         if deals:
             match = _find_exit_deal(deals, ticket)
             if match:
-                return _format_exit_deal(match)
+                offset = _observed_offset_or_fallback(log)
+                return _format_exit_deal(match, _position_deals(ticket, deals), offset)
 
         # Pass 2: yesterday's calendar window (catches trades near day boundary)
         yest_midnight = midnight - timedelta(days=1)
@@ -493,7 +542,8 @@ def _get_closed_deal(ticket: int, log: logging.Logger) -> dict | None:
             match = _find_exit_deal(deals, ticket)
             if match:
                 log.info(f"ticket {ticket}: exit deal found in yesterday's window")
-                return _format_exit_deal(match)
+                offset = _observed_offset_or_fallback(log)
+                return _format_exit_deal(match, _position_deals(ticket, deals), offset)
 
         return None
     except Exception as e:
@@ -553,6 +603,20 @@ def monitor_positions(open_trades: list, log: logging.Logger,
                 closed_trade = {**trade, **exit_info}
                 newly_closed.append(closed_trade)
 
+                ledger_record = {
+                    'ticket': ticket,
+                    'exit_time': exit_info['exit_time'],
+                    'gross_pnl': exit_info['gross_pnl'],
+                    'commission': exit_info['commission'],
+                    'swap': exit_info['swap'],
+                    'fee': exit_info['fee'],
+                    'net_pnl': exit_info['net_pnl'],
+                    'deal_count': exit_info['deal_count'],
+                    'server_offset_h': exit_info['server_offset_h'],
+                }
+                if not append_cost_record(ledger_record):
+                    log.info(f"Accounting ledger already contains or could not save ticket={ticket}")
+
                 _write_trade_log({
                     'Timestamp'  : exit_info['exit_time'],
                     'Pair'       : symbol,
@@ -592,6 +656,12 @@ def monitor_positions(open_trades: list, log: logging.Logger,
                         'exit_time'   : now_str,
                         'exit_reason' : 'UNKNOWN',
                         'exit_pnl'    : 0.0,
+                        'gross_pnl'   : None,
+                        'commission'  : None,
+                        'swap'        : None,
+                        'fee'         : None,
+                        'net_pnl'     : None,
+                        'accounting_coverage': 'incomplete',
                     })
                 else:
                     log.warning(

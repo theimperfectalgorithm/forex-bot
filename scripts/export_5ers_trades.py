@@ -36,6 +36,9 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from core.trade_cost_ledger import load_cost_ledger
+
 NA = 'NOT_AVAILABLE'
 
 PIP_VALUE_USD = {'default': 10.0, 'JPY': 6.7, 'XAUUSD': 10.0}
@@ -51,7 +54,7 @@ TIMESTAMP_MATCH_TOLERANCE = timedelta(minutes=5)
 EXPORT_COLUMNS = [
     'trade_id', 'account', 'status', 'strategy', 'symbol', 'direction',
     'signal_time', 'entry_time', 'exit_time', 'entry_price', 'exit_price',
-    'lots', 'risk_percent', 'initial_risk', 'profit', 'swap', 'commission',
+    'lots', 'risk_percent', 'initial_risk', 'profit', 'swap', 'commission', 'fee', 'net_pnl',
     'R', 'stop_loss', 'take_profit', 'spread', 'ATR', 'holding_time',
     'exit_reason', 'raw_exit_reason', 'strategy_reason', 'strategy_version',
     'demotion_status', 'r_source', 'match_method', 'source_timestamp',
@@ -210,9 +213,11 @@ def decode_exit_reason(raw: str) -> str:
     return raw  # TP, SL, FRIDAY_CLOSE, EOD_CLOSE pass through unchanged
 
 
-def build_export(trades_path: Path, journal_path: Path, account: str):
+def build_export(trades_path: Path, journal_path: Path, account: str,
+                 ledger_path: Path | None = None):
     trades = load_trades(trades_path)
     events, malformed_journal_lines = load_journal_events(journal_path)
+    ledger = load_cost_ledger(ledger_path) if ledger_path else {}
     entry_by_ticket = index_by_ticket(events['entry'])
     exit_by_ticket = index_by_ticket(events['exit'])
 
@@ -288,6 +293,7 @@ def build_export(trades_path: Path, journal_path: Path, account: str):
             match_method = 'none'
 
         pnl = _to_float(row.get('PnL'))
+        costs = ledger.get(ticket) if status == 'CLOSED' else None
         if risk_usd is None:
             sl_pips = _to_float(row.get('SLPips'))
             lots = _to_float(row.get('Lots'))
@@ -314,9 +320,13 @@ def build_export(trades_path: Path, journal_path: Path, account: str):
             'lots': row.get('Lots', NA),
             'risk_percent': risk_pct,
             'initial_risk': round(risk_usd, 2) if risk_usd else NA,
+            # Legacy PnL remains gross. New sidecar fields are optional so
+            # historical exports remain explicitly cost-unknown, not invented.
             'profit': row.get('PnL') or NA,
-            'swap': NA,        # not persisted anywhere in this file-based system
-            'commission': NA,  # not persisted anywhere in this file-based system
+            'swap': costs.get('swap', NA) if costs else NA,
+            'commission': costs.get('commission', NA) if costs else NA,
+            'fee': costs.get('fee', NA) if costs else NA,
+            'net_pnl': costs.get('net_pnl', NA) if costs else NA,
             'R': r,
             'stop_loss': row.get('SL', NA),
             'take_profit': row.get('TP', NA),
@@ -352,6 +362,10 @@ def build_export(trades_path: Path, journal_path: Path, account: str):
         'journal_exit_events': len(events['exit']),
         'journal_rejection_events': len(events['rejection']),
         'journal_malformed_lines': malformed_journal_lines,
+        'cost_ledger_records': len(ledger),
+        'cost_covered_closed_trades': sum(1 for r in trades
+                                          if r.get('Status') == 'CLOSED'
+                                          and str(r.get('Ticket') or '') in ledger),
         'matched_trades': matched_count,
         'unmatched_trades': unmatched_count,
         'matched_via_ticket': sum(1 for r in rows if r['match_method'] == 'ticket'),
@@ -374,7 +388,9 @@ def main():
     ap.add_argument('--output', required=True, help='Path to write the export CSV (not under the source data dir)')
     ap.add_argument('--account', default=None,
                      help='Explicit account label. Defaults to the trades file\'s grandparent '
-                          'directory name (e.g. "forex-bot-5ers") if omitted.')
+                        'directory name (e.g. "forex-bot-5ers") if omitted.')
+    ap.add_argument('--ledger', default=None,
+                    help='Optional ticket-keyed accounting sidecar JSONL (read-only).')
     ap.add_argument('--dry-run', action='store_true',
                      help='Run the full join + validation summary but do not write --output')
     args = ap.parse_args()
@@ -396,7 +412,11 @@ def main():
 
     account = args.account or trades_path.resolve().parent.parent.name
 
-    rows, summary = build_export(trades_path, journal_path, account)
+    ledger_path = Path(args.ledger) if args.ledger else None
+    if ledger_path is not None and not ledger_path.is_file():
+        print(f"ERROR: --ledger not found: {ledger_path}", file=sys.stderr)
+        sys.exit(2)
+    rows, summary = build_export(trades_path, journal_path, account, ledger_path)
 
     print('=== Validation summary ===')
     print(json.dumps(summary, indent=2))

@@ -29,7 +29,8 @@ ts_server, server_offset_h, kind):
               risk_pct_config, risk_usd_intended
               + account snapshot + market context
   exit      : ticket, key, symbol, direction, exit_price, exit_reason,
-              pnl, entry_time, hold_hours
+              pnl (gross), gross_pnl, commission, swap, fee, net_pnl,
+              entry_time, exit_time, hold_hours
 
 Account snapshot: balance, equity, open_positions, open_risk_usd.
 Market context: spread_pips, atr14_h1_pips, hour_server, dow_server,
@@ -45,6 +46,8 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from core.mt5_time import observed_server_utc_offset_hours
+
 try:
     import MetaTrader5 as mt5
     MT5_AVAILABLE = True
@@ -58,18 +61,11 @@ log = logging.getLogger('JOURNAL')
 
 
 def _server_offset_hours() -> int:
-    """Server-clock offset vs UTC (same logic as agent_strategy's helper,
-    duplicated locally so core/ never imports from src/agents/)."""
-    try:
-        if MT5_AVAILABLE and mt5.initialize():
-            tick = mt5.symbol_info_tick('EURUSD')
-            if tick and tick.time:
-                diff = round((tick.time
-                              - datetime.now(timezone.utc).timestamp()) / 3600)
-                if diff in (2, 3):
-                    return diff
-    except Exception:
-        pass
+    """Return the observed server offset, with a live-only DST fallback."""
+    if MT5_AVAILABLE:
+        observed = observed_server_utc_offset_hours(mt5)
+        if observed is not None:
+            return observed
     return 3 if 3 <= datetime.now(timezone.utc).month <= 10 else 2
 
 
@@ -210,18 +206,21 @@ def log_entry(key, symbol, direction, sl_pips, tp_pips, signal_price,
         **acct, **market_context(symbol)})
 
 
-def log_exit(trade: dict):
-    """trade = the orchestrator's open_trades dict after close detection."""
-    hold = None
+def compute_hold_hours(entry_time, exit_time):
+    """Return elapsed hours for two normalized ISO-8601 timestamps."""
     try:
-        et = trade.get('entry_time')
-        xt = trade.get('exit_time')
-        if et and xt:
-            hold = round((datetime.fromisoformat(str(xt))
-                          - datetime.fromisoformat(str(et))
+        if entry_time and exit_time:
+            return round((datetime.fromisoformat(str(exit_time))
+                          - datetime.fromisoformat(str(entry_time))
                           ).total_seconds() / 3600, 2)
     except Exception:
-        pass
+        return None
+    return None
+
+
+def log_exit(trade: dict):
+    """trade = the orchestrator's open_trades dict after close detection."""
+    hold = compute_hold_hours(trade.get('entry_time'), trade.get('exit_time'))
     log_event('exit', {
         'key': trade.get('strategy_key', trade.get('symbol')),
         'symbol': trade.get('symbol'),
@@ -229,6 +228,15 @@ def log_exit(trade: dict):
         'ticket': trade.get('ticket'),
         'exit_price': trade.get('exit_price'),
         'exit_reason': trade.get('exit_reason'),
+        # ``pnl`` remains the long-standing gross field used by analytics.
         'pnl': trade.get('exit_pnl'),
+        'gross_pnl': trade.get('gross_pnl', trade.get('exit_pnl')),
+        'commission': trade.get('commission'),
+        'swap': trade.get('swap'),
+        'fee': trade.get('fee'),
+        'net_pnl': trade.get('net_pnl'),
+        'accounting_coverage': trade.get('accounting_coverage',
+                                         'complete' if trade.get('net_pnl') is not None else 'incomplete'),
         'entry_time': trade.get('entry_time'),
+        'exit_time': trade.get('exit_time'),
         'hold_hours': hold})
