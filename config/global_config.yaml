@@ -42,6 +42,12 @@ global:
   # stored in this file (this repo is public).
   mt5_login: 0
   mt5_server: ""
+  # Required fail-closed identity expectations for live instances. These
+  # validate the account already selected in the configured terminal; they
+  # do NOT trigger an automatic login. Set per instance in local_config.
+  expected_mt5_login: 0
+  expected_mt5_server: ""
+  expected_mt5_terminal_path: ""
   # true only if this instance's terminal is a folder-copy launched with
   # the /portable flag (Method B) rather than a normal second install
   mt5_portable: false

@@ -46,6 +46,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from core.mt5_time import observed_server_utc_offset_hours, server_epoch_to_utc
+from core.mt5_connect import initialize_and_validate
 from core.trade_cost_ledger import aggregate_position_deals, append_cost_record
 
 # -- logging
@@ -119,6 +120,20 @@ def _connect(log: logging.Logger) -> bool:
         return True
     log.error(f"MT5 init failed: {mt5.last_error()}")
     return False
+
+
+def _connect_for_entry(log: logging.Logger) -> bool:
+    """Entry-only connection gate with independent account validation."""
+    return initialize_and_validate(log)
+
+
+def _broker_duplicate_for_symbol(symbol: str, log: logging.Logger):
+    """Return a bot-owned same-symbol position, or raise on query failure."""
+    positions = mt5.positions_get()
+    if positions is None:
+        raise RuntimeError(f"positions_get failed: {mt5.last_error()}")
+    return next((p for p in positions
+                 if p.symbol == symbol and p.magic == MAGIC_NUMBER), None)
 
 
 def _price_round(price: float, symbol: str) -> float:
@@ -212,8 +227,8 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
     failed = lambda err: {'success': False, 'ticket': 0,
                           'entry_price': 0.0, 'sl': 0.0, 'tp': 0.0, 'error': err}
 
-    if not _connect(log):
-        return failed("MT5 connection failed")
+    if not _connect_for_entry(log):
+        return failed("MT5 expected-account identity validation failed")
 
     if not mt5.symbol_select(symbol, True):
         return failed(f"symbol_select({symbol}) failed")
@@ -276,6 +291,21 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         'type_time'   : mt5.ORDER_TIME_GTC,
         'type_filling': _get_filling_mode(symbol),
     }
+
+    # Final broker-truth guard, deliberately adjacent to order_send. Stale
+    # state or a crash/restart must not permit a second bot position on the
+    # same symbol. Unrelated/manual magic numbers do not claim the slot.
+    try:
+        duplicate = _broker_duplicate_for_symbol(symbol, log)
+    except Exception as e:
+        err = f"broker-side duplicate guard query failed for {symbol}: {e} -- order rejected"
+        log.error(err)
+        return failed(err)
+    if duplicate is not None:
+        err = (f"broker-side duplicate guard: {symbol} already has bot position "
+               f"ticket={duplicate.ticket} magic={duplicate.magic} -- order rejected")
+        log.error(err)
+        return failed(err)
 
     result = mt5.order_send(request)
     if result is None:
@@ -694,7 +724,8 @@ def monitor_positions(open_trades: list, log: logging.Logger,
     return still_open, newly_closed
 
 
-def find_untracked_positions(open_trades: list, log: logging.Logger) -> list:
+def find_untracked_positions(open_trades: list, log: logging.Logger,
+                             strict: bool = False) -> list:
     """
     Reconciliation check (2026-08-03): monitor_positions() above is
     one-directional -- it only detects "bot thinks a ticket is open, MT5
@@ -713,9 +744,15 @@ def find_untracked_positions(open_trades: list, log: logging.Logger) -> list:
     entry_price, sl, tp, open_time) for every untracked bot position.
     """
     if not _connect(log):
+        if strict:
+            raise RuntimeError("MT5 connection failed during reconciliation")
         return []
     known_tickets = {t['ticket'] for t in open_trades}
     positions = mt5.positions_get()
+    if positions is None:
+        if strict:
+            raise RuntimeError(f"positions_get failed during reconciliation: {mt5.last_error()}")
+        return []
     if not positions:
         return []
 

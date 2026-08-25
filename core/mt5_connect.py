@@ -48,6 +48,7 @@ MT5_PASSWORD env var -- never the config file, this repo is public).
 from __future__ import annotations
 
 import os
+import logging
 from pathlib import Path
 
 import yaml
@@ -78,6 +79,9 @@ _CFG       = _load_cfg()
 MT5_PATH   = (_CFG.get('mt5_terminal_path') or '').strip()
 MT5_LOGIN  = int(_CFG.get('mt5_login') or 0)
 MT5_SERVER = str(_CFG.get('mt5_server', ''))
+EXPECTED_MT5_LOGIN = int(_CFG.get('expected_mt5_login') or 0)
+EXPECTED_MT5_SERVER = str(_CFG.get('expected_mt5_server', '')).strip()
+EXPECTED_MT5_PATH = str(_CFG.get('expected_mt5_terminal_path', '')).strip()
 
 PATCHED = False   # importable flag so callers/tests can confirm the patch applied
 
@@ -112,3 +116,77 @@ try:
     PATCHED = True
 except ImportError:
     PATCHED = False   # MetaTrader5 not installed (e.g. Mac dev) -- nothing to patch
+
+
+def _normalise_path(value: str) -> str:
+    """Return a comparison form for a configured Windows terminal path."""
+    return os.path.normcase(os.path.abspath(os.path.expandvars(value.strip())))
+
+
+def validate_expected_account(log: logging.Logger | None = None) -> bool:
+    """Fail-closed validation of this instance's terminal/account identity.
+
+    The ``expected_*`` settings are assertions only. They never cause an
+    account login or expose a password. Callers must initialize MT5 first.
+    """
+    log = log or logging.getLogger('MT5_IDENTITY')
+    missing = []
+    if not MT5_PATH:
+        missing.append('mt5_terminal_path')
+    if not EXPECTED_MT5_PATH:
+        missing.append('expected_mt5_terminal_path')
+    if not EXPECTED_MT5_LOGIN:
+        missing.append('expected_mt5_login')
+    if not EXPECTED_MT5_SERVER:
+        missing.append('expected_mt5_server')
+    if missing:
+        log.critical("MT5 identity validation FAILED: missing required config: %s",
+                     ', '.join(missing))
+        return False
+    if _normalise_path(MT5_PATH) != _normalise_path(EXPECTED_MT5_PATH):
+        log.critical("MT5 identity validation FAILED: configured terminal path=%r "
+                     "expected=%r", MT5_PATH, EXPECTED_MT5_PATH)
+        return False
+    if not PATCHED:
+        log.critical("MT5 identity validation FAILED: MetaTrader5 unavailable")
+        return False
+    acct = mt5.account_info()
+    if acct is None:
+        log.critical("MT5 identity validation FAILED: account_info unavailable; "
+                     "expected login=%s server=%r",
+                     EXPECTED_MT5_LOGIN, EXPECTED_MT5_SERVER)
+        return False
+    actual_login = int(getattr(acct, 'login', 0) or 0)
+    actual_server = str(getattr(acct, 'server', '') or '').strip()
+    if actual_login != EXPECTED_MT5_LOGIN:
+        log.critical("MT5 identity validation FAILED: expected login=%s actual=%s "
+                     "expected server=%r actual=%r",
+                     EXPECTED_MT5_LOGIN, actual_login,
+                     EXPECTED_MT5_SERVER, actual_server)
+        return False
+    if actual_server.casefold() != EXPECTED_MT5_SERVER.casefold():
+        log.critical("MT5 identity validation FAILED: login=%s expected server=%r "
+                     "actual=%r", actual_login, EXPECTED_MT5_SERVER, actual_server)
+        return False
+    terminal_info = mt5.terminal_info()
+    actual_terminal = str(getattr(terminal_info, 'path', '') or '').strip()
+    if actual_terminal:
+        expected_dir = str(Path(EXPECTED_MT5_PATH).parent)
+        if _normalise_path(actual_terminal) != _normalise_path(expected_dir):
+            log.critical("MT5 identity validation FAILED: expected terminal dir=%r "
+                         "actual=%r", expected_dir, actual_terminal)
+            return False
+    return True
+
+
+def initialize_and_validate(log: logging.Logger | None = None) -> bool:
+    """Initialize the pinned terminal and validate its expected identity."""
+    log = log or logging.getLogger('MT5_IDENTITY')
+    if not PATCHED:
+        log.critical("MT5 initialization FAILED: MetaTrader5 unavailable")
+        return False
+    if not mt5.initialize():
+        log.critical("MT5 initialization FAILED for expected terminal %r: %s",
+                     EXPECTED_MT5_PATH or MT5_PATH, mt5.last_error())
+        return False
+    return validate_expected_account(log)

@@ -48,6 +48,7 @@ sys.path.insert(0, str(BASE_DIR))
 # full incident writeup; a bare mt5.initialize() elsewhere was confirmed to
 # silently attach to a DIFFERENT terminal when two are running on the VPS.
 import core.mt5_connect  # noqa: F401 -- imported for its patching side effect
+from core.mt5_connect import initialize_and_validate
 
 from agent_market    import run as run_market
 from agent_strategy  import (prepare_session, check_breakout,
@@ -801,7 +802,8 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             log.error(f"EURUSD {strategy}: order FAILED -- {result['error']}")
 
 
-def _check_untracked_positions(state: dict, log: logging.Logger):
+def _check_untracked_positions(state: dict, log: logging.Logger,
+                               strict: bool = False) -> bool:
     """
     Reconciliation (2026-08-03): find MT5 positions this bot placed that
     aren't in state['open_trades'] -- runs EVERY cycle, independent of
@@ -816,9 +818,9 @@ def _check_untracked_positions(state: dict, log: logging.Logger):
     look before the book resumes fully autonomous entries, even though
     the position itself is safely tracked again immediately.
     """
-    untracked = find_untracked_positions(state['open_trades'], log)
+    untracked = find_untracked_positions(state['open_trades'], log, strict=strict)
     if not untracked:
-        return
+        return True
 
     for pos in untracked:
         log.error(
@@ -848,6 +850,26 @@ def _check_untracked_positions(state: dict, log: logging.Logger):
         })
 
     state['untracked_positions_flagged_at'] = datetime.now(timezone.utc).isoformat()
+    return True
+
+
+def step_pre_entry_reconciliation(state: dict, log: logging.Logger) -> bool:
+    """Mandatory fail-closed broker reconciliation before entry evaluation."""
+    if not initialize_and_validate(log):
+        log.critical("PRE-ENTRY BLOCKED: expected MT5 identity unavailable or mismatched; "
+                     "position-management steps remain scheduled")
+        return False
+    try:
+        _check_untracked_positions(state, log, strict=True)
+    except Exception as e:
+        log.critical("PRE-ENTRY BLOCKED: broker reconciliation failed: %s; "
+                     "position-management steps remain scheduled", e, exc_info=True)
+        return False
+    if state.get('untracked_positions_flagged_at'):
+        log.error("PRE-ENTRY BLOCKED: untracked bot position was adopted; existing "
+                  "same-day reconciliation policy blocks new entries")
+        return False
+    return True
 
 
 def step_monitor_positions(state: dict, log: logging.Logger):
@@ -1003,7 +1025,7 @@ def sleep_until_next_quarter(log: logging.Logger):
 # Main loop
 # ---------------------------------------------------------------------------
 
-def _bind_mt5_terminal(log: logging.Logger):
+def _bind_mt5_terminal(log: logging.Logger) -> bool:
     """
     One explicit MT5 initialize() against the terminal configured in
     global_config (mt5_terminal_path). With TWO terminals installed on
@@ -1017,9 +1039,8 @@ def _bind_mt5_terminal(log: logging.Logger):
     """
     path = (GLOBAL_CFG.get('mt5_terminal_path') or '').strip()
     if not path:
-        log.info("mt5_terminal_path not set -- attaching to default terminal "
-                 "(fine while only ONE terminal is installed)")
-        return
+        log.critical("mt5_terminal_path not set -- expected-account validation fails closed")
+        return False
     try:
         import os
         import MetaTrader5 as mt5
@@ -1036,10 +1057,13 @@ def _bind_mt5_terminal(log: logging.Logger):
             acct = mt5.account_info()
             log.info(f"MT5 terminal bound: {path}  account="
                      f"{acct.login if acct else '?'}")
+            return initialize_and_validate(log)
         else:
             log.error(f"MT5 terminal bind FAILED for {path}: {mt5.last_error()}")
+            return False
     except Exception as e:
         log.error(f"MT5 terminal bind error: {e}", exc_info=True)
+        return False
 
 
 def main():
@@ -1052,13 +1076,21 @@ def main():
              f"risk_scale={GLOBAL_CFG.get('risk_scale', 1.0)}  "
              f"max_lot={GLOBAL_CFG.get('max_lot', 2.0)}")
     log.info("=" * 60)
-    _bind_mt5_terminal(log)
+    startup_identity_ok = _bind_mt5_terminal(log)
+    if not startup_identity_ok:
+        log.critical("Startup expected-account validation failed -- new entries remain blocked")
 
     while True:
         try:
             now   = datetime.now(timezone.utc)
             state = load_state()
             t     = minutes_since_midnight(now)
+
+            # Mandatory before every possible new-entry path. Failure blocks
+            # entries for this cycle only; scheduled exits, Friday close,
+            # reporting, and existing-position monitoring remain callable.
+            entries_allowed = step_pre_entry_reconciliation(state, log)
+            save_state(state)
 
             # server-clock coordinates for all session-window gating
             # (bar stamps + backtest windows are SERVER time; see the
@@ -1078,7 +1110,7 @@ def main():
             #    06:00 UTC); each strategy's own check_signal() enforces
             #    its tighter per-pair cutoff (GBPJPY/AUDJPY/CADJPY stop at
             #    04:00 UTC) and returns NO_SIGNAL after its own cutoff.
-            if (t <= T_AMR_END and AMR_KEYS
+            if (t <= T_AMR_END and AMR_KEYS and entries_allowed
                     and state.get('market_ran')
                     and state.get('trade_allowed', False)):
                 step_check_asian_reversion(state, log)
@@ -1092,7 +1124,7 @@ def main():
 
             # -- server Monday 00:00-02:00  Monday-drift entry checks
             #    (= real Sunday evening -- the weekly open bar)
-            if (server_now.weekday() == 0 and srv <= T_MONDAY_END and MON_KEYS
+            if (entries_allowed and server_now.weekday() == 0 and srv <= T_MONDAY_END and MON_KEYS
                     and state.get('market_ran')
                     and state.get('trade_allowed', False)):
                 step_check_asian_reversion(state, log, keys=MON_KEYS,
@@ -1120,7 +1152,8 @@ def main():
                 save_state(state)
 
             # -- server 08:00-12:30  breakout checks (every 15 min)
-            if T_LONDON_START <= srv <= T_LONDON_END and state['london_prep_done']:
+            if (entries_allowed and T_LONDON_START <= srv <= T_LONDON_END
+                    and state['london_prep_done']):
                 step_check_breakouts(state, 'london', log)
                 save_state(state)
 
@@ -1134,14 +1167,16 @@ def main():
                 save_state(state)
 
             # -- server 13:00-20:45  NY breakout checks (every 15 min)
-            if T_NY_START <= srv <= T_NY_END and state['ny_prep_done']:
+            if (entries_allowed and T_NY_START <= srv <= T_NY_END
+                    and state['ny_prep_done']):
                 step_check_breakouts(state, 'ny', log)
                 save_state(state)
 
             # -- server 12:00-15:45  EURUSD dual-strategy checks.
             #    EURUSD_PAIR is None when no sma_ema_combined pair is active
             #    (deactivated 2026-07-05 after failing re-validation).
-            if EURUSD_PAIR and T_EURUSD_START <= srv <= T_EURUSD_END:
+            if (entries_allowed and EURUSD_PAIR
+                    and T_EURUSD_START <= srv <= T_EURUSD_END):
                 step_check_eurusd(state, log)
                 save_state(state)
 
