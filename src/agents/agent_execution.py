@@ -408,6 +408,28 @@ def close_trade(ticket: int, symbol: str, comment: str = 'SMA_cross_exit') -> bo
     return False
 
 
+def position_is_open(ticket: int, log: logging.Logger) -> bool | None:
+    """Return broker truth for one position, or ``None`` if unavailable.
+
+    This deliberately distinguishes a confirmed empty lookup from connection,
+    query, and broker failures.  Scheduled exits must remain retryable whenever
+    the terminal cannot prove that a position is gone.
+    """
+    if not _connect(log):
+        return None
+    try:
+        positions = mt5.positions_get(ticket=ticket)
+    except Exception as e:
+        log.error(f"Position verification failed for ticket {ticket}: {e}",
+                  exc_info=True)
+        return None
+    if positions is None:
+        log.error(f"Position verification failed for ticket {ticket}: "
+                  "positions_get returned None")
+        return None
+    return len(positions) > 0
+
+
 # ---------------------------------------------------------------------------
 # Monitor open positions
 # ---------------------------------------------------------------------------

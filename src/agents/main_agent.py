@@ -57,7 +57,7 @@ from agent_strategy  import (prepare_session, check_breakout,
 from agent_risk      import (run as run_risk, GLOBAL_CFG,
                              STARTING_BALANCE, MAX_DAILY_LOSS_PCT)
 from agent_execution import (place_trade, monitor_positions, close_trade,
-                             find_untracked_positions)
+                             find_untracked_positions, position_is_open)
 from agent_reporting import run as run_reporting
 from core.pair_manager import get_active_pairs
 from core.session_filter import is_friday_close_time
@@ -967,10 +967,22 @@ def step_friday_close(state: dict, log: logging.Logger):
         state['friday_close_done'] = True
         return
 
-    log.info(f"FRIDAY CLOSE  20:00 UTC -- force-closing {len(state['open_trades'])} trade(s)")
+    log.info(f"FRIDAY CLOSE  20:00 UTC -- checking {len(state['open_trades'])} trade(s)")
+    all_confirmed_closed = True
     for trade in list(state['open_trades']):
         ticket = trade['ticket']
         symbol = trade['symbol']
+
+        # Broker truth, not the result of an earlier order request, decides
+        # whether this ticket needs another close attempt.  Keep open_trades
+        # untouched: monitor_positions owns exit lookup and accounting.
+        open_before = position_is_open(ticket, log)
+        if open_before is False:
+            continue
+        if open_before is None:
+            all_confirmed_closed = False
+            continue
+
         try:
             ok = close_trade(ticket, symbol, comment='FRIDAY_CLOSE')
             if ok:
@@ -981,7 +993,19 @@ def step_friday_close(state: dict, log: logging.Logger):
                 log.error(f"FRIDAY CLOSE FAILED  {symbol}  ticket={ticket} -- will retry next cycle")
         except Exception as e:
             log.error(f"FRIDAY CLOSE error  {symbol}  ticket={ticket}: {e}", exc_info=True)
-    state['friday_close_done'] = True
+            all_confirmed_closed = False
+            continue
+
+        # An accepted request is not proof that the broker has removed the
+        # position.  A still-open or unverifiable ticket remains retryable.
+        open_after = position_is_open(ticket, log)
+        if open_after is not False:
+            all_confirmed_closed = False
+
+    state['friday_close_done'] = all_confirmed_closed
+    if not all_confirmed_closed:
+        log.warning("Friday close incomplete -- open or unverifiable positions "
+                    "will retry next cycle")
 
 
 def step_thursday_swap_warning(state: dict, log: logging.Logger):
