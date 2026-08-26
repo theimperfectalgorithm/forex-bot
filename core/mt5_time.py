@@ -35,3 +35,19 @@ def server_epoch_to_utc(server_epoch: int | float, observed_offset_hours: int) -
         raise ValueError(f'unsupported MT5 server UTC offset: {observed_offset_hours!r}')
     return (datetime.fromtimestamp(server_epoch, tz=timezone.utc)
             - timedelta(hours=observed_offset_hours))
+
+
+def mt5_bar_time_to_utc(value: int | float | datetime,
+                        observed_offset_hours: int) -> datetime:
+    """Normalize one MT5 bar time exactly once.
+
+    Numeric MT5 values are broker/server-clock epochs and require the observed
+    offset.  An aware ``datetime`` is an explicit already-normalized value used
+    by tests/offline callers and is converted to UTC without another shift.
+    Naive datetimes are rejected because their clock basis is ambiguous.
+    """
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            raise ValueError('naive MT5 bar datetime has ambiguous timezone')
+        return value.astimezone(timezone.utc)
+    return server_epoch_to_utc(value, observed_offset_hours)

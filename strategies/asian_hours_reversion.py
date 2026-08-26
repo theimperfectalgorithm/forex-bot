@@ -56,6 +56,8 @@ except ImportError:
 import numpy as np
 
 from strategies.base_strategy import BaseStrategy
+from core.mt5_time import (mt5_bar_time_to_utc,
+                           observed_server_utc_offset_hours)
 
 LOGS_DIR = Path(__file__).parent.parent / 'data' / 'logs'
 
@@ -210,14 +212,33 @@ class AsianHoursReversion(BaseStrategy):
         if bars is None:
             return no_signal(f'insufficient M15 history ({M15_BARS_NEEDED} bars)')
 
-        bar_time = datetime.fromtimestamp(bars[-1]['time'], tz=timezone.utc)
+        offset_h = observed_server_utc_offset_hours(mt5, self.pair)
+        if offset_h is None:
+            return no_signal('could not establish MT5 server UTC offset')
+        try:
+            bar_time = mt5_bar_time_to_utc(bars[-1]['time'], offset_h)
+        except (TypeError, ValueError) as e:
+            return no_signal(f'invalid M15 bar timestamp: {e}')
+
         end_hour = self.pair_config.get('entry_end_hour', ENTRY_END_HOUR)
         if bar_time.hour >= end_hour:
+            log.debug(
+                "AMR DECISION pair=%s scheduler_utc=%s bar_utc=%s "
+                "window=00:00-%02d:00 inside=False signal=NO_SIGNAL "
+                "reason=outside entry window",
+                self.pair, datetime.now(timezone.utc).isoformat(),
+                bar_time.isoformat(), end_hour)
             return no_signal(
                 f'bar at {bar_time.hour:02d}:{bar_time.minute:02d} UTC outside '
                 f'00:00-{end_hour:02d}:00 entry window')
 
         if self._last_trade_date == bar_time.date():
+            log.debug(
+                "AMR DECISION pair=%s scheduler_utc=%s bar_utc=%s "
+                "window=00:00-%02d:00 inside=True signal=NO_SIGNAL "
+                "reason=already traded UTC date",
+                self.pair, datetime.now(timezone.utc).isoformat(),
+                bar_time.isoformat(), end_hour)
             return no_signal('already traded this pair today (one trade/day limit)')
 
         closes = np.array([b['close'] for b in bars], dtype=float)
@@ -233,12 +254,30 @@ class AsianHoursReversion(BaseStrategy):
         tp_pips = abs(sma - close) / self.pip_size
 
         if abs(z) < z_thr:
+            log.debug(
+                "AMR DECISION pair=%s scheduler_utc=%s bar_utc=%s z=%+.3f "
+                "threshold=%.3f window=00:00-%02d:00 inside=True "
+                "signal=NO_SIGNAL reason=below threshold",
+                self.pair, datetime.now(timezone.utc).isoformat(),
+                bar_time.isoformat(), z, z_thr, end_hour)
             return no_signal(f'|z|={abs(z):.2f} below threshold {z_thr}')
         if tp_pips < MIN_TP_PIPS:
+            log.debug(
+                "AMR DECISION pair=%s scheduler_utc=%s bar_utc=%s z=%+.3f "
+                "threshold=%.3f window=00:00-%02d:00 inside=True "
+                "signal=NO_SIGNAL reason=TP distance %.1fp below %.1fp",
+                self.pair, datetime.now(timezone.utc).isoformat(),
+                bar_time.isoformat(), z, z_thr, end_hour,
+                tp_pips, MIN_TP_PIPS)
             return no_signal(f'TP distance {tp_pips:.1f}p below {MIN_TP_PIPS}p minimum')
 
         direction = 'BUY' if z <= -z_thr else 'SELL'
         self._last_trade_date = bar_time.date()
+        log.debug(
+            "AMR DECISION pair=%s scheduler_utc=%s bar_utc=%s z=%+.3f "
+            "threshold=%.3f window=00:00-%02d:00 inside=True signal=%s",
+            self.pair, datetime.now(timezone.utc).isoformat(),
+            bar_time.isoformat(), z, z_thr, end_hour, direction)
         return {
             'signal'      : direction,
             'reason'      : (f'z={z:+.2f} vs SMA{SMA_PERIOD}={sma:.5f}  '
@@ -246,4 +285,5 @@ class AsianHoursReversion(BaseStrategy):
             'entry_price' : close,
             'sl_pips'     : round(tp_pips * sl_mult, 1),
             'tp_pips'     : round(tp_pips, 1),
+            'signal_bar_time_utc': bar_time.isoformat(),
         }
