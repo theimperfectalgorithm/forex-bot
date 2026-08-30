@@ -430,19 +430,21 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                              reject_reason=risk['reason'])
             continue
 
-        log.info(f"Risk APPROVED {pair}: {risk['lot_size']:.2f} lots")
+        log.info(f"Risk gates APPROVED {pair}: broker sizing budget "
+                 f"${risk['allowed_risk_dollars']:.2f}")
 
         # Trade execution
         try:
             result = place_trade(symbol, breakout, risk['lot_size'],
-                                 state['session_data'][pair], session)
+                                 state['session_data'][pair], session,
+                                 risk['allowed_risk_dollars'], risk['max_lot'])
         except Exception as e:
             log.error(f"Agent 4 place_trade {pair}: {e}", exc_info=True)
             continue
 
         if result['success']:
             log.info(f"TRADE PLACED  {pair} {breakout['signal']}  "
-                     f"{risk['lot_size']:.2f}L  "
+                     f"{result['volume']:.2f}L  "
                      f"entry={result['entry_price']:.5f}  "
                      f"SL={result['sl']:.5f}  TP={result['tp']:.5f}  "
                      f"ticket={result['ticket']}")
@@ -454,7 +456,7 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                 'strategy_key'  : pair,
                 'direction'     : breakout['signal'],
                 'session'       : session.capitalize(),
-                'lots'          : risk['lot_size'],
+                'lots'          : result['volume'],
                 'entry_price'   : result['entry_price'],
                 'sl'            : result['sl'],
                 'tp'            : result['tp'],
@@ -466,7 +468,7 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                 'entry_time'    : datetime.now(timezone.utc).isoformat(),
             })
             tj.log_entry(**_sig, ticket=result['ticket'],
-                         lots=risk['lot_size'],
+                         lots=result['volume'],
                          fill_price=result['entry_price'],
                          risk_pct_config=RISK_PCT_BY_KEY.get(pair))
         else:
@@ -554,14 +556,15 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                      'use_live_anchor': True, 'strategy': label}
         try:
             result = place_trade(symbol, res, risk['lot_size'],
-                                 exec_data, session_name)
+                                 exec_data, session_name,
+                                 risk['allowed_risk_dollars'], risk['max_lot'])
         except Exception as e:
             log.error(f"Agent 4 place_trade {key}: {e}", exc_info=True)
             continue
 
         if result['success']:
             log.info(f"TRADE PLACED  {key} {res['signal']}  "
-                     f"{risk['lot_size']:.2f}L  ticket={result['ticket']}")
+                     f"{result['volume']:.2f}L  ticket={result['ticket']}")
             state.setdefault(flag, {})[key] = True
             state['open_trades'].append({
                 'ticket'         : result['ticket'],
@@ -569,7 +572,7 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                 'strategy_key'   : key,
                 'direction'      : res['signal'],
                 'session'        : session_name.capitalize(),
-                'lots'           : risk['lot_size'],
+                'lots'           : result['volume'],
                 'entry_price'    : result['entry_price'],
                 'sl'             : result['sl'],
                 'tp'             : result['tp'],
@@ -579,7 +582,7 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                 'entry_time'     : datetime.now(timezone.utc).isoformat(),
             })
             tj.log_entry(**_sig, ticket=result['ticket'],
-                         lots=risk['lot_size'],
+                         lots=result['volume'],
                          fill_price=result['entry_price'],
                          risk_pct_config=RISK_PCT_BY_KEY.get(key))
         else:
@@ -758,7 +761,8 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             log.warning(f"EURUSD {strategy}: BLOCKED -- risk rejected: {risk['reason']}")
             continue
 
-        log.info(f"EURUSD {strategy}: risk approved {risk['lot_size']:.2f}L -- placing order")
+        log.info(f"EURUSD {strategy}: risk gates approved; broker sizing budget "
+                 f"${risk['allowed_risk_dollars']:.2f}")
 
         # Place trade
         eurusd_session = {
@@ -769,7 +773,8 @@ def step_check_eurusd(state: dict, log: logging.Logger):
         }
 
         try:
-            result = place_trade(EURUSD_PAIR, sig, risk['lot_size'], eurusd_session, 'ny')
+            result = place_trade(EURUSD_PAIR, sig, risk['lot_size'], eurusd_session, 'ny',
+                                 risk['allowed_risk_dollars'], risk['max_lot'])
         except Exception as e:
             log.error(f"place_trade EURUSD {strategy}: {e}", exc_info=True)
             continue
@@ -777,7 +782,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
         if result['success']:
             log.info(
                 f"TRADE PLACED  EURUSD-{strategy} {direction}  "
-                f"{risk['lot_size']:.2f}L  "
+                f"{result['volume']:.2f}L  "
                 f"entry={result['entry_price']:.5f}  "
                 f"SL={result['sl']:.5f}  TP={result['tp']:.5f}  "
                 f"ticket={result['ticket']}"
@@ -789,7 +794,7 @@ def step_check_eurusd(state: dict, log: logging.Logger):
                 'direction'       : direction,
                 'session'         : 'NY',
                 'strategy'        : strategy,
-                'lots'            : risk['lot_size'],
+                'lots'            : result['volume'],
                 'entry_price'     : result['entry_price'],
                 'sl'              : result['sl'],
                 'tp'              : result['tp'],

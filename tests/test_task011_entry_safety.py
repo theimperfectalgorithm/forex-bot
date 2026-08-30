@@ -70,7 +70,10 @@ def _entry_mt5(positions=()):
         ORDER_FILLING_RETURN=2, TRADE_RETCODE_DONE=10009,
         symbol_select=lambda symbol, enabled: True,
         symbol_info_tick=lambda symbol: SimpleNamespace(ask=115.10, bid=115.09),
-        symbol_info=lambda symbol: SimpleNamespace(filling_mode=1),
+        symbol_info=lambda symbol: SimpleNamespace(
+            filling_mode=1, volume_min=0.01, volume_step=0.01, volume_max=10.0),
+        order_calc_profit=lambda typ, symbol, volume, entry, sl:
+            -abs(entry - sl) * 10000 * volume,
         positions_get=lambda **kwargs: tuple(positions),
         order_send=lambda request: sent.append(request) or
             SimpleNamespace(retcode=10009, order=123, price=115.10, comment="ok"),
@@ -89,7 +92,7 @@ def _place(monkeypatch, positions=()):
     result = execution.place_trade(
         "CADJPY", {"signal": "BUY"}, 0.01,
         {"sl_pips": 20, "tp_pips": 40, "asian_high": 115.00,
-         "asian_low": 114.80}, "london")
+         "asian_low": 114.80}, "london", 100.0, 2.0)
     return result, sent
 
 
@@ -100,7 +103,7 @@ def test_identity_revalidated_before_order_submission(monkeypatch):
     result = execution.place_trade("CADJPY", {"signal": "BUY"}, 0.01,
                                    {"sl_pips": 20, "tp_pips": 40,
                                     "asian_high": 115.0, "asian_low": 114.8},
-                                   "london")
+                                   "london", 100.0, 2.0)
     assert not result["success"]
     assert sent == []
 
@@ -191,7 +194,7 @@ def test_positions_query_failure_fails_closed(monkeypatch):
     result = execution.place_trade(
         "CADJPY", {"signal": "BUY"}, 0.01,
         {"sl_pips": 20, "tp_pips": 40, "asian_high": 115.0,
-         "asian_low": 114.8}, "london")
+         "asian_low": 114.8}, "london", 100.0, 2.0)
     assert not result["success"] and sent == []
 
 
@@ -206,4 +209,3 @@ def test_crash_window_stale_state_broker_position_prevents_second_order(monkeypa
     pos = SimpleNamespace(symbol="CADJPY", magic=execution.MAGIC_NUMBER, ticket=321)
     result, sent = _place(monkeypatch, [pos])
     assert not result["success"] and sent == []
-

@@ -37,18 +37,18 @@ Checks (in order):
      whole stop. This gate makes that protection deliberate, on both
      accounts, and journals the rejection properly.
 
-If all checks pass, calculates dynamic lot size:
-  Risk per trade  = 1% of current balance (= 20% of 5% daily limit)
-  Pip value       = derived live from MT5 symbol_info (account-currency aware)
-  Lot size        = risk_usd / (sl_pips x pip_value_per_lot)
-  Hard cap        = 2.0 lots maximum
+If all checks pass, calculates the unchanged strategy/account monetary risk
+budget. The execution agent then sizes from fresh executable entry to the
+actual intended SL using MT5's account-currency profit calculator and broker
+volume constraints.
 
-Returns APPROVED with lot size, or REJECTED with reason.
+Returns APPROVED with the monetary budget, or REJECTED with reason.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 import sys
 from pathlib import Path
 
@@ -220,25 +220,24 @@ def _same_currency_count(symbol: str) -> int:
 # Lot size calculation
 # ---------------------------------------------------------------------------
 
-def _calc_lots(balance: float, sl_pips: float, symbol: str,
-               log: logging.Logger, risk_pct: float | None = None) -> float:
+def _risk_budget(balance: float, symbol: str,
+                 risk_pct: float | None = None) -> tuple[float, float, float]:
     """
-    Lot size = risk_usd / (sl_pips x pip_value_per_lot)
-    Clamped to [MIN_LOT, MAX_LOT].
-    risk_pct: the strategy's own risk fraction (from its pair YAML
-    risk_percent), passed by the orchestrator. Fallback when None
-    preserves legacy behaviour: EURUSD 0.25%, others 1%.
+    Return (allowed dollars, base risk fraction, effective fraction).
+
+    Lot sizing deliberately does not happen here: only the execution layer
+    knows the intended broker SL and a fresh executable bid/ask.  Keeping the
+    existing budget calculation here preserves strategy/account policy while
+    preventing nominal SL distance from being mistaken for monetary risk.
     """
     if risk_pct is None:
         risk_pct = EURUSD_RISK_PCT if symbol == 'EURUSD' else RISK_PER_TRADE_PCT
-    risk_usd  = balance * risk_pct * RISK_SCALE
-    pv        = _pip_value_per_lot(symbol, log)
-    lots      = risk_usd / (sl_pips * pv) if sl_pips > 0 else MIN_LOT
-    lots      = round(max(MIN_LOT, min(lots, MAX_LOT)), 2)
-
-    log.info(f"  Lot calc: risk=${risk_usd:.2f} ({risk_pct*100:.2f}%)  SL={sl_pips:.1f}p  "
-             f"pip_val=${pv:.2f}  -> {lots:.2f} lots")
-    return lots
+    effective_pct = risk_pct * RISK_SCALE
+    allowed = balance * effective_pct
+    if not all(math.isfinite(v) for v in (risk_pct, effective_pct, allowed)) \
+            or risk_pct <= 0 or RISK_SCALE <= 0 or allowed <= 0:
+        raise ValueError("invalid/nonfinite risk budget")
+    return allowed, risk_pct, effective_pct
 
 
 # ---------------------------------------------------------------------------
@@ -267,8 +266,11 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
 
     reject = lambda reason: {
         'decision': 'REJECTED', 'lot_size': 0.0, 'reason': reason}
-    approve = lambda lots: {
-        'decision': 'APPROVED', 'lot_size': lots, 'reason': 'all checks passed'}
+    approve = lambda allowed, base, effective: {
+        'decision': 'APPROVED', 'lot_size': 0.0,
+        'allowed_risk_dollars': allowed, 'base_risk_pct': base,
+        'risk_scale': RISK_SCALE, 'effective_risk_pct': effective,
+        'max_lot': MAX_LOT, 'reason': 'all checks passed'}
 
     # -- 1. MT5 connection & live balance
     if not mt5.initialize():
@@ -386,10 +388,13 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
             f"(max {sl_pips*SPREAD_MAX_FRAC_OF_SL:.1f}p) -- "
             f"rollover/news spread widening")
 
-    # -- All checks passed -- calculate lot size
-    lots = _calc_lots(balance, sl_pips, symbol, log, risk_pct)
-
-    log.info(f"Risk APPROVED: {symbol} {signal}  {lots:.2f}L  "
-             f"SL={sl_pips:.1f}p  balance=${balance:,.2f}")
-
-    return approve(lots)
+    # -- All checks passed -- preserve the existing monetary budget. Final
+    # broker-aware sizing occurs beside order_send in agent_execution.
+    try:
+        allowed, base_pct, effective_pct = _risk_budget(balance, symbol, risk_pct)
+    except ValueError as e:
+        return reject(str(e))
+    log.info(f"RISK BUDGET: {symbol} {signal}  base={base_pct*100:.3f}%  "
+             f"scale={RISK_SCALE:.4g}  effective={effective_pct*100:.3f}%  "
+             f"allowed=${allowed:.2f}  nominal_SL={sl_pips:.1f}p")
+    return approve(allowed, base_pct, effective_pct)

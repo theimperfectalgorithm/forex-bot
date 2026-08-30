@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import math
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -146,7 +147,89 @@ def _get_live_price(symbol: str, signal: str) -> float | None:
     tick = mt5.symbol_info_tick(symbol)
     if tick is None:
         return None
-    return tick.ask if signal == 'BUY' else tick.bid
+    price = tick.ask if signal == 'BUY' else tick.bid
+    return price if isinstance(price, (int, float)) and math.isfinite(price) and price > 0 else None
+
+
+def _expected_loss(symbol: str, signal: str, volume: float,
+                   entry: float, sl: float) -> float | None:
+    """Broker-calculated account-currency loss, or None (fail closed)."""
+    if not all(math.isfinite(v) and v > 0 for v in (volume, entry, sl)):
+        return None
+    order_type = mt5.ORDER_TYPE_BUY if signal == 'BUY' else mt5.ORDER_TYPE_SELL
+    try:
+        profit = mt5.order_calc_profit(order_type, symbol, volume, entry, sl)
+    except Exception:
+        return None
+    if profit is None or not isinstance(profit, (int, float)) or not math.isfinite(profit):
+        return None
+    loss = -float(profit)
+    return loss if loss > 0 else None
+
+
+def _floor_volume(raw: float, volume_min: float, volume_step: float,
+                  effective_max: float) -> float | None:
+    """Normalize downward on the broker's min-anchored volume grid."""
+    vals = (raw, volume_min, volume_step, effective_max)
+    if not all(math.isfinite(v) and v > 0 for v in vals) or effective_max < volume_min:
+        return None
+    capped = min(raw, effective_max)
+    grid_tolerance = max(1e-12, volume_step * 1e-10)
+    if capped + grid_tolerance < volume_min:
+        return None
+    if capped < volume_min:  # mathematical equality obscured by float division
+        capped = volume_min
+    steps = math.floor(((capped - volume_min) / volume_step) + 1e-12)
+    normalized = volume_min + steps * volume_step
+    # Decimal places are presentation only; the floor above is authoritative.
+    decimals = max(0, min(8, len(f"{volume_step:.8f}".rstrip('0').split('.')[-1])))
+    return round(normalized, decimals)
+
+
+def _size_for_risk(symbol: str, signal: str, entry: float, sl: float,
+                   allowed_risk: float, bot_max_lot: float,
+                   nominal_sl_pips: float, pip_size: float,
+                   log: logging.Logger) -> tuple[float, float] | tuple[None, str]:
+    """Find the largest broker-valid volume whose expected loss is safe."""
+    if signal == 'BUY' and sl >= entry:
+        return None, f"invalid BUY SL: entry={entry} SL={sl}"
+    if signal == 'SELL' and sl <= entry:
+        return None, f"invalid SELL SL: entry={entry} SL={sl}"
+    if not math.isfinite(allowed_risk) or allowed_risk <= 0:
+        return None, "invalid allowed monetary risk"
+    info = mt5.symbol_info(symbol)
+    try:
+        vmin, vstep, vmax = float(info.volume_min), float(info.volume_step), float(info.volume_max)
+    except (AttributeError, TypeError, ValueError):
+        return None, f"missing/invalid broker volume metadata for {symbol}"
+    if not all(math.isfinite(v) and v > 0 for v in (vmin, vstep, vmax)):
+        return None, f"missing/invalid broker volume metadata for {symbol}"
+    effective_max = min(vmax, bot_max_lot)
+    min_loss = _expected_loss(symbol, signal, vmin, entry, sl)
+    if min_loss is None:
+        return None, f"broker loss calculation failed for {symbol}"
+    if min_loss > allowed_risk + max(1e-9, allowed_risk * 1e-12):
+        return None, (f"RISK REJECTED: broker minimum volume would exceed allowed monetary risk; "
+                      f"symbol={symbol} allowed=${allowed_risk:.2f} minimum_volume={vmin:g} "
+                      f"expected_loss=${min_loss:.2f} entry={entry} SL={sl}")
+    # MT5 profit calculation is linear in volume. Derive from the known-valid
+    # broker minimum instead of asking it to price 1.0 lot, which itself may
+    # exceed an unusual symbol's volume_max.
+    loss_per_lot = min_loss / vmin
+    raw = allowed_risk / loss_per_lot
+    volume = _floor_volume(raw, vmin, vstep, effective_max)
+    if volume is None:
+        return None, f"no valid safe broker volume for {symbol}"
+    expected = _expected_loss(symbol, signal, volume, entry, sl)
+    if expected is None:
+        return None, f"broker loss calculation failed for {symbol}"
+    actual_pips = abs(entry - sl) / pip_size
+    log.info(f"RISK DISTANCE: {symbol} {signal} nominal={nominal_sl_pips:.1f}p "
+             f"actual={actual_pips:.1f}p")
+    log.info(f"BROKER SIZING: allowed=${allowed_risk:.2f} raw={raw:.8f} "
+             f"min={vmin:g} step={vstep:g} broker_max={vmax:g} bot_max={bot_max_lot:g} "
+             f"final={volume:g} expected_loss=${expected:.2f}")
+    return volume, expected
 
 
 def _get_filling_mode(symbol: str) -> int:
@@ -204,7 +287,9 @@ def _confirm_fill_price(ticket: int, fallback_price: float, log: logging.Logger)
 # ---------------------------------------------------------------------------
 
 def place_trade(symbol: str, breakout: dict, lot_size: float,
-                session_data: dict, session: str) -> dict:
+                session_data: dict, session: str,
+                allowed_risk_dollars: float | None = None,
+                bot_max_lot: float | None = None) -> dict:
     """
     Place a market order on MT5.
 
@@ -275,12 +360,25 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         log.warning(err)
         return failed(err)
 
+    # The legacy lot_size argument is intentionally not trusted. It was based
+    # on nominal strategy distance. Production callers must provide the
+    # unchanged monetary budget so this layer can size against broker truth.
+    if allowed_risk_dollars is None or bot_max_lot is None:
+        return failed("missing final broker-aware risk budget -- order rejected")
+    sized = _size_for_risk(symbol, signal, entry_price, sl_price,
+                           allowed_risk_dollars, bot_max_lot, sl_pips,
+                           pip_size, log)
+    if sized[0] is None:
+        log.error(sized[1])
+        return failed(sized[1])
+    final_volume, pre_send_risk = sized
+
     comment = f"5ers_{session}_{signal}_{strategy}" if strategy else f"5ers_{session}_{signal}"
 
     request = {
         'action'      : mt5.TRADE_ACTION_DEAL,
         'symbol'      : symbol,
-        'volume'      : lot_size,
+        'volume'      : final_volume,
         'type'        : order_type,
         'price'       : entry_price,
         'sl'          : sl_price,
@@ -307,6 +405,22 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         log.error(err)
         return failed(err)
 
+    # Refresh executable price at the last practical point before submission.
+    # SL/TP methodology remains unchanged; only risk and request price refresh.
+    final_entry = _get_live_price(symbol, signal)
+    if final_entry is None:
+        return failed(f"missing final tick for {symbol} -- order rejected")
+    final_risk = _expected_loss(symbol, signal, final_volume, final_entry, sl_price)
+    tolerance = max(1e-9, allowed_risk_dollars * 1e-12)
+    if final_risk is None or final_risk > allowed_risk_dollars + tolerance:
+        err = (f"FINAL RISK REJECTED: {symbol} {signal} volume={final_volume:g} "
+               f"entry={final_entry} SL={sl_price} expected_loss={final_risk} "
+               f"allowed=${allowed_risk_dollars:.2f}")
+        log.error(err)
+        return failed(err)
+    request['price'] = final_entry
+    pre_send_risk = final_risk
+
     result = mt5.order_send(request)
     if result is None:
         return failed("order_send returned None")
@@ -317,9 +431,31 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         return failed(err)
 
     ticket       = result.order
-    actual_entry = _confirm_fill_price(ticket, result.price or entry_price, log)
+    actual_entry = _confirm_fill_price(ticket, result.price or final_entry, log)
+    # Observability is labelled actual only when broker position truth confirms
+    # price_open. A request/result fallback remains useful for journalling but
+    # must not be presented as a confirmed fill-risk measurement.
+    confirmed_entry = None
+    try:
+        confirmed = mt5.positions_get(ticket=ticket)
+        if confirmed and getattr(confirmed[0], 'price_open', 0):
+            confirmed_entry = float(confirmed[0].price_open)
+    except Exception:
+        pass
+    actual_risk = (_expected_loss(symbol, signal, final_volume,
+                                  confirmed_entry, sl_price)
+                   if confirmed_entry is not None else None)
+    if actual_risk is None:
+        log.error(f"POST-FILL RISK unavailable: {symbol} ticket={ticket} "
+                  f"confirmed fill not available; journal_entry={actual_entry} SL={sl_price}")
+    else:
+        difference = actual_risk - allowed_risk_dollars
+        pct_difference = difference / allowed_risk_dollars * 100.0
+        log.info(f"POST-FILL RISK: {symbol} ticket={ticket} allowed=${allowed_risk_dollars:.2f} "
+                 f"pre_send=${pre_send_risk:.2f} actual_fill_to_SL=${actual_risk:.2f} "
+                 f"difference=${difference:+.2f} ({pct_difference:+.2f}%)")
 
-    log.info(f"ORDER PLACED  {symbol} {signal}  {lot_size}L  "
+    log.info(f"ORDER PLACED  {symbol} {signal}  {final_volume}L  "
              f"entry={actual_entry:.5f}  SL={sl_price}  TP={tp_price}  "
              f"ticket={ticket}")
 
@@ -328,7 +464,7 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         'Pair'       : symbol,
         'Direction'  : signal,
         'Session'    : session.capitalize(),
-        'Lots'       : lot_size,
+        'Lots'       : final_volume,
         'EntryPrice' : actual_entry,
         'SL'         : sl_price,
         'TP'         : tp_price,
@@ -347,6 +483,9 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         'entry_price' : actual_entry,
         'sl'          : sl_price,
         'tp'          : tp_price,
+        'volume'      : final_volume,
+        'pre_send_risk': pre_send_risk,
+        'actual_risk' : actual_risk,
         'error'       : None,
     }
 
