@@ -29,7 +29,9 @@ import logging
 import math
 from pathlib import Path
 
-JOURNAL_FILE = Path(__file__).parent.parent / 'data' / 'journal' / 'events.jsonl'
+from core.runtime_paths import data_dir
+
+JOURNAL_FILE = data_dir() / 'journal' / 'events.jsonl'
 
 # expected win rates from the validation record (conservative pick)
 EXPECTED_WR = {

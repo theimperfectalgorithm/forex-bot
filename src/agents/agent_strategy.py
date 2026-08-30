@@ -43,9 +43,10 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from core.pair_manager import get_active_pairs
+from core.runtime_paths import data_dir
 
 # -- logging
-LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'
+LOGS_DIR = data_dir() / 'logs'
 
 def _log() -> logging.Logger:
     LOGS_DIR.mkdir(parents=True, exist_ok=True)

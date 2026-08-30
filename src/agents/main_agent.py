@@ -64,7 +64,9 @@ from core.session_filter import is_friday_close_time
 from core import trade_journal as tj
 
 # -- directory paths
-DATA_DIR   = BASE_DIR / 'data'
+from core.runtime_paths import data_dir
+
+DATA_DIR   = data_dir()
 STATE_DIR  = DATA_DIR / 'state'
 LOGS_DIR   = DATA_DIR / 'logs'
 STATE_FILE = STATE_DIR / 'daily_state.json'

@@ -47,6 +47,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from core.mt5_time import observed_server_utc_offset_hours
+from core.runtime_paths import data_dir
 
 try:
     import MetaTrader5 as mt5
@@ -54,7 +55,7 @@ try:
 except ImportError:
     MT5_AVAILABLE = False
 
-JOURNAL_DIR  = Path(__file__).parent.parent / 'data' / 'journal'
+JOURNAL_DIR  = data_dir() / 'journal'
 JOURNAL_FILE = JOURNAL_DIR / 'events.jsonl'
 
 log = logging.getLogger('JOURNAL')

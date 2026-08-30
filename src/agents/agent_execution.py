@@ -39,7 +39,9 @@ except ImportError:
 # -- paths
 AGENTS_DIR  = Path(__file__).parent
 BASE_DIR    = AGENTS_DIR.parent.parent
-DATA_DIR    = BASE_DIR / 'data'
+from core.runtime_paths import data_dir
+
+DATA_DIR    = data_dir()
 LOGS_DIR    = DATA_DIR / 'logs'
 TRADES_LOG  = DATA_DIR / 'trades_log.csv'
 

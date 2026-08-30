@@ -31,10 +31,12 @@ from pathlib import Path
 
 import yaml
 
+from core.runtime_paths import data_dir
+
 REPO_ROOT   = Path(__file__).parent.parent
-CACHE_FILE  = REPO_ROOT / 'data' / 'news_calendar.json'
+CACHE_FILE  = data_dir() / 'news_calendar.json'
 CONFIG_FILE = REPO_ROOT / 'config' / 'global_config.yaml'
-LOGS_DIR    = REPO_ROOT / 'data' / 'logs'
+LOGS_DIR    = data_dir() / 'logs'
 
 FEED_URL      = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
 REFRESH_HOURS = 6

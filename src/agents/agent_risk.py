@@ -67,7 +67,9 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 # -- logging
-LOGS_DIR = Path(__file__).parent.parent.parent / 'data' / 'logs'
+from core.runtime_paths import data_dir
+
+LOGS_DIR = data_dir() / 'logs'
 
 def _log() -> logging.Logger:
     log = logging.getLogger('RISK')

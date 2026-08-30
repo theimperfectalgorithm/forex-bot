@@ -15,8 +15,10 @@ import os
 from pathlib import Path
 import time
 
+from core.runtime_paths import data_dir
 
-LEDGER_FILE = Path(__file__).parent.parent / 'data' / 'accounting' / 'trade_costs.jsonl'
+
+LEDGER_FILE = data_dir() / 'accounting' / 'trade_costs.jsonl'
 REQUIRED_FIELDS = frozenset({'ticket', 'gross_pnl', 'commission', 'swap', 'fee', 'net_pnl'})
 _LOCK_SUFFIX = '.lock'
 LOCK_STALE_AFTER_SECONDS = 300

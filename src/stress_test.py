@@ -314,16 +314,20 @@ def save_trade_log(trades: list):
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 
-connect_mt5()
-raw = fetch_data()
-if MT5_AVAILABLE:
-    mt5.shutdown()
+def main():
+    connect_mt5()
+    raw = fetch_data()
+    if MT5_AVAILABLE:
+        mt5.shutdown()
 
-data           = apply_strategy(raw)
-trades, equity = run_backtest(data)
-stats          = compute_stats(trades, equity, data)
+    data = apply_strategy(raw)
+    trades, equity = run_backtest(data)
+    stats = compute_stats(trades, equity, data)
+    print_results(stats)
+    save_trade_log(trades)
+    plot_equity(trades, equity, data)
+    print("\nDone!")
 
-print_results(stats)
-save_trade_log(trades)
-plot_equity(trades, equity, data)
-print("\nDone!")
+
+if __name__ == "__main__":
+    main()
