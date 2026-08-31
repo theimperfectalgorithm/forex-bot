@@ -95,6 +95,7 @@ def _log() -> logging.Logger:
 # the incident this fixed). Every agent now imports from the same place.
 from core.account_config import (GLOBAL_CFG, STARTING_BALANCE, HARD_FLOOR,
                                  MAX_DAILY_LOSS_PCT, MAX_LOT, RISK_SCALE)
+from core.prop_loss_guard import evaluate_prop_risk
 
 # -- risk-agent-specific constants (not shared with other agents)
 DAILY_EQUITY_SOFT_STOP_PCT = 0.04  # halt NEW trades at -4% equity on the day,
@@ -399,4 +400,7 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
     log.info(f"RISK BUDGET: {symbol} {signal}  base={base_pct*100:.3f}%  "
              f"scale={RISK_SCALE:.4g}  effective={effective_pct*100:.3f}%  "
              f"allowed=${allowed:.2f}  nominal_SL={sl_pips:.1f}p")
+    prop = evaluate_prop_risk(allowed, log=log)
+    if not prop.allowed:
+        return reject(f"Broker-authoritative prop loss guard: {prop.reason}")
     return approve(allowed, base_pct, effective_pct)

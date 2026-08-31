@@ -89,6 +89,8 @@ def _place(monkeypatch, positions=()):
     monkeypatch.setattr(execution, "_confirm_fill_price",
                         lambda ticket, fallback, log: fallback)
     monkeypatch.setattr(execution, "_write_trade_log", lambda row: None)
+    monkeypatch.setattr(execution, "evaluate_prop_risk",
+                        lambda risk, log=None: SimpleNamespace(allowed=True, reason="test"))
     result = execution.place_trade(
         "CADJPY", {"signal": "BUY"}, 0.01,
         {"sl_pips": 20, "tp_pips": 40, "asian_high": 115.00,

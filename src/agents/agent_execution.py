@@ -51,6 +51,7 @@ if str(BASE_DIR) not in sys.path:
 from core.mt5_time import observed_server_utc_offset_hours, server_epoch_to_utc
 from core.mt5_connect import initialize_and_validate
 from core.trade_cost_ledger import aggregate_position_deals, append_cost_record
+from core.prop_loss_guard import evaluate_prop_risk
 
 # -- logging
 def _log() -> logging.Logger:
@@ -422,6 +423,12 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         return failed(err)
     request['price'] = final_entry
     pre_send_risk = final_risk
+
+    # Re-query account-wide broker truth using the final normalized expected
+    # loss. This last entry gate is intentionally adjacent to order_send.
+    prop = evaluate_prop_risk(final_risk, log=log)
+    if not prop.allowed:
+        return failed(f"Broker-authoritative prop loss guard: {prop.reason}")
 
     result = mt5.order_send(request)
     if result is None:

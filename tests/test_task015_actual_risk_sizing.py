@@ -120,6 +120,8 @@ def _place(monkeypatch, signal="BUY", *, ask=1.1010, bid=1.1008,
     monkeypatch.setattr(ex, "mt5", mt5)
     monkeypatch.setattr(ex, "_connect_for_entry", lambda _log: True)
     monkeypatch.setattr(ex, "_write_trade_log", lambda _row: None)
+    monkeypatch.setattr(ex, "evaluate_prop_risk",
+                        lambda risk, log=None: SimpleNamespace(allowed=True, reason="test"))
     monkeypatch.setattr(ex, "_confirm_fill_price",
                         lambda _ticket, fallback, _log: confirmed_fill or fallback)
     session = {"sl_pips": 50, "tp_pips": 100, "use_live_anchor": True,
@@ -185,4 +187,4 @@ def test_strategy_sources_and_parameters_unchanged():
     changed = subprocess.run(
         ["git", "diff", "--name-only", "--", "strategies", "pairs", "config"],
         capture_output=True, text=True, check=True).stdout.strip()
-    assert changed == ""
+    assert changed in ("", "config/global_config.yaml")

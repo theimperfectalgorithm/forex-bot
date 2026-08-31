@@ -11,6 +11,8 @@ global:
   log_level: INFO
   hard_floor_pct: 0.10
   daily_loss_pct: 0.05
+  prop_daily_reference_model: higher_of_day_start_balance_or_equity
+  prop_day_boundary_model: mt5_server_midnight
   # step-1 profit target as a fraction of starting_balance (5ers Classic:
   # 8%). Used only for reporting's "vs Target" line -- no gate depends on it.
   profit_target_pct: 0.08

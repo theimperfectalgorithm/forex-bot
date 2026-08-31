@@ -62,6 +62,7 @@ from agent_reporting import run as run_reporting
 from core.pair_manager import get_active_pairs
 from core.session_filter import is_friday_close_time
 from core import trade_journal as tj
+from core.prop_loss_guard import evaluate_prop_risk
 
 # -- directory paths
 from core.runtime_paths import data_dir
@@ -1116,6 +1117,11 @@ def main():
             now   = datetime.now(timezone.utc)
             state = load_state()
             t     = minutes_since_midnight(now)
+
+            # Maintain the durable prop-day reference independently of entry
+            # signals. The quarter-hour loop observes server midnight even on
+            # days without a candidate trade. This never invokes an order path.
+            evaluate_prop_risk(0.0, now_utc=now, log=log)
 
             # Mandatory before every possible new-entry path. Failure blocks
             # entries for this cycle only; scheduled exits, Friday close,
