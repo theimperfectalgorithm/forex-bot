@@ -101,11 +101,22 @@ def _snapshot_values(raw: Any, *, login: int, server: str, day_id: str,
         equity = _finite(raw["day_start_equity"])
         reference = _finite(raw["daily_reference"])
         captured = datetime.fromisoformat(str(raw["captured_at_utc"]))
+        day_start = (datetime.fromisoformat(day_id).replace(tzinfo=timezone.utc)
+                     - timedelta(hours=offset))
+        source = str(raw["source"])
+        authoritative_source = (source == "authoritative_server_midnight"
+                                and captured.astimezone(timezone.utc) == day_start)
+        reconstructed_source = (
+            source == "broker_reconstruction_no_midnight_positions"
+            and abs(balance - equity) <= 1e-9
+            and day_start <= captured.astimezone(timezone.utc)
+            < day_start + timedelta(days=1))
         valid = (raw["version"] == SNAPSHOT_VERSION and int(raw["login"]) == login
                  and str(raw["server"]).casefold() == server.casefold()
                  and raw["server_day"] == day_id
                  and int(raw["server_offset_hours"]) == offset
                  and captured.tzinfo is not None
+                 and (authoritative_source or reconstructed_source)
                  and abs(reference - max(balance, equity)) <= 1e-9)
     except (TypeError, ValueError, OverflowError):
         valid = False
@@ -337,13 +348,7 @@ def evaluate_prop_risk(candidate_risk: float, *, rules: PropRules | None = None,
             offset=int(offset), path=snapshot_path)
         if snapshot is None:
             trade_deals = [d for d in deals if _deal_kind(d, api) == "trade"]
-            seconds_after_midnight = (now - day_start).total_seconds()
-            if 0 <= seconds_after_midnight <= 60:
-                snapshot = make_daily_snapshot(
-                    account=account, day_start=day_start, offset=int(offset),
-                    balance=values["balance"], equity=values["equity"],
-                    source="broker_midnight_observation", captured_at=now)
-            elif not positions and not trade_deals:
+            if not positions and not trade_deals:
                 snapshot = make_daily_snapshot(
                     account=account, day_start=day_start, offset=int(offset),
                     balance=reconstructed_balance, equity=reconstructed_balance,

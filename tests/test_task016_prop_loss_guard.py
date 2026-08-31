@@ -72,7 +72,8 @@ def check(api=None, candidate=10, identity=True, rules=RULES, offset=3):
         snap = make_daily_snapshot(
             account=api.account,
             day_start=prop_day_start_utc(NOW, offset), offset=offset,
-            balance=opening, equity=opening, source="test_fixture",
+            balance=opening, equity=opening,
+            source="broker_reconstruction_no_midnight_positions",
             captured_at=prop_day_start_utc(NOW, offset))
         write_daily_snapshot(snap, path=snapshot_path)
     return evaluate_prop_risk(candidate, rules=rules, api=api, now_utc=NOW,

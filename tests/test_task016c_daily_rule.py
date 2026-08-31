@@ -1,5 +1,5 @@
 """Task 016C: authoritative MAX(balance, equity) daily reference snapshots."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 import math
 import os
@@ -23,7 +23,8 @@ def account(balance=5000, equity=5000, login=26520700,
     return NS(balance=balance, equity=equity, login=login, server=server)
 
 
-def snapshot(balance, equity, *, acct=None, source="test"):
+def snapshot(balance, equity, *, acct=None,
+             source="authoritative_server_midnight"):
     return make_daily_snapshot(account=acct or account(), day_start=DAY_START,
         offset=3, balance=balance, equity=equity, source=source,
         captured_at=DAY_START)
@@ -152,8 +153,8 @@ class Broker:
     def order_calc_profit(self, *args): return -10
 
 
-def evaluate(api, path, *, write=True):
-    return evaluate_prop_risk(0, rules=RULES, api=api, now_utc=NOW,
+def evaluate(api, path, *, write=True, now=NOW):
+    return evaluate_prop_risk(0, rules=RULES, api=api, now_utc=now,
         identity_validator=lambda log: True, offset_provider=lambda unused: 3,
         snapshot_path=path, snapshot_write=write)
 
@@ -171,6 +172,52 @@ def test_missing_snapshot_possible_overnight_position_blocks(tmp_path):
     pos = NS(ticket=1, symbol="EURUSD", sl=1.09, volume=0.1, type=0)
     result = evaluate(Broker(positions=(pos,)), tmp_path / "snapshot.json")
     assert not result.allowed and "overnight position" in result.reason
+
+
+@pytest.mark.parametrize("seconds", [1, 5, 59, 60, 61])
+@pytest.mark.parametrize("observed_equity", [5120, 5050])
+def test_delayed_midnight_observation_never_becomes_reference(
+        tmp_path, seconds, observed_equity):
+    pos = NS(ticket=1, symbol="EURUSD", sl=1.09, volume=0.1, type=0)
+    observed = DAY_START + timedelta(seconds=seconds)
+    path = tmp_path / "snapshot.json"
+    result = evaluate(Broker(positions=(pos,), balance=5000,
+                             equity=observed_equity), path,
+                      now=observed)
+    assert not result.allowed and "overnight position" in result.reason
+    assert "daily_baseline" not in result.values
+    assert not path.exists()
+
+
+def test_legacy_delayed_observation_snapshot_is_rejected(tmp_path):
+    path = tmp_path / "snapshot.json"
+    delayed = snapshot(5000, 5120, source="broker_midnight_observation")
+    delayed["captured_at_utc"] = (DAY_START + timedelta(seconds=5)).isoformat()
+    path.write_text(json.dumps(delayed), encoding="utf-8")
+    loaded, error = load_daily_snapshot(login=26520700,
+        server="FivePercentOnline-Real", day_id="2026-08-31", offset=3,
+        path=path)
+    assert loaded is None and "invalid" in error
+
+
+def test_exact_source_with_delayed_timestamp_is_rejected(tmp_path):
+    path = tmp_path / "snapshot.json"
+    delayed = snapshot(5000, 5100)
+    delayed["captured_at_utc"] = (DAY_START + timedelta(seconds=1)).isoformat()
+    path.write_text(json.dumps(delayed), encoding="utf-8")
+    loaded, error = load_daily_snapshot(login=26520700,
+        server="FivePercentOnline-Real", day_id="2026-08-31", offset=3,
+        path=path)
+    assert loaded is None and error
+
+
+def test_proven_flat_reconstruction_never_uses_current_equity(tmp_path):
+    path = tmp_path / "snapshot.json"
+    result = evaluate(Broker(balance=4800, equity=4900), path)
+    assert result.allowed
+    assert result.values["day_start_balance"] == 4800
+    assert result.values["day_start_equity"] == 4800
+    assert result.values["daily_baseline"] != 4900
 
 
 def test_corrupt_snapshot_does_not_fall_back_when_overnight_possible(tmp_path):
