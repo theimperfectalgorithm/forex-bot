@@ -135,7 +135,11 @@ def test_one_trade_dedup_uses_normalized_utc_date(monkeypatch):
     strategy = _strategy("AUDJPY", 4)
     closes = [100.0] * 19 + [99.0]
     first = _rates(closes, datetime(2026, 8, 25, 0, 0, tzinfo=timezone.utc))
+    signal = _run(monkeypatch, strategy, first)
+    assert signal["signal"] == "BUY"
+    # Detection alone is repeatable; successful execution commits dedup.
     assert _run(monkeypatch, strategy, first)["signal"] == "BUY"
+    strategy.acknowledge_trade(signal)
     later = _rates(closes, datetime(2026, 8, 25, 2, 45, tzinfo=timezone.utc))
     result = _run(monkeypatch, strategy, later)
     assert result["signal"] == "NO_SIGNAL"

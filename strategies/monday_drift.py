@@ -175,7 +175,6 @@ class MondayDrift(BaseStrategy):
 
         sl_mult = self.pair_config.get('sl_atr_mult', SL_ATR_MULT)
         tp_mult = self.pair_config.get('tp_atr_mult', TP_ATR_MULT)
-        self._last_trade_date = bar_time.date()
         return {
             'signal'      : 'BUY',
             'reason'      : (f'Monday drift long: ATR20d={atr:.0f}p  '
@@ -183,4 +182,12 @@ class MondayDrift(BaseStrategy):
             'entry_price' : float(rates[0]['close']),
             'sl_pips'     : round(atr * sl_mult, 1),
             'tp_pips'     : round(atr * tp_mult, 1),
+            'signal_bar_time_utc': bar_time.isoformat(),
         }
+
+    def acknowledge_trade(self, signal: dict) -> None:
+        """Commit the weekly dedup marker only after broker acceptance."""
+        if signal.get('signal') != 'BUY':
+            raise ValueError('cannot acknowledge a non-entry Monday signal')
+        bar_time = datetime.fromisoformat(signal['signal_bar_time_utc'])
+        self._last_trade_date = bar_time.date()

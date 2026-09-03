@@ -272,7 +272,6 @@ class AsianHoursReversion(BaseStrategy):
             return no_signal(f'TP distance {tp_pips:.1f}p below {MIN_TP_PIPS}p minimum')
 
         direction = 'BUY' if z <= -z_thr else 'SELL'
-        self._last_trade_date = bar_time.date()
         log.debug(
             "AMR DECISION pair=%s scheduler_utc=%s bar_utc=%s z=%+.3f "
             "threshold=%.3f window=00:00-%02d:00 inside=True signal=%s",
@@ -287,3 +286,10 @@ class AsianHoursReversion(BaseStrategy):
             'tp_pips'     : round(tp_pips, 1),
             'signal_bar_time_utc': bar_time.isoformat(),
         }
+
+    def acknowledge_trade(self, signal: dict) -> None:
+        """Commit same-day dedup only after the broker accepts the entry."""
+        if signal.get('signal') not in ('BUY', 'SELL'):
+            raise ValueError('cannot acknowledge a non-entry AMR signal')
+        bar_time = datetime.fromisoformat(signal['signal_bar_time_utc'])
+        self._last_trade_date = bar_time.date()

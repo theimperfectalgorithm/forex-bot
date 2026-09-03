@@ -52,6 +52,7 @@ from core.mt5_time import observed_server_utc_offset_hours, server_epoch_to_utc
 from core.mt5_connect import initialize_and_validate
 from core.trade_cost_ledger import aggregate_position_deals, append_cost_record
 from core.prop_loss_guard import evaluate_prop_risk
+from core.trading_mode import get_trading_mode
 
 # -- logging
 def _log() -> logging.Logger:
@@ -273,7 +274,13 @@ def _confirm_fill_price(ticket: int, fallback_price: float, log: logging.Logger)
     better than silently recording 0.0.
     """
     for _ in range(3):
-        positions = mt5.positions_get(ticket=ticket)
+        try:
+            positions = mt5.positions_get(ticket=ticket)
+        except Exception as exc:
+            log.error("ticket %s: post-success fill confirmation query failed: %s -- "
+                      "using broker result/request fallback", ticket, exc,
+                      exc_info=True)
+            break
         if positions and positions[0].price_open:
             return positions[0].price_open
         time.sleep(0.3)
@@ -314,6 +321,14 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
 
     failed = lambda err: {'success': False, 'ticket': 0,
                           'entry_price': 0.0, 'sl': 0.0, 'tp': 0.0, 'error': err}
+
+    # Entry-only final gate. Keep this inside the sole new-position executor,
+    # independently of every caller and before connecting to or querying MT5.
+    mode = get_trading_mode()
+    if not mode.entries_allowed:
+        err = f"ENTRY BLOCKED {symbol} -- trading mode {mode.mode or 'INVALID/UNAVAILABLE'}: {mode.reason}"
+        log.error(err)
+        return failed(err)
 
     if not _connect_for_entry(log):
         return failed("MT5 expected-account identity validation failed")
@@ -468,23 +483,33 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
              f"entry={actual_entry:.5f}  SL={sl_price}  TP={tp_price}  "
              f"ticket={ticket}")
 
-    _write_trade_log({
-        'Timestamp'  : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-        'Pair'       : symbol,
-        'Direction'  : signal,
-        'Session'    : session.capitalize(),
-        'Lots'       : final_volume,
-        'EntryPrice' : actual_entry,
-        'SL'         : sl_price,
-        'TP'         : tp_price,
-        'AsianHigh'  : session_data.get('asian_high', ''),
-        'AsianLow'   : session_data.get('asian_low',  ''),
-        'RangePips'  : session_data.get('range_pips', ''),
-        'SLPips'     : sl_pips,
-        'TPPips'     : tp_pips,
-        'Ticket'     : ticket,
-        'Status'     : 'OPEN',
-    })
+    # Broker acceptance is authoritative. The CSV is observability, not part
+    # of order success: a disk/encoding/permission failure must not make the
+    # caller believe this already-open position failed and skip acknowledgement.
+    try:
+        _write_trade_log({
+            'Timestamp'  : datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+            'Pair'       : symbol,
+            'Direction'  : signal,
+            'Session'    : session.capitalize(),
+            'Lots'       : final_volume,
+            'EntryPrice' : actual_entry,
+            'SL'         : sl_price,
+            'TP'         : tp_price,
+            'AsianHigh'  : session_data.get('asian_high', ''),
+            'AsianLow'   : session_data.get('asian_low',  ''),
+            'RangePips'  : session_data.get('range_pips', ''),
+            'SLPips'     : sl_pips,
+            'TPPips'     : tp_pips,
+            'Ticket'     : ticket,
+            'Status'     : 'OPEN',
+        })
+    except Exception as exc:
+        log.critical(
+            "BROKER ENTRY SUCCEEDED BUT TRADE CSV WRITE FAILED: "
+            "symbol=%s direction=%s ticket=%s volume=%s entry=%s SL=%s TP=%s error=%s",
+            symbol, signal, ticket, final_volume, actual_entry, sl_price,
+            tp_price, exc, exc_info=True)
 
     return {
         'success'     : True,

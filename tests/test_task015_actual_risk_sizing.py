@@ -109,7 +109,7 @@ def test_nonfinite_broker_loss_fails_closed(monkeypatch):
 
 
 def _place(monkeypatch, signal="BUY", *, ask=1.1010, bid=1.1008,
-           ticks=None, allowed=100.0, confirmed_fill=None):
+           ticks=None, allowed=100.0, confirmed_fill=None, trade_log=None):
     mt5, sent = fake_mt5(ask=ask, bid=bid)
     if ticks is not None:
         sequence = iter(ticks)
@@ -119,7 +119,7 @@ def _place(monkeypatch, signal="BUY", *, ask=1.1010, bid=1.1008,
         mt5.positions_get = lambda **kw: (pos,) if "ticket" in kw else ()
     monkeypatch.setattr(ex, "mt5", mt5)
     monkeypatch.setattr(ex, "_connect_for_entry", lambda _log: True)
-    monkeypatch.setattr(ex, "_write_trade_log", lambda _row: None)
+    monkeypatch.setattr(ex, "_write_trade_log", trade_log or (lambda _row: None))
     monkeypatch.setattr(ex, "evaluate_prop_risk",
                         lambda risk, log=None: SimpleNamespace(allowed=True, reason="test"))
     monkeypatch.setattr(ex, "_confirm_fill_price",
@@ -165,6 +165,49 @@ def test_final_safe_risk_allows_order(monkeypatch):
     assert result["volume"] != pytest.approx(9.99)  # legacy nominal lot ignored
 
 
+def test_broker_success_survives_trade_log_failure(monkeypatch, caplog):
+    writes = []
+
+    def fail_log(row):
+        writes.append(row)
+        raise OSError("test disk failure")
+
+    with caplog.at_level(logging.CRITICAL):
+        result, sent = _place(monkeypatch, "BUY", trade_log=fail_log)
+
+    assert result["success"] is True
+    assert result["ticket"] == 7
+    assert result["entry_price"] == pytest.approx(1.1010)
+    assert len(sent) == 1 and len(writes) == 1
+    assert "BROKER ENTRY SUCCEEDED BUT TRADE CSV WRITE FAILED" in caplog.text
+    assert "symbol=EURUSD" in caplog.text and "ticket=7" in caplog.text
+
+
+def test_broker_success_survives_fill_confirmation_query_failure(monkeypatch):
+    mt5, sent = fake_mt5()
+    queries = 0
+
+    def positions_get(**kwargs):
+        nonlocal queries
+        if "ticket" in kwargs:
+            queries += 1
+            raise RuntimeError("test post-fill query failure")
+        return ()
+
+    mt5.positions_get = positions_get
+    monkeypatch.setattr(ex, "mt5", mt5)
+    monkeypatch.setattr(ex, "_connect_for_entry", lambda _log: True)
+    monkeypatch.setattr(ex, "_write_trade_log", lambda _row: None)
+    monkeypatch.setattr(ex, "evaluate_prop_risk", lambda risk, log=None:
+                        SimpleNamespace(allowed=True, reason="test"))
+    result = ex.place_trade(
+        "EURUSD", {"signal": "BUY"}, 1,
+        {"sl_pips": 50, "tp_pips": 100, "use_live_anchor": True},
+        "ny", 100, 2)
+    assert result["success"] is True and result["ticket"] == 7
+    assert len(sent) == 1 and queries >= 1
+
+
 def test_post_fill_diagnostic_uses_confirmed_fill(monkeypatch):
     result, _ = _place(monkeypatch, "BUY", confirmed_fill=1.1020)
     expected = ex._expected_loss("EURUSD", "BUY", result["volume"],
@@ -181,10 +224,17 @@ def test_effective_risk_budget_represents_scale(monkeypatch):
 
 
 def test_strategy_sources_and_parameters_unchanged():
-    # The hardening is confined to risk/execution/orchestration; signal and
-    # SL/TP implementations/configuration remain untouched.
+    # Task017B changes execution-acknowledgement state in exactly four strategy
+    # classes; pair files and every other strategy remain untouched.
     import subprocess
-    changed = subprocess.run(
+    changed = set(filter(None, subprocess.run(
         ["git", "diff", "--name-only", "--", "strategies", "pairs", "config"],
-        capture_output=True, text=True, check=True).stdout.strip()
-    assert changed in ("", "config/global_config.yaml")
+        capture_output=True, text=True, check=True).stdout.splitlines()))
+    assert changed <= {
+        "config/global_config.yaml",
+        "strategies/asian_hours_reversion.py",
+        "strategies/asian_range_breakout.py",
+        "strategies/monday_drift.py",
+        "strategies/sma_ema_combined.py",
+    }
+    assert not any(path.startswith("pairs/") for path in changed)

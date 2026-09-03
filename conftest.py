@@ -6,6 +6,9 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+from types import SimpleNamespace
+
+import pytest
 
 _TEST_DATA_ROOT = Path(tempfile.mkdtemp(prefix="forex-bot-pytest-data-"))
 os.environ["FOREX_BOT_DATA_DIR"] = str(_TEST_DATA_ROOT)
@@ -41,3 +44,17 @@ def pytest_sessionstart(session):
 
 def pytest_runtest_setup(item):
     _block_live_mt5()
+
+
+@pytest.fixture(autouse=True)
+def _explicit_live_mode_for_legacy_execution_tests(monkeypatch):
+    """Existing order-path tests opt into LIVE explicitly.
+
+    Task017 tests override this where they exercise fail-closed modes. This
+    changes no config file and retains the repository's safe PAUSED default.
+    """
+    from src.agents import agent_execution
+    monkeypatch.setattr(
+        agent_execution, "get_trading_mode",
+        lambda: SimpleNamespace(mode="LIVE", entries_allowed=True,
+                                reason="explicit pytest LIVE mode"))

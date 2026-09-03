@@ -53,7 +53,7 @@ from core.mt5_connect import initialize_and_validate
 from agent_market    import run as run_market
 from agent_strategy  import (prepare_session, check_breakout,
                              check_eurusd_signals, check_asian_reversion,
-                             server_utc_offset_hours)
+                             server_utc_offset_hours, acknowledge_trade)
 from agent_risk      import (run as run_risk, GLOBAL_CFG,
                              STARTING_BALANCE, MAX_DAILY_LOSS_PCT)
 from agent_execution import (place_trade, monitor_positions, close_trade,
@@ -63,6 +63,7 @@ from core.pair_manager import get_active_pairs
 from core.session_filter import is_friday_close_time
 from core import trade_journal as tj
 from core.prop_loss_guard import evaluate_prop_risk
+from core.trading_mode import allow_or_log_entry, log_startup_mode
 
 # -- directory paths
 from core.runtime_paths import data_dir
@@ -394,6 +395,9 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
                  f"{breakout['signal']}  bar_close={breakout['trigger_bar_close']:.5f}  "
                  f"+{breakout.get('overshoot_pips', 0.0):.0f}p past range")
 
+        if not allow_or_log_entry(log, pair, symbol, breakout['signal']):
+            continue
+
         _sig = dict(key=pair, symbol=symbol, direction=breakout['signal'],
                     sl_pips=state['session_data'][pair].get('sl_pips'),
                     tp_pips=state['session_data'][pair].get('tp_pips'),
@@ -446,6 +450,10 @@ def step_check_breakouts(state: dict, session: str, log: logging.Logger):
             continue
 
         if result['success']:
+            try:
+                acknowledge_trade(pair, breakout)
+            except Exception as e:
+                log.critical(f"TRADE ACKNOWLEDGEMENT FAILED {pair}: {e}", exc_info=True)
             log.info(f"TRADE PLACED  {pair} {breakout['signal']}  "
                      f"{result['volume']:.2f}L  "
                      f"entry={result['entry_price']:.5f}  "
@@ -530,6 +538,9 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
                  f"SL={res['sl_pips']:.1f}p  TP={res['tp_pips']:.1f}p  "
                  f"{res['reason']}")
 
+        if not allow_or_log_entry(log, key, symbol, res['signal']):
+            continue
+
         _sig = dict(key=key, symbol=symbol, direction=res['signal'],
                     sl_pips=res['sl_pips'], tp_pips=res['tp_pips'],
                     signal_price=res.get('entry_price'),
@@ -566,6 +577,10 @@ def step_check_asian_reversion(state: dict, log: logging.Logger,
             continue
 
         if result['success']:
+            try:
+                acknowledge_trade(key, res)
+            except Exception as e:
+                log.critical(f"TRADE ACKNOWLEDGEMENT FAILED {key}: {e}", exc_info=True)
             log.info(f"TRADE PLACED  {key} {res['signal']}  "
                      f"{result['volume']:.2f}L  ticket={result['ticket']}")
             state.setdefault(flag, {})[key] = True
@@ -705,6 +720,10 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             f"SL={sl_pips}p  TP={tp_pips}p  reason={sig['reason']}"
         )
 
+        strategy_key = f"{EURUSD_PAIR}@{strategy.lower()}"
+        if not allow_or_log_entry(log, strategy_key, EURUSD_PAIR, direction):
+            continue
+
         # Guard 1: daily loss limit
         if state['daily_pnl'] <= -DAILY_LOSS_LIMIT:
             log.warning(
@@ -783,6 +802,14 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             continue
 
         if result['success']:
+            try:
+                acknowledged = acknowledge_trade(
+                    EURUSD_PAIR, sig, state['eurusd'])
+                if acknowledged is not None:
+                    state['eurusd'] = acknowledged
+            except Exception as e:
+                log.critical(f"TRADE ACKNOWLEDGEMENT FAILED EURUSD-{strategy}: {e}",
+                             exc_info=True)
             log.info(
                 f"TRADE PLACED  EURUSD-{strategy} {direction}  "
                 f"{result['volume']:.2f}L  "
@@ -1107,6 +1134,7 @@ def main():
              f"daily_limit={MAX_DAILY_LOSS_PCT*100:.0f}%  "
              f"risk_scale={GLOBAL_CFG.get('risk_scale', 1.0)}  "
              f"max_lot={GLOBAL_CFG.get('max_lot', 2.0)}")
+    log_startup_mode(log)
     log.info("=" * 60)
     startup_identity_ok = _bind_mt5_terminal(log)
     if not startup_identity_ok:

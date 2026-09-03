@@ -148,6 +148,21 @@ def check_asian_reversion(key: str) -> dict:
     return inst.check_signal({'armed': True}, 'asian')
 
 
+def acknowledge_trade(key: str, signal: dict,
+                      state: dict | None = None) -> dict | None:
+    """Commit strategy-local consumed state after confirmed execution only."""
+    inst = _get_strategies().get(key)
+    if inst is None:
+        raise KeyError(f'{key}: strategy not loaded for acknowledgement')
+    acknowledge = getattr(inst, 'acknowledge_trade', None)
+    if acknowledge is None:
+        return state
+    if state is None:
+        acknowledge(signal)
+        return None
+    return acknowledge(signal, state)
+
+
 def _breakout_pairs() -> list:
     """Keys of active pairs whose strategy follows the breakout interface
     (prepare() once per session + check_breakout() each cycle, identical

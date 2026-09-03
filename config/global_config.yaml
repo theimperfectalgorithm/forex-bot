@@ -1,3 +1,8 @@
+trading:
+  # Safe repository default. A live instance must explicitly override this
+  # in its gitignored config/local_config.yaml and restart the process.
+  mode: PAUSED
+
 global:
   max_open_trades: 3
   # 2026-07-05: enabled -- core/news_calendar.py enforces the 5ers rule

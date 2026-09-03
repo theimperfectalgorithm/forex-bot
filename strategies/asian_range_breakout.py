@@ -333,7 +333,6 @@ class AsianRangeBreakout(BaseStrategy):
             return no_signal('already traded this pair today (one trade/day limit)')
 
         if bar_close > asian_high and (not use_h4 or trend == 1):
-            self._last_trade_date = bar_time.date()
             return {
                 'signal'            : 'BUY',
                 'reason'            : ('close above Asian High, H4 BULLISH'
@@ -345,7 +344,6 @@ class AsianRangeBreakout(BaseStrategy):
             }
 
         if bar_close < asian_low and (not use_h4 or trend == -1):
-            self._last_trade_date = bar_time.date()
             return {
                 'signal'            : 'SELL',
                 'reason'            : ('close below Asian Low, H4 BEARISH'
@@ -359,3 +357,10 @@ class AsianRangeBreakout(BaseStrategy):
         trend_label = ('BULLISH' if trend == 1
                        else 'BEARISH' if trend == -1 else 'either-direction')
         return no_signal(f'no {trend_label} close beyond range on bar {bar_time.strftime("%H:%M")}')
+
+    def acknowledge_trade(self, signal: dict) -> None:
+        """Commit same-day dedup only after the broker accepts the entry."""
+        if signal.get('signal') not in ('BUY', 'SELL'):
+            raise ValueError('cannot acknowledge a non-entry ARB signal')
+        bar_time = datetime.fromisoformat(signal['trigger_bar_time'])
+        self._last_trade_date = bar_time.date()

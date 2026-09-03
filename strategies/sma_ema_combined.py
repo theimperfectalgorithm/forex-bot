@@ -443,8 +443,6 @@ class SmaEmaCombined(BaseStrategy):
                             'tp_pips' : EMA_TP_PIPS,
                             'reason'  : 'EMA pullback confirmed: close above EMA20, H1 bullish',
                         })
-                        state['ema_pullback_pending'] = False
-                        state['ema_pullback_dir']     = ''
                     elif not bull_aligned or h1_trend != 1:
                         log.info(
                             f"{self.pair} EMA: BUY pullback cancelled -- "
@@ -471,8 +469,6 @@ class SmaEmaCombined(BaseStrategy):
                             'tp_pips' : EMA_TP_PIPS,
                             'reason'  : 'EMA pullback confirmed: close below EMA20, H1 bearish',
                         })
-                        state['ema_pullback_pending'] = False
-                        state['ema_pullback_dir']     = ''
                     elif not bear_aligned or h1_trend != -1:
                         log.info(
                             f"{self.pair} EMA: SELL pullback cancelled -- "
@@ -487,3 +483,17 @@ class SmaEmaCombined(BaseStrategy):
                         )
 
         return signals, state
+
+    def acknowledge_trade(self, signal: dict, state: dict | None = None) -> dict:
+        """Commit execution-dependent EURUSD state after broker acceptance."""
+        updated = dict(state or {})
+        if signal.get('signal') not in ('BUY', 'SELL'):
+            raise ValueError('cannot acknowledge a non-entry EURUSD signal')
+        if signal.get('strategy') == 'EMA':
+            expected = signal['signal']
+            if (not updated.get('ema_pullback_pending')
+                    or updated.get('ema_pullback_dir') != expected):
+                raise ValueError('EMA acknowledgement does not match pending setup')
+            updated['ema_pullback_pending'] = False
+            updated['ema_pullback_dir'] = ''
+        return updated
