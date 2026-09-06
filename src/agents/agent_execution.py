@@ -423,6 +423,21 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
         log.error(err)
         return failed(err)
 
+    # Entry-only defense against direct callers and changes since risk approval.
+    # Keep network/calendar work before the final executable-price/prop checks.
+    try:
+        from core.news_calendar import NewsResult, evaluate_news, reevaluate_news
+        news = evaluate_news(symbol)
+        if not isinstance(news, NewsResult):
+            raise ValueError('invalid news helper result')
+        log.info(news.entry_message)
+        if not news.entries_allowed:
+            return failed(news.entry_message)
+    except Exception as e:
+        reason = f"NEWS UNKNOWN / ENTRY BLOCKED: news helper failed ({e})"
+        log.warning(reason)
+        return failed(reason)
+
     # Refresh executable price at the last practical point before submission.
     # SL/TP methodology remains unchanged; only risk and request price refresh.
     final_entry = _get_live_price(symbol, signal)
@@ -445,6 +460,15 @@ def place_trade(symbol: str, breakout: dict, lot_size: float,
     if not prop.allowed:
         return failed(f"Broker-authoritative prop loss guard: {prop.reason}")
 
+    # Reevaluate retained evidence AFTER all ticks, sizing, logging and broker
+    # prop queries. No I/O occurs on the permitted path before order_send.
+    try:
+        final_news = reevaluate_news(news, symbol)
+        if not isinstance(final_news, NewsResult) or not final_news.entries_allowed:
+            return failed(final_news.entry_message if isinstance(final_news, NewsResult)
+                          else 'NEWS UNKNOWN / ENTRY BLOCKED: invalid final news result')
+    except Exception as e:
+        return failed(f'NEWS UNKNOWN / ENTRY BLOCKED: final news check failed ({e})')
     result = mt5.order_send(request)
     if result is None:
         return failed("order_send returned None")

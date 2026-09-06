@@ -218,20 +218,9 @@ class SmaEmaCombined(BaseStrategy):
         if not self._connect(log):
             return signals, state
 
-        now  = datetime.now(timezone.utc)
-        if not london_ny_overlap(now):
-            return signals, state
-
         bars = self._m15_bars()
         if bars is None:
             log.warning(f"{self.pair}: insufficient M15 data for signal check")
-            return signals, state
-
-        h1_trend = self._h1_ema50_trend(log)
-        h1_label = {1: 'BULLISH', -1: 'BEARISH', 0: 'NEUTRAL'}[h1_trend]
-        log.info(f"{self.pair}: H1 EMA50 = {h1_label}  (needed: BULLISH for BUY, BEARISH for SELL)")
-        if h1_trend == 0:
-            log.info(f"{self.pair}: H1 trend NEUTRAL -- no signals possible this bar")
             return signals, state
 
         closes = np.array([b['close'] for b in bars])
@@ -281,6 +270,23 @@ class SmaEmaCombined(BaseStrategy):
                     'reason'             : (f"SMA50 x SMA100 adverse cross against "
                                             f"{open_sma['direction']}"),
                 })
+
+        # Return a confirmed exit before any entry-only H1 query can delay or
+        # raise away that signal. New entries can be evaluated next cycle.
+        if signals:
+            return signals, state
+
+        # Existing-position crosses are independent of entry session/trend.
+        now = datetime.now(timezone.utc)
+        if not london_ny_overlap(now):
+            return signals, state
+
+        h1_trend = self._h1_ema50_trend(log)
+        h1_label = {1: 'BULLISH', -1: 'BEARISH', 0: 'NEUTRAL'}[h1_trend]
+        log.info(f"{self.pair}: H1 EMA50 = {h1_label}  (needed: BULLISH for BUY, BEARISH for SELL)")
+        if h1_trend == 0:
+            log.info(f"{self.pair}: H1 trend NEUTRAL -- no signals possible this bar")
+            return signals, state
 
         sma_daily  = state.get('sma_daily_trades', 0)
         sma_consec = state.get('sma_consec_losses', 0)

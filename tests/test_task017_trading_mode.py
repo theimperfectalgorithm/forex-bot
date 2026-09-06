@@ -7,6 +7,8 @@ from types import SimpleNamespace as NS
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures('clear_news')
+
 from core import trading_mode
 from src.agents import agent_execution as execution
 from src.agents import main_agent

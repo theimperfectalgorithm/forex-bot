@@ -628,13 +628,18 @@ def step_asian_time_exit(state: dict, log: logging.Logger,
     all_closed = True
     for t in keyed_open:
         try:
-            from core.news_calendar import is_blackout
-            blocked, why = is_blackout(t['symbol'])
-            if blocked:
+            from core.news_calendar import NewsStatus, evaluate_news
+            news = evaluate_news(t['symbol'], refresh=False)
+            # Only confirmed blackouts defer this scheduled exit. Unknown news
+            # blocks new entries, never management of an existing position.
+            if news.status is NewsStatus.BLACKOUT:
                 log.warning(f"{label} TIME EXIT deferred for {t['symbol']} "
-                            f"ticket={t['ticket']}: {why}")
+                            f"ticket={t['ticket']}: {news.reason}")
                 all_closed = False
                 continue
+            if news.status is NewsStatus.UNKNOWN:
+                log.warning(f"{label} TIME EXIT: NEWS UNKNOWN -- closing anyway: "
+                            f"{news.reason}")
         except Exception as e:
             log.warning(f"{label} time-exit news check failed ({e}) -- "
                         f"closing anyway")
@@ -652,7 +657,7 @@ def step_asian_time_exit(state: dict, log: logging.Logger,
         state[done_flag] = True
 
 
-def step_check_eurusd(state: dict, log: logging.Logger):
+def step_check_eurusd(state: dict, log: logging.Logger, *, entries_allowed: bool = True):
     """
     Every 15 min during 12:00-15:45 UTC.
     Checks EURUSD for SMA Run 1 and EMA Pullback signals.
@@ -674,14 +679,6 @@ def step_check_eurusd(state: dict, log: logging.Logger):
         f"pb_dir={eu.get('ema_pullback_dir','')!r}]"
     )
 
-    if not state.get('trade_allowed', False):
-        log.info("EURUSD: skipping -- AVOID day (market agent blocked trading)")
-        return
-
-    if state.get('ny_news_flag'):
-        log.info("EURUSD: skipping -- NY news flag active")
-        return
-
     try:
         signals, updated_eurusd = check_eurusd_signals(
             state['eurusd'], state['open_trades'])
@@ -697,6 +694,9 @@ def step_check_eurusd(state: dict, log: logging.Logger):
     MAX_CONSEC       = 2
     MAX_DAILY        = 2
 
+    # Process all exits first, even if a strategy returns an entry before an
+    # exit. Entry gates below never suppress management of existing positions.
+    signals = sorted(signals, key=lambda sig: sig['signal'] != 'CROSS_EXIT')
     for sig in signals:
         strategy  = sig['strategy']
         direction = sig['signal']
@@ -713,6 +713,10 @@ def step_check_eurusd(state: dict, log: logging.Logger):
             continue
 
         # ---- New entry: log signal then check every guard in sequence ----
+        if (not entries_allowed or not state.get('trade_allowed', False)
+                or state.get('ny_news_flag')):
+            log.info('EURUSD: entry blocked by reconciliation/session/market/news gate')
+            continue
         sl_pips = sig['sl_pips']
         tp_pips = sig['tp_pips']
         log.info(
@@ -1240,9 +1244,11 @@ def main():
             # -- server 12:00-15:45  EURUSD dual-strategy checks.
             #    EURUSD_PAIR is None when no sma_ema_combined pair is active
             #    (deactivated 2026-07-05 after failing re-validation).
-            if (entries_allowed and EURUSD_PAIR
-                    and T_EURUSD_START <= srv <= T_EURUSD_END):
-                step_check_eurusd(state, log)
+            eurusd_entry_session = T_EURUSD_START <= srv <= T_EURUSD_END
+            if EURUSD_PAIR and (eurusd_entry_session or any(
+                    trade.get('symbol') == EURUSD_PAIR for trade in state['open_trades'])):
+                step_check_eurusd(state, log,
+                                  entries_allowed=entries_allowed and eurusd_entry_session)
                 save_state(state)
 
             # -- 21:00  Daily report (once per day)

@@ -369,16 +369,21 @@ def run(symbol: str, signal: str, sl_pips: float, daily_state: dict,
 
     # -- 9. High-impact news blackout (5ers: no entries +/-5 min of news)
     try:
-        from core.news_calendar import is_blackout
-        blocked, news_reason = is_blackout(symbol)
-        if blocked:
-            return reject(f"News blackout: {news_reason}")
+        from core.news_calendar import NewsResult, evaluate_news
+        news = evaluate_news(symbol)
+        if not isinstance(news, NewsResult):
+            raise ValueError('invalid news helper result')
+        log.info(news.entry_message)
+        if not news.entries_allowed:
+            return reject(news.entry_message)
     except Exception as e:
-        log.warning(f"news blackout check failed ({e}) -- proceeding")
+        reason = f"NEWS UNKNOWN / ENTRY BLOCKED: news helper failed ({e})"
+        log.warning(reason)
+        return reject(reason)
 
     # -- 10. Spread gate: a spread that is a large fraction of the SL
     # makes the trade near-unwinnable (entry starts most of the way to
-    # the stop). Fails OPEN on a missing tick (like the news gate): a
+    # the stop). Fails OPEN on a missing tick: a
     # transient tick-read hiccup must not silently halt trading, and the
     # broker's own Invalid-stops rejection remains as the backstop.
     spread = _spread_pips(symbol, log)

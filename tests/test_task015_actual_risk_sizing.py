@@ -11,6 +11,7 @@ from src.agents import agent_risk as risk
 
 
 LOG = logging.getLogger("task015")
+pytestmark = pytest.mark.usefixtures('clear_news')
 
 
 def fake_mt5(*, ask=1.1010, bid=1.1008, vmin=.01, step=.01, vmax=10.0,

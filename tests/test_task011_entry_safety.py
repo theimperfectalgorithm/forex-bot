@@ -15,6 +15,7 @@ from src.agents import main_agent
 
 
 LOG = logging.getLogger("task011-tests")
+pytestmark = pytest.mark.usefixtures('clear_news')
 ROOT = Path(__file__).parent.parent
 
 

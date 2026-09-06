@@ -44,6 +44,19 @@ def test_execution_logging_is_isolated():
     assert targets and all(_inside(path, runtime_paths.data_dir()) for path in targets)
 
 
+def test_legacy_strategy_logging_is_isolated():
+    from strategies import sma_ema_combined
+    logger = sma_ema_combined._log()
+    targets = [Path(h.baseFilename) for h in logger.handlers
+               if isinstance(h, logging.FileHandler)]
+    assert targets and all(_inside(path, runtime_paths.data_dir()) for path in targets)
+
+
+def test_production_file_handler_is_blocked():
+    with pytest.raises(AssertionError, match='production log handler forbidden'):
+        logging.FileHandler(runtime_paths.PRODUCTION_DATA_DIR / 'logs' / 'trading.log')
+
+
 def test_reporting_outputs_are_isolated(monkeypatch):
     class OfflineMT5:
         @staticmethod
